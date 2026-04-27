@@ -30,6 +30,7 @@ The repository now has the first public bootstrap: root toolchain metadata, cros
 - `packages/sdk-js` and `packages/plugin-sdk`: early SDK surfaces for clients and plugins.
 - `services/ingest`: Python normalization helpers for untrusted imported content.
 - `scripts`: smoke, repository health, task queue, environment guard, package baseline, and LOC tools.
+- `docs/core-model.md`: public overview of identifiers, events, reducers, sync, and audit primitives.
 - `docs/STATUS.md`: generated repository health summary.
 
 ## Local Checks

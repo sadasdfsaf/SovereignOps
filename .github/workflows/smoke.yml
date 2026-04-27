@@ -19,4 +19,3 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: python scripts/smoke.py
       - run: python -m unittest discover -s tests
-

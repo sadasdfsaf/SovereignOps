@@ -15,4 +15,3 @@ jobs:
           node-version: "22"
       - run: corepack enable
       - run: pnpm -r --if-present check
-

@@ -27,6 +27,7 @@ REQUIRED_PATHS = [
     "services/mcp-gateway/.env.example",
     "services/sync/.env.example",
     "docs/release-checklist.md",
+    "docs/core-model.md",
     "docs/adr/000-template.md",
     "docs/adr/001-local-first-event-model.md",
 ]

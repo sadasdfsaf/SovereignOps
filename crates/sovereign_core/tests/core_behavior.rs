@@ -4,11 +4,12 @@ use sovereign_core::{
 };
 
 #[test]
-fn end_to_end_policy_then_event_append() {
+fn end_to_end_policy_then_event_append() -> Result<(), Box<dyn std::error::Error>> {
+    let object_id = ObjectId::parse("obj_note-1")?;
     let request = PolicyRequest {
-        workspace_id: WorkspaceId::parse("wsp_demo").unwrap(),
-        actor_id: ActorId::parse("act_builder").unwrap(),
-        object_id: Some(ObjectId::parse("obj_note-1").unwrap()),
+        workspace_id: WorkspaceId::parse("wsp_demo")?,
+        actor_id: ActorId::parse("act_builder")?,
+        object_id: Some(object_id.clone()),
         capability: Capability::WriteObject,
         risk: RiskLevel::Low,
     };
@@ -25,13 +26,12 @@ fn end_to_end_policy_then_event_append() {
         workspace_id: request.workspace_id,
         sequence: 1,
         actor_id: request.actor_id,
-        object_id: request.object_id.unwrap(),
+        object_id,
         operation: "object.updated".to_owned(),
         payload_digest: "digest-1".to_owned(),
         previous_digest: None,
-    })
-    .unwrap();
+    })?;
 
     assert_eq!(log.len(), 1);
+    Ok(())
 }
-

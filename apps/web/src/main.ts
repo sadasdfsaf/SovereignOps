@@ -10,3 +10,14 @@ export const bootstrapRoutes: RouteSummary[] = [
   { path: "/sync", title: "Sync" },
 ];
 
+export { InMemoryLocalStore, createInMemoryLocalStore } from "./localStore.ts";
+export type {
+  BrowserLocalStore,
+  LocalStoreCollection,
+  LocalStoreEntry,
+  LocalStoreJson,
+  LocalStoreKey,
+  LocalStoreListQuery,
+  LocalStorePut,
+  WorkspaceId,
+} from "./localStore.ts";
