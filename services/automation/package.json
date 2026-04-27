@@ -5,7 +5,7 @@
   "private": true,
   "main": "src/index.ts",
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package && node tests/automation.test.mjs && node tests/automation-audit.test.mjs",
-    "test": "node tests/automation.test.mjs && node tests/automation-audit.test.mjs"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/automation.test.mjs && node tests/automation-audit.test.mjs && node tests/plugin-review.test.mjs",
+    "test": "node tests/automation.test.mjs && node tests/automation-audit.test.mjs && node tests/plugin-review.test.mjs"
   }
 }

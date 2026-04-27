@@ -1,0 +1,207 @@
+{
+  "artifactVersion": "1.0.0",
+  "kind": "plugin_review_artifact",
+  "plugin": {
+    "id": "plugin.release-notes.local-draft",
+    "name": "Local Release Notes Draft",
+    "version": "0.1.0",
+    "manifestPath": "examples/plugins/release-notes/plugin.json",
+    "entrypoint": "examples/plugins/release-notes/index.mjs"
+  },
+  "scope": {
+    "proposalOnly": true,
+    "localOnly": true,
+    "externalCalls": 0,
+    "resourceUri": "local://release-notes/change-summary-input",
+    "inputPath": "examples/plugins/release-notes/sample-input.json"
+  },
+  "capabilityGrant": {
+    "approvedCapabilities": [
+      "read_local_change_summaries",
+      "redact_sensitive_release_note_fields",
+      "propose_release_note_draft"
+    ],
+    "deniedCapabilities": [],
+    "notes": [
+      "Read host-supplied local commit and change summary records.",
+      "Apply deterministic redaction before draft metadata is returned.",
+      "Return release-note draft metadata for review without changing workspace records."
+    ]
+  },
+  "sandboxRun": {
+    "harness": "createPluginSandboxHarness",
+    "limits": {
+      "maxAuditEvents": 64,
+      "maxTicks": 64
+    },
+    "ticks": 16,
+    "result": "ok",
+    "auditEvents": [
+      "release_notes.local_changes_scanned",
+      "release_notes.secret_redactions_applied",
+      "release_notes.draft_metadata_created"
+    ],
+    "hostApiEvents": []
+  },
+  "proposal": {
+    "type": "release_note_draft_metadata",
+    "proposalOnly": true,
+    "localOnly": true,
+    "externalCalls": 0,
+    "releaseName": "Desktop Workspace 1.8.0",
+    "draftKey": "release-notes-13v5ztc",
+    "sourceCounts": {
+      "changes": 4,
+      "commits": 3,
+      "includedChanges": 3,
+      "omittedChanges": 1
+    },
+    "sourceCommits": [
+      {
+        "sha": "a1b2c3d",
+        "summary": "Add manifest-driven release note draft metadata.",
+        "files": [
+          "examples/plugins/release-notes/README.md",
+          "examples/plugins/release-notes/plugin.json"
+        ],
+        "refs": [
+          "task-101"
+        ]
+      },
+      {
+        "sha": "d4e5f6a",
+        "summary": "Redact password=[REDACTED] and apiKey=[REDACTED] before drafting.",
+        "files": [
+          "packages/plugin-sdk/tests/release-notes-plugin-example.test.mjs"
+        ],
+        "refs": [
+          "task-102"
+        ]
+      },
+      {
+        "sha": "f7e8d9c",
+        "summary": "Document local-only release note review flow.",
+        "files": [
+          "examples/plugins/release-notes/sample-input.json"
+        ],
+        "refs": [
+          "task-103"
+        ]
+      }
+    ],
+    "sections": [
+      {
+        "heading": "Added",
+        "items": [
+          {
+            "changeId": "chg-001",
+            "title": "Manifest-driven draft metadata",
+            "summary": "Adds a plugin.json contract for release-note draft metadata generated from local summaries.",
+            "commits": [
+              "a1b2c3d"
+            ],
+            "risk": "low"
+          }
+        ]
+      },
+      {
+        "heading": "Changed",
+        "items": [
+          {
+            "changeId": "chg-002",
+            "title": "Local input redaction",
+            "summary": "Redacts password=[REDACTED], apiKey=[REDACTED], and Authorization: Bearer [REDACTED] before metadata is returned.",
+            "commits": [
+              "d4e5f6a"
+            ],
+            "risk": "medium"
+          }
+        ]
+      },
+      {
+        "heading": "Fixed",
+        "items": [
+          {
+            "changeId": "chg-003",
+            "title": "Deterministic audit metadata",
+            "summary": "Uses fixed audit event names and stable sorting so repeated runs produce the same draft.",
+            "commits": [
+              "d4e5f6a",
+              "f7e8d9c"
+            ],
+            "risk": "low"
+          }
+        ]
+      }
+    ],
+    "omittedChangeIds": [
+      "chg-004"
+    ],
+    "nextStep": "Review the redacted draft metadata before sharing."
+  },
+  "redactionReport": {
+    "placeholder": "[REDACTED]",
+    "patterns": [
+      "keyValueSecret",
+      "bearerToken",
+      "privateKeyBlock"
+    ],
+    "redactions": [
+      {
+        "path": "changes[1].summary",
+        "kind": "bearer_token",
+        "replacements": 1
+      },
+      {
+        "path": "changes[1].summary",
+        "kind": "key_value_secret",
+        "replacements": 2
+      },
+      {
+        "path": "changes[3].summary",
+        "kind": "private_key_block",
+        "replacements": 1
+      },
+      {
+        "path": "commits[1].summary",
+        "kind": "key_value_secret",
+        "replacements": 2
+      }
+    ],
+    "redactedExamples": [
+      {
+        "path": "commits[1].summary",
+        "value": "Redact password=[REDACTED] and apiKey=[REDACTED] before drafting."
+      },
+      {
+        "path": "changes[1].summary",
+        "value": "Redacts password=[REDACTED], apiKey=[REDACTED], and Authorization: Bearer [REDACTED] before metadata is returned."
+      },
+      {
+        "path": "changes[3].summary",
+        "value": "[REDACTED]"
+      }
+    ]
+  },
+  "sourceFiles": [
+    "examples/plugins/release-notes/review-artifact.json",
+    "examples/plugins/release-notes/plugin.json",
+    "examples/plugins/release-notes/manifest.json",
+    "examples/plugins/release-notes/index.mjs",
+    "examples/plugins/release-notes/sample-input.json",
+    "packages/plugin-sdk/src/sandbox.ts",
+    "packages/plugin-sdk/src/manifest.ts",
+    "packages/plugin-sdk/tests/release-notes-plugin-example.test.mjs",
+    "docs/plugin-review-artifacts.md",
+    "docs/plugin-release-notes-example.md",
+    "docs/plugin-sandbox.md"
+  ],
+  "reviewChecklist": [
+    "Manifest validates with the plugin SDK.",
+    "Sandbox run used only approved capabilities.",
+    "Artifact is proposal-only and local-only.",
+    "External calls are recorded as zero.",
+    "Fake secret-like inputs are already redacted.",
+    "All paths are repo-relative."
+  ]
+}
