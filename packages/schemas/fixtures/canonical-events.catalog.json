@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "fixtures": [
+    {
+      "kind": "canonicalLocalEventCatalog",
+      "fixture": "canonical-events.valid.json",
+      "valid": true
+    },
+    {
+      "kind": "canonicalLocalEventCatalog",
+      "fixture": "canonical-events.invalid.json",
+      "valid": false
+    }
+  ]
+}

@@ -4121,8 +4121,11 @@ components:
       properties:
         path:
           type: string
+          minLength: 1
         message:
           type: string
+          minLength: 1
+      additionalProperties: false
     ErrorResponse:
       type: object
       required:

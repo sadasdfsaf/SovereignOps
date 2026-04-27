@@ -4,6 +4,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { errorResponseSchema, validationIssueSchema } from "../src/apiError.ts";
+import { canonicalLocalEventCatalogSchema, canonicalLocalEventSchema } from "../src/eventCatalog.ts";
 import { jsonSchemaCatalog, jsonSchemas, schemaKinds } from "../src/jsonSchema.ts";
 import { mcpApprovalEvidenceSchema } from "../src/mcpApprovalEvidence.ts";
 import {
@@ -27,6 +29,10 @@ const checkOnly = process.argv.includes("--check");
 const outputs = [
   ["schema-catalog.json", jsonSchemaCatalog],
   ...schemaKinds.map((kind) => [`${kind}.schema.json`, jsonSchemas[kind]]),
+  ["api-error-response.schema.json", errorResponseSchema],
+  ["api-validation-issue.schema.json", validationIssueSchema],
+  ["canonical-local-event.schema.json", canonicalLocalEventSchema],
+  ["canonical-local-event-catalog.schema.json", canonicalLocalEventCatalogSchema],
   ["mcp-approval-evidence.schema.json", mcpApprovalEvidenceSchema],
   ["mcp-approval-evidence-record.schema.json", mcpApprovalEvidenceRecordSchema],
   ["mcp-approval-evidence-record-list.schema.json", mcpApprovalEvidenceRecordListSchema],

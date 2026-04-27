@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "api-error/v1",
+  "error": {
+    "code": "validation_failed",
+    "status": 422,
+    "message": "Request validation failed.",
+    "requestId": "req_01HY9J6M4K8A9Z4P3G2T1C0B9D",
+    "issues": [
+      {
+        "code": "invalid_format",
+        "path": "body.items[0].name",
+        "message": "name must be a non-empty string.",
+        "expected": "non_empty_string",
+        "received": "string"
+      },
+      {
+        "code": "required",
+        "path": "body.workspaceId",
+        "message": "workspaceId is required.",
+        "expected": "present",
+        "received": "missing"
+      }
+    ]
+  }
+}

@@ -58,6 +58,7 @@ def make_release_root(root: Path) -> None:
         "scripts/validate_mcp_gateway_fixtures.py",
         "scripts/node-check.mjs",
         "docs/openapi.yaml",
+        "docs/schema-alignment.md",
         "docs/local-data-lifecycle.md",
         "docs/maintainership.md",
         "docs/security-checklist.md",
@@ -147,6 +148,8 @@ def make_release_root(root: Path) -> None:
         "tests/test_status_dashboard.py",
         "tests/test_status_docs.py",
         "tests/test_ingest_contract_alignment.py",
+        "tests/test_schema_alignment_docs.py",
+        "tests/test_validate_openapi_schema_components.py",
         "tests/test_validate_openapi_ingest_search.py",
         "tests/test_validate_openapi_ingest_evidence.py",
         "tests/ingest_evidence_parity.test.mjs",
@@ -173,14 +176,29 @@ def make_release_root(root: Path) -> None:
         "packages/cli/tests/mcp-approval-evidence-records-replay.test.mjs",
         "packages/cli/tests/plugin-review-artifact.test.mjs",
         "packages/ingest-evidence/src/index.ts",
+        "packages/schemas/src/apiError.ts",
+        "packages/schemas/src/eventCatalog.ts",
         "packages/schemas/src/mcpApprovalEvidence.ts",
         "packages/schemas/src/mcpApprovalEvidenceRecord.ts",
         "packages/schemas/src/pluginReviewArtifact.ts",
         "packages/schemas/src/pluginReviewArtifactRecord.ts",
+        "packages/schemas/tests/api-error.test.mjs",
+        "packages/schemas/tests/event-catalog.test.mjs",
         "packages/schemas/tests/mcp-approval-evidence.test.mjs",
         "packages/schemas/tests/mcp-approval-evidence-record.test.mjs",
         "packages/schemas/tests/plugin-review-artifact.test.mjs",
         "packages/schemas/tests/plugin-review-artifact-record.test.mjs",
+        "packages/schemas/tests/schema-compatibility.test.mjs",
+        "packages/schemas/fixtures/api-error-response.schema.json",
+        "packages/schemas/fixtures/api-validation-issue.schema.json",
+        "packages/schemas/fixtures/api-error.valid.json",
+        "packages/schemas/fixtures/api-error.invalid.json",
+        "packages/schemas/fixtures/canonical-local-event.schema.json",
+        "packages/schemas/fixtures/canonical-local-event-catalog.schema.json",
+        "packages/schemas/fixtures/canonical-events.catalog.json",
+        "packages/schemas/fixtures/canonical-events.valid.json",
+        "packages/schemas/fixtures/canonical-events.invalid.json",
+        "packages/schemas/fixtures/schema-compatibility.v1.json",
         "packages/schemas/fixtures/mcp-approval-evidence.valid.json",
         "packages/schemas/fixtures/mcp-approval-evidence.invalid.json",
         "packages/schemas/fixtures/mcp-approval-evidence.schema.json",
@@ -274,6 +292,7 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertTrue(by_name["ingest-evidence-api-replay"].available)
         self.assertTrue(by_name["status-dashboard"].available)
         self.assertTrue(by_name["bootstrap-docs"].available)
+        self.assertTrue(by_name["schema-contract-alignment"].available)
         self.assertTrue(by_name["plugin-automation-alignment"].available)
         self.assertTrue(by_name["mcp-approval-evidence-api-alignment"].available)
         self.assertTrue(by_name["mcp-approval-evidence-records-api-alignment"].available)
@@ -332,6 +351,7 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("RUN ingest-python-tests: python -m unittest discover -s services/ingest/tests", output.getvalue())
         self.assertIn("RUN status-dashboard: python scripts/status_dashboard.py --json", output.getvalue())
         self.assertIn("RUN bootstrap-docs: python -m unittest tests.test_adr_docs", output.getvalue())
+        self.assertIn("RUN schema-contract-alignment: python -m unittest tests.test_schema_alignment_docs", output.getvalue())
         self.assertIn("RUN loc-integrity: python scripts/loc_integrity.py", output.getvalue())
         self.assertIn("SKIP release-notes-smoke:", output.getvalue())
         self.assertIn("SKIP cargo-check: missing tool: cargo", output.getvalue())

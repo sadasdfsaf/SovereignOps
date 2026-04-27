@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sovereignops.local/api/validation-issue.schema.json",
+  "title": "API validation issue",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "code": {
+      "type": "string",
+      "enum": [
+        "required",
+        "invalid_type",
+        "invalid_format",
+        "invalid_value",
+        "too_small",
+        "too_large",
+        "not_allowed",
+        "duplicate",
+        "not_sorted"
+      ]
+    },
+    "path": {
+      "type": "string",
+      "pattern": "^(?:\\$|[A-Za-z][A-Za-z0-9_-]*(?:\\[[0-9]+\\])?(?:\\.[A-Za-z][A-Za-z0-9_-]*(?:\\[[0-9]+\\])?)*)$"
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9 ._,()\\[\\]-]{0,199}$"
+    },
+    "expected": {
+      "type": "string",
+      "enum": [
+        "array",
+        "boolean",
+        "integer",
+        "number",
+        "object",
+        "string",
+        "non_empty_string",
+        "safe_identifier",
+        "safe_path",
+        "timestamp",
+        "allowed_value",
+        "present",
+        "absent"
+      ]
+    },
+    "received": {
+      "type": "string",
+      "enum": [
+        "array",
+        "boolean",
+        "integer",
+        "number",
+        "object",
+        "string",
+        "null",
+        "missing",
+        "unknown"
+      ]
+    }
+  },
+  "required": [
+    "code",
+    "path",
+    "message"
+  ]
+}

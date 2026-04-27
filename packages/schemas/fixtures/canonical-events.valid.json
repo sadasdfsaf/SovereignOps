@@ -1,0 +1,199 @@
+{
+  "schemaVersion": "canonical-local-event-catalog/v1",
+  "generatedAt": "2026-04-27T10:30:00.000Z",
+  "workspaceId": "wsp_local_fixtures",
+  "localOnly": true,
+  "events": [
+    {
+      "schemaVersion": "canonical-local-event/v1",
+      "id": "evt_local_01",
+      "workspaceId": "wsp_local_fixtures",
+      "actorId": "act_local_author",
+      "sequence": 1,
+      "occurredAt": "2026-04-27T10:00:00.000Z",
+      "recordedAt": "2026-04-27T10:00:01.000Z",
+      "localOnly": true,
+      "operation": "append",
+      "payload": {
+        "schemaKind": "docs",
+        "recordId": "doc_release_notes",
+        "summary": "Create local release notes.",
+        "afterDigest": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "payloadDigest": "f3b98349ae4a83f1f3e1623f5c7233a606bc0146ca6816f2095182ba67cb22b8",
+      "previousDigest": null,
+      "redactionMetadata": {
+        "redacted": true,
+        "redactedFieldCount": 1,
+        "redactedPaths": [
+          "payload.after.body"
+        ],
+        "retainedMetadataKeys": [
+          "operation",
+          "schemaKind"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "canonical-local-event/v1",
+      "id": "evt_local_02",
+      "workspaceId": "wsp_local_fixtures",
+      "actorId": "act_local_author",
+      "sequence": 2,
+      "occurredAt": "2026-04-27T10:05:00.000Z",
+      "recordedAt": "2026-04-27T10:05:01.000Z",
+      "localOnly": true,
+      "operation": "update",
+      "payload": {
+        "schemaKind": "docs",
+        "recordId": "doc_release_notes",
+        "summary": "Mark release notes ready for review.",
+        "beforeDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "afterDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+        "fields": [
+          "status",
+          "updatedAt"
+        ]
+      },
+      "payloadDigest": "f5c68c86e9fe7c5aee8ef04a7ca9e72077dd79a09923f50e996b78d56901e6f7",
+      "previousDigest": "cc6c1890a8360dd58b8632d82ff6303897799dcb4ccaa31606ee3715fd022826",
+      "redactionMetadata": {
+        "redacted": false,
+        "redactedFieldCount": 0,
+        "redactedPaths": [],
+        "retainedMetadataKeys": [
+          "operation",
+          "schemaKind"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "canonical-local-event/v1",
+      "id": "evt_local_03",
+      "workspaceId": "wsp_local_fixtures",
+      "actorId": "act_local_reviewer",
+      "sequence": 3,
+      "occurredAt": "2026-04-27T10:10:00.000Z",
+      "recordedAt": "2026-04-27T10:10:01.000Z",
+      "localOnly": true,
+      "operation": "append",
+      "payload": {
+        "schemaKind": "comments",
+        "recordId": "cmt_release_review",
+        "targetId": "doc_release_notes",
+        "summary": "Add review note.",
+        "afterDigest": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "payloadDigest": "d96d6ccbc8b39614729f573d745b838d07e039b623bb9d7b31e45d2722374f75",
+      "previousDigest": "93a615df77d6bbe483fbeedb151c253f65bb3c3a93974b0e08c00a6350980a79",
+      "redactionMetadata": {
+        "redacted": true,
+        "redactedFieldCount": 1,
+        "redactedPaths": [
+          "payload.after.body"
+        ],
+        "retainedMetadataKeys": [
+          "operation",
+          "schemaKind"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "canonical-local-event/v1",
+      "id": "evt_local_04",
+      "workspaceId": "wsp_local_fixtures",
+      "actorId": "act_local_author",
+      "sequence": 4,
+      "occurredAt": "2026-04-27T10:15:00.000Z",
+      "recordedAt": "2026-04-27T10:15:01.000Z",
+      "localOnly": true,
+      "operation": "delete",
+      "payload": {
+        "schemaKind": "attachments",
+        "recordId": "att_temp_preview",
+        "targetId": "doc_release_notes",
+        "summary": "Remove temporary preview attachment.",
+        "beforeDigest": "4444444444444444444444444444444444444444444444444444444444444444"
+      },
+      "payloadDigest": "9b639f5765ff76d43c6112400c444391c675158de69dba09e6b0f8feb5277593",
+      "previousDigest": "a24854e68990bba333250f6306d831f765b5d4ea8d1bb650df54def060b9b3e3",
+      "redactionMetadata": {
+        "redacted": false,
+        "redactedFieldCount": 0,
+        "redactedPaths": [],
+        "retainedMetadataKeys": [
+          "operation",
+          "schemaKind"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "canonical-local-event/v1",
+      "id": "evt_local_05",
+      "workspaceId": "wsp_local_fixtures",
+      "actorId": "act_local_author",
+      "sequence": 5,
+      "occurredAt": "2026-04-27T10:20:00.000Z",
+      "recordedAt": "2026-04-27T10:20:01.000Z",
+      "localOnly": true,
+      "operation": "approval_requested",
+      "payload": {
+        "schemaKind": "approvals",
+        "recordId": "apv_release_notes",
+        "targetId": "doc_release_notes",
+        "summary": "Request approval for release notes.",
+        "approvalId": "apv_release_notes",
+        "approvalStatus": "requested",
+        "afterDigest": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      "payloadDigest": "f814fb78a59c9119651035d3a69412cb8901900498ffb0c6b76cd902c5f2ceef",
+      "previousDigest": "f1af71039b473194da62d792e85ba2d0dffccdb03b062f2a24f8bd47987c66a4",
+      "redactionMetadata": {
+        "redacted": false,
+        "redactedFieldCount": 0,
+        "redactedPaths": [],
+        "retainedMetadataKeys": [
+          "operation",
+          "schemaKind"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "canonical-local-event/v1",
+      "id": "evt_local_06",
+      "workspaceId": "wsp_local_fixtures",
+      "actorId": "act_local_reviewer",
+      "sequence": 6,
+      "occurredAt": "2026-04-27T10:25:00.000Z",
+      "recordedAt": "2026-04-27T10:25:01.000Z",
+      "localOnly": true,
+      "operation": "approval_approved",
+      "payload": {
+        "schemaKind": "approvals",
+        "recordId": "apv_release_notes",
+        "targetId": "doc_release_notes",
+        "summary": "Approve release notes for local sharing.",
+        "approvalId": "apv_release_notes",
+        "approvalStatus": "approved",
+        "decision": "approved",
+        "beforeDigest": "5555555555555555555555555555555555555555555555555555555555555555",
+        "afterDigest": "6666666666666666666666666666666666666666666666666666666666666666",
+        "fields": [
+          "status",
+          "updatedAt"
+        ]
+      },
+      "payloadDigest": "a65e78625d7116246dbae654e4478925a7b2874f3eb594740e1376327ac32fbd",
+      "previousDigest": "4cd6172e02c913701835fd98b263fbbe20be11a469851db608fd12c09f1a9627",
+      "redactionMetadata": {
+        "redacted": false,
+        "redactedFieldCount": 0,
+        "redactedPaths": [],
+        "retainedMetadataKeys": [
+          "operation",
+          "schemaKind"
+        ]
+      }
+    }
+  ]
+}

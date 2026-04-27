@@ -12,6 +12,29 @@ from typing import Optional
 
 PYTHON = "{python}"
 
+SCHEMA_CONTRACT_REQUIRED_PATHS: tuple[str, ...] = (
+    "docs/schema-alignment.md",
+    "docs/openapi.yaml",
+    "scripts/validate_openapi.py",
+    "tests/test_schema_alignment_docs.py",
+    "tests/test_validate_openapi_schema_components.py",
+    "packages/schemas/src/apiError.ts",
+    "packages/schemas/src/eventCatalog.ts",
+    "packages/schemas/tests/api-error.test.mjs",
+    "packages/schemas/tests/event-catalog.test.mjs",
+    "packages/schemas/tests/schema-compatibility.test.mjs",
+    "packages/schemas/fixtures/api-error-response.schema.json",
+    "packages/schemas/fixtures/api-validation-issue.schema.json",
+    "packages/schemas/fixtures/api-error.valid.json",
+    "packages/schemas/fixtures/api-error.invalid.json",
+    "packages/schemas/fixtures/canonical-local-event.schema.json",
+    "packages/schemas/fixtures/canonical-local-event-catalog.schema.json",
+    "packages/schemas/fixtures/canonical-events.catalog.json",
+    "packages/schemas/fixtures/canonical-events.valid.json",
+    "packages/schemas/fixtures/canonical-events.invalid.json",
+    "packages/schemas/fixtures/schema-compatibility.v1.json",
+)
+
 
 @dataclass(frozen=True)
 class CheckSpec:
@@ -73,6 +96,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "docs/mcp-approval-evidence-records-api.md",
             "docs/plugin-review-artifact-api.md",
             "docs/plugin-review-artifacts.md",
+            *SCHEMA_CONTRACT_REQUIRED_PATHS,
             "docs/status.md",
             "docs/ci.md",
             "docs/development-quickstart.md",
@@ -211,6 +235,18 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
         description="Validate the checked-in OpenAPI contract.",
         command=(PYTHON, "scripts/validate_openapi.py"),
         required_paths=("scripts/validate_openapi.py", "docs/openapi.yaml"),
+    ),
+    CheckSpec(
+        name="schema-contract-alignment",
+        description="Validate schema alignment docs and OpenAPI schema component wiring.",
+        command=(
+            PYTHON,
+            "-m",
+            "unittest",
+            "tests.test_schema_alignment_docs",
+            "tests.test_validate_openapi_schema_components",
+        ),
+        required_paths=SCHEMA_CONTRACT_REQUIRED_PATHS,
     ),
     CheckSpec(
         name="mcp-gateway-fixtures",

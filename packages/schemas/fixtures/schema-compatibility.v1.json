@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "schema-compatibility.v1",
+  "records": [
+    {
+      "kind": "docs",
+      "record": {
+        "id": "doc_notes",
+        "workspaceId": "wsp_main",
+        "projectId": "prj_launch",
+        "title": "Launch notes",
+        "body": "Checklist for the local release.",
+        "status": "active",
+        "risk": "low",
+        "ownerActorId": "act_owner",
+        "createdAt": "2026-04-27T00:00:00.000Z",
+        "updatedAt": "2026-04-27T00:00:00.000Z"
+      }
+    },
+    {
+      "kind": "projects",
+      "record": {
+        "id": "prj_launch",
+        "workspaceId": "wsp_main",
+        "name": "Local release",
+        "status": "active",
+        "risk": "medium",
+        "ownerActorId": "act_owner",
+        "createdAt": "2026-04-27T00:00:00.000Z",
+        "updatedAt": "2026-04-27T00:00:00.000Z"
+      }
+    },
+    {
+      "kind": "incidents",
+      "record": {
+        "id": "inc_import_mismatch",
+        "workspaceId": "wsp_main",
+        "projectId": "prj_launch",
+        "title": "Import mismatch",
+        "summary": "A local import produced a count mismatch.",
+        "status": "triaged",
+        "risk": "high",
+        "reportedByActorId": "act_owner",
+        "createdAt": "2026-04-27T00:00:00.000Z",
+        "updatedAt": "2026-04-27T00:00:00.000Z"
+      }
+    },
+    {
+      "kind": "comments",
+      "record": {
+        "id": "cmt_review_note",
+        "workspaceId": "wsp_main",
+        "targetId": "doc_notes",
+        "body": "Ready for review.",
+        "status": "open",
+        "risk": "low",
+        "authorActorId": "act_owner",
+        "createdAt": "2026-04-27T00:00:00.000Z",
+        "updatedAt": "2026-04-27T00:00:00.000Z"
+      }
+    },
+    {
+      "kind": "attachments",
+      "record": {
+        "id": "att_release_notes",
+        "workspaceId": "wsp_main",
+        "targetId": "doc_notes",
+        "filename": "release-notes.txt",
+        "contentType": "text/plain",
+        "byteSize": 512,
+        "status": "ready",
+        "risk": "medium",
+        "uploadedByActorId": "act_owner",
+        "createdAt": "2026-04-27T00:00:00.000Z",
+        "updatedAt": "2026-04-27T00:00:00.000Z"
+      }
+    },
+    {
+      "kind": "approvals",
+      "record": {
+        "id": "apv_release_notes",
+        "workspaceId": "wsp_main",
+        "targetId": "doc_notes",
+        "summary": "Approve release notes for local sharing.",
+        "status": "requested",
+        "risk": "high",
+        "requestedByActorId": "act_owner",
+        "approverActorId": "act_reviewer",
+        "createdAt": "2026-04-27T00:00:00.000Z",
+        "updatedAt": "2026-04-27T00:00:00.000Z"
+      }
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "canonical-local-event-catalog/bad",
+  "generatedAt": "2026-04-27T09:00:00.000Z",
+  "workspaceId": "workspace",
+  "localOnly": false,
+  "events": [
+    {
+      "schemaVersion": "canonical-local-event/bad",
+      "id": "bad_event",
+      "workspaceId": "wsp_other",
+      "actorId": "actor",
+      "sequence": 0,
+      "occurredAt": "2026-04-27T10:05:00.000Z",
+      "recordedAt": "2026-04-27T10:04:59.000Z",
+      "localOnly": false,
+      "operation": "merge",
+      "payload": {
+        "schemaKind": "docs",
+        "recordId": "apv_wrong_prefix",
+        "summary": " ",
+        "afterDigest": "not-a-digest",
+        "rawDetail": "removed"
+      },
+      "payloadDigest": "not-a-digest",
+      "previousDigest": "also-not-a-digest",
+      "redactionMetadata": {
+        "redacted": false,
+        "redactedFieldCount": 1,
+        "redactedPaths": [
+          "payload.secret",
+          "payload.secret"
+        ],
+        "retainedMetadataKeys": [
+          "operation",
+          "apiToken"
+        ],
+        "extra": true
+      },
+      "unexpected": true
+    },
+    {
+      "schemaVersion": "canonical-local-event/v1",
+      "id": "evt_local_02",
+      "workspaceId": "wsp_local_fixtures",
+      "actorId": "act_local_author",
+      "sequence": 3,
+      "occurredAt": "2026-04-27T10:05:00.000Z",
+      "recordedAt": "2026-04-27T10:05:01.000Z",
+      "localOnly": true,
+      "operation": "update",
+      "payload": {
+        "schemaKind": "docs",
+        "recordId": "doc_release_notes",
+        "summary": "No effective update.",
+        "beforeDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "afterDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "fields": []
+      },
+      "payloadDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+      "previousDigest": null,
+      "redactionMetadata": {
+        "redacted": false,
+        "redactedFieldCount": 0,
+        "redactedPaths": [],
+        "retainedMetadataKeys": [
+          "schemaKind",
+          "operation"
+        ]
+      }
+    }
+  ]
+}
