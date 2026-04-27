@@ -16,3 +16,4 @@ export * from "./pluginReviewArtifactRecordRoutes.ts";
 export * from "./router.ts";
 export * from "./syncRoutes.ts";
 export * from "./workspaceSessionRoutes.ts";
+export * from "./workspaceSessionStoreRoutes.ts";

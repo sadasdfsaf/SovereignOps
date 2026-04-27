@@ -1078,9 +1078,10 @@ paths:
       tags:
         - workspace-session
       summary: Summarize a supplied local workspace session snapshot.
+      description: Returns a redacted local-only summary from a caller-supplied descriptor and optional session operation list. The route performs no durable write.
       operationId: summarizeWorkspaceSession
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
@@ -1099,6 +1100,7 @@ paths:
       tags:
         - workspace-session
       summary: Preview redacted local workspace session audit records.
+      description: Builds deterministic preview events and audit records from descriptor-backed local event plans. The route performs no durable write.
       operationId: previewWorkspaceSessionAudit
       requestBody:
         required: true
@@ -5248,119 +5250,291 @@ components:
         error:
           $ref: "#/components/schemas/ApiErrorBody"
       additionalProperties: false
+    WorkspaceSessionOperation:
+      type: string
+      enum:
+        - open
+        - lock
+        - unlock
+    WorkspaceSessionEventType:
+      type: string
+      enum:
+        - workspace.session.opened
+        - workspace.session.locked
+        - workspace.session.unlocked
+    WorkspaceSessionId:
+      type: string
+      pattern: "^sess_[A-Za-z0-9_-]{1,88}$"
+    WorkspaceSessionDeviceId:
+      type: string
+      pattern: "^dev_[A-Za-z0-9_-]{1,88}$"
+    WorkspaceSessionRootKeyRef:
+      type: string
+      pattern: "^key_[A-Za-z0-9_-]{1,88}$"
+    WorkspaceSessionGateway:
+      type: object
+      required:
+        - transport
+      properties:
+        transport:
+          type: string
+          enum:
+            - http
+            - stdio
+        host:
+          type: string
+          enum:
+            - 127.0.0.1
+            - localhost
+        port:
+          type: integer
+          minimum: 0
+          maximum: 65535
+      additionalProperties: false
+    WorkspaceSessionDescriptor:
+      type: object
+      required:
+        - workspaceId
+        - deviceId
+        - rootKeyRef
+        - createdAt
+        - updatedAt
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/WorkspaceSessionDeviceId"
+        rootKeyRef:
+          $ref: "#/components/schemas/WorkspaceSessionRootKeyRef"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        storagePath:
+          type: string
+          minLength: 1
+        gateway:
+          $ref: "#/components/schemas/WorkspaceSessionGateway"
+      additionalProperties: false
     WorkspaceSessionSummaryRequest:
       type: object
+      required:
+        - descriptor
+      properties:
+        descriptor:
+          $ref: "#/components/schemas/WorkspaceSessionDescriptor"
+        sessionId:
+          $ref: "#/components/schemas/WorkspaceSessionId"
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionOperation"
+      additionalProperties: false
+    WorkspaceSessionSummaryStorage:
+      type: object
+      required:
+        - localOnly
+        - storagePath
+        - storagePathRedacted
       properties:
         localOnly:
           type: boolean
           const: true
-        workspace:
-          type: object
-          additionalProperties: true
-        session:
-          type: object
-          additionalProperties: true
-        lock:
-          type: object
-          additionalProperties: true
-        gateway:
-          type: object
-          additionalProperties: true
-        migration:
-          type: object
-          additionalProperties: true
-        backup:
-          type: object
-          additionalProperties: true
-        generatedAt:
+        storagePath:
           type: string
-          format: date-time
-      additionalProperties: true
-    WorkspaceSessionSummaryCard:
+          pattern: '^\[redacted:path:[a-z0-9]+\]$'
+        storagePathRedacted:
+          type: boolean
+          const: true
+      additionalProperties: false
+    WorkspaceSessionSummarySession:
       type: object
       required:
-        - id
-        - status
-        - value
-        - severity
+        - sessionId
+        - operations
       properties:
-        id:
-          type: string
-          minLength: 1
-        status:
-          type: string
-          minLength: 1
-        value:
-          type: string
-          minLength: 1
-        severity:
-          type: string
-          minLength: 1
+        sessionId:
+          $ref: "#/components/schemas/WorkspaceSessionId"
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionOperation"
       additionalProperties: false
     WorkspaceSessionSummaryResponse:
       type: object
       required:
         - kind
-        - workspaceId
-        - sessionId
+        - schemaVersion
         - localOnly
-        - status
-        - summaryCards
+        - durableWrites
+        - workspaceId
+        - deviceId
+        - storage
+        - gateway
       properties:
         kind:
           type: string
           const: workspace-session.summary
-        workspaceId:
+        schemaVersion:
           type: string
-          pattern: "^wsp_[A-Za-z0-9_-]{1,88}$"
-        sessionId:
-          type: string
-          pattern: "^sess_[A-Za-z0-9_-]{1,88}$"
+          const: workspace-session-api/v1
         localOnly:
           type: boolean
           const: true
-        status:
+        durableWrites:
+          type: boolean
+          const: false
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/WorkspaceSessionDeviceId"
+        storage:
+          $ref: "#/components/schemas/WorkspaceSessionSummaryStorage"
+        gateway:
+          $ref: "#/components/schemas/WorkspaceSessionGateway"
+        session:
+          $ref: "#/components/schemas/WorkspaceSessionSummarySession"
+      additionalProperties: false
+    WorkspaceSessionEventPlan:
+      type: object
+      required:
+        - operation
+      properties:
+        operation:
+          $ref: "#/components/schemas/WorkspaceSessionOperation"
+        sequence:
+          type: integer
+          minimum: 1
+        cursor:
           type: string
-          enum:
-            - ready
-            - attention
-            - blocked
-        summaryCards:
-          type: array
-          items:
-            $ref: "#/components/schemas/WorkspaceSessionSummaryCard"
-        redaction:
-          type: object
-          additionalProperties: true
-      additionalProperties: true
+          pattern: "^[1-9][0-9]*$"
+        createdAt:
+          type: string
+          format: date-time
+        reason:
+          type: string
+          minLength: 1
+        lockToken:
+          type: string
+          pattern: "^lock_[A-Za-z0-9_-]{1,120}$"
+      additionalProperties: false
     WorkspaceSessionAuditPreviewRequest:
       type: object
       required:
-        - localOnly
+        - descriptor
+        - sessionId
         - events
       properties:
-        localOnly:
-          type: boolean
-          const: true
+        descriptor:
+          $ref: "#/components/schemas/WorkspaceSessionDescriptor"
+        sessionId:
+          $ref: "#/components/schemas/WorkspaceSessionId"
+        events:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionEventPlan"
         actor:
           type: string
           minLength: 1
         createdAt:
           type: string
           format: date-time
-        events:
-          type: array
-          minItems: 1
-          items:
-            type: object
-            additionalProperties: true
-      additionalProperties: true
+      additionalProperties: false
+    WorkspaceSessionLockPayload:
+      type: object
+      required:
+        - lockTokenRef
+      properties:
+        lockTokenRef:
+          type: string
+          pattern: '^\[redacted:lockToken:[a-z0-9]+\]$'
+      additionalProperties: false
+    WorkspaceSessionPreviewEventPayload:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - operation
+        - sessionId
+        - localOnly
+        - storagePath
+        - storagePathDisplay
+        - storagePathRedacted
+        - gateway
+      properties:
+        kind:
+          type: string
+          const: localWorkspaceSession
+        schemaVersion:
+          type: string
+          const: local-workspace-session/v1
+        operation:
+          $ref: "#/components/schemas/WorkspaceSessionOperation"
+        sessionId:
+          $ref: "#/components/schemas/WorkspaceSessionId"
+        localOnly:
+          type: boolean
+          const: true
+        storagePath:
+          type: string
+          pattern: '^\[redacted:path:[a-z0-9]+\]$'
+        storagePathDisplay:
+          type: string
+          minLength: 1
+        storagePathRedacted:
+          type: boolean
+          const: true
+        gateway:
+          $ref: "#/components/schemas/WorkspaceSessionGateway"
+        lock:
+          $ref: "#/components/schemas/WorkspaceSessionLockPayload"
+        reason:
+          type: string
+          minLength: 1
+      additionalProperties: false
+    WorkspaceSessionPreviewEvent:
+      type: object
+      required:
+        - eventId
+        - workspaceId
+        - type
+        - payload
+        - cursor
+        - sequence
+        - deviceId
+        - createdAt
+      properties:
+        eventId:
+          type: string
+          pattern: "^evt_[A-Za-z0-9_-]{1,160}$"
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        type:
+          $ref: "#/components/schemas/WorkspaceSessionEventType"
+        payload:
+          $ref: "#/components/schemas/WorkspaceSessionPreviewEventPayload"
+        cursor:
+          type: string
+          pattern: "^[1-9][0-9]*$"
+        sequence:
+          type: integer
+          minimum: 1
+        deviceId:
+          $ref: "#/components/schemas/WorkspaceSessionDeviceId"
+        createdAt:
+          type: string
+          format: date-time
+      additionalProperties: false
     WorkspaceSessionAuditPreviewRecord:
       type: object
       required:
         - auditId
         - workspaceId
         - action
+        - actor
         - createdAt
         - details
       properties:
@@ -5368,11 +5542,9 @@ components:
           type: string
           minLength: 1
         workspaceId:
-          type: string
-          pattern: "^wsp_[A-Za-z0-9_-]{1,88}$"
+          $ref: "#/components/schemas/WorkspaceId"
         action:
-          type: string
-          minLength: 1
+          $ref: "#/components/schemas/WorkspaceSessionEventType"
         actor:
           type: string
           minLength: 1
@@ -5382,23 +5554,23 @@ components:
         details:
           type: object
           additionalProperties: true
-      additionalProperties: true
-    WorkspaceSessionAuditPreviewResponse:
+      additionalProperties: false
+    WorkspaceSessionAuditPreviewRecords:
       type: object
       required:
         - kind
-        - workspaceId
         - localOnly
+        - redacted
         - recordCount
         - records
       properties:
         kind:
           type: string
-          const: workspace-session.audit-preview
-        workspaceId:
-          type: string
-          pattern: "^wsp_[A-Za-z0-9_-]{1,88}$"
+          const: workspace-session.audit-preview.records
         localOnly:
+          type: boolean
+          const: true
+        redacted:
           type: boolean
           const: true
         recordCount:
@@ -5408,10 +5580,39 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkspaceSessionAuditPreviewRecord"
-        redaction:
-          type: object
-          additionalProperties: true
-      additionalProperties: true
+      additionalProperties: false
+    WorkspaceSessionAuditPreviewResponse:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - localOnly
+        - durableWrites
+        - summary
+        - events
+        - audit
+      properties:
+        kind:
+          type: string
+          const: workspace-session.audit-preview
+        schemaVersion:
+          type: string
+          const: workspace-session-api/v1
+        localOnly:
+          type: boolean
+          const: true
+        durableWrites:
+          type: boolean
+          const: false
+        summary:
+          $ref: "#/components/schemas/WorkspaceSessionSummaryResponse"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionPreviewEvent"
+        audit:
+          $ref: "#/components/schemas/WorkspaceSessionAuditPreviewRecords"
+      additionalProperties: false
     PluginReviewArtifactPreviewRequest:
       type: object
       required:

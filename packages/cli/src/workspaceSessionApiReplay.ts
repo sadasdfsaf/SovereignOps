@@ -140,6 +140,7 @@ const RAW_LOCAL_PATH_PATTERNS = [
   /\\\\[^\\\s"',;)}\]]+[\\][^\s"',;)}\]]+/g,
   /\/\/[^/\s"',;)}\]]+\/[^\s"',;)}\]]+/g,
   /\b(?:\/Users|\/home|\/var|\/tmp|\/private|\/mnt|\/Volumes)\/[^\s"',;)}\]]+/g,
+  /\bworkspaces[\\/][^\s"',;)}\]]+/g,
 ];
 
 export async function runWorkspaceSessionApiReplayCli(
@@ -343,6 +344,10 @@ export function createWorkspaceSessionApiDispatcher(
 
       if (method === "POST" && routePath === "/v1/workspace-session/audit-preview") {
         const body = isRecord(request.body) ? request.body : {};
+        if (Array.isArray(body.events)) {
+          return apiJsonResponse(200, workspaceSessionAuditPreviewBody(body));
+        }
+
         return apiJsonResponse(200, {
           kind: "workspace-session.audit-preview",
           ...(await services.previewAudit({
@@ -1431,6 +1436,152 @@ function workspaceSessionSummaryStatus(body: Record<string, unknown>): "ready" |
   )
     ? "ready"
     : "attention";
+}
+
+function workspaceSessionAuditPreviewBody(body: Record<string, unknown>): Record<string, unknown> {
+  const events = body.events;
+  if (!Array.isArray(events)) {
+    throw invalidFixture("body.events must be an array.");
+  }
+
+  const records = events.map((event, index) =>
+    workspaceSessionAuditPreviewRecord(event, index, body)
+  );
+  const firstRecord = records[0];
+
+  return {
+    kind: "workspace-session.audit-preview",
+    workspaceId: stringOrFallback(
+      body.workspaceId,
+      stringOrFallback(firstRecord?.workspaceId, "wsp_local_workspace"),
+    ),
+    localOnly: body.localOnly !== false,
+    recordCount: records.length,
+    records,
+    redaction: {
+      rawStoragePathsStored: false,
+      rawLockMaterialStored: false,
+      replacement: "[REDACTED]",
+    },
+  };
+}
+
+function workspaceSessionAuditPreviewRecord(
+  value: unknown,
+  index: number,
+  body: Record<string, unknown>,
+): Record<string, unknown> {
+  const event = requiredRecord(value, `body.events[${index}]`);
+  const payload = requiredRecord(event.payload, `body.events[${index}].payload`);
+  const eventId = nonEmptyString(event.eventId, `body.events[${index}].eventId`);
+  const workspaceId = nonEmptyString(event.workspaceId, `body.events[${index}].workspaceId`);
+  const action = nonEmptyString(event.type, `body.events[${index}].type`);
+  const sequence = optionalPositiveInteger(event.sequence, `body.events[${index}].sequence`) ??
+    index + 1;
+  const sessionId = nonEmptyString(payload.sessionId, `body.events[${index}].payload.sessionId`);
+  const operation = nonEmptyString(payload.operation, `body.events[${index}].payload.operation`);
+  const storagePath = nonEmptyString(
+    payload.storagePath,
+    `body.events[${index}].payload.storagePath`,
+  );
+  const storagePathDisplay = nonEmptyString(
+    payload.storagePathDisplay,
+    `body.events[${index}].payload.storagePathDisplay`,
+  );
+  const safeStoragePathDisplay = redactedWorkspaceSessionPathDisplay(
+    storagePath,
+    storagePathDisplay,
+  );
+  const lock = redactedWorkspaceSessionLock(payload.lock);
+  const redactedFields = [
+    "storagePath",
+    ...(lock === undefined ? [] : ["lockToken"]),
+  ];
+
+  return {
+    auditId: `aud_${eventId.startsWith("evt_") ? eventId.slice("evt_".length) : eventId}`,
+    workspaceId,
+    action,
+    actor: stringOrFallback(
+      body.actor,
+      stringOrFallback(event.deviceId, "local-workspace-session"),
+    ),
+    createdAt: stringOrFallback(
+      body.createdAt,
+      stringOrFallback(event.createdAt, DEFAULT_TIMESTAMP),
+    ),
+    details: optionalFields({
+      kind: "localWorkspaceSessionAuditPreview",
+      schemaVersion: stringOrFallback(payload.schemaVersion, "local-workspace-session/v1"),
+      eventId,
+      sequence,
+      sessionId,
+      operation,
+      localOnly: payload.localOnly !== false,
+      storagePath: redactedWorkspaceSessionPath(storagePath, safeStoragePathDisplay),
+      storagePathDisplay: safeStoragePathDisplay,
+      gateway: isRecord(payload.gateway) ? cloneJson(payload.gateway) : undefined,
+      lock,
+      reason: optionalNonEmptyString(payload.reason, `body.events[${index}].payload.reason`),
+      redaction: {
+        redacted: true,
+        fields: redactedFields,
+      },
+    }),
+  };
+}
+
+function redactedWorkspaceSessionPathDisplay(storagePath: string, value: string): string {
+  if (/^[^/\\\r\n]+\s+\[path:[a-z0-9]+\]$/i.test(value)) {
+    return value;
+  }
+
+  return `${safeWorkspaceSessionPathBasename(storagePath)} [path:${
+    stableWorkspaceSessionPathHash(storagePath)
+  }]`;
+}
+
+function redactedWorkspaceSessionPath(storagePath: string, storagePathDisplay: string): string {
+  const displayMatch = storagePathDisplay.match(/\[path:([a-z0-9]+)\]/i);
+  const fingerprint = displayMatch?.[1] ?? stableWorkspaceSessionPathHash(storagePath);
+  return `[redacted:path:${fingerprint}]`;
+}
+
+function redactedWorkspaceSessionLock(value: unknown): Record<string, unknown> | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const lockTokenRef = typeof value.lockTokenRef === "string" &&
+    value.lockTokenRef.startsWith("[redacted:lockToken:")
+    ? value.lockTokenRef
+    : "[REDACTED]";
+  return {
+    lockTokenRef,
+  };
+}
+
+function safeWorkspaceSessionPathBasename(value: string): string {
+  const basename = value.trim().replace(/\\/g, "/").split("/").filter(Boolean).at(-1);
+  if (basename === undefined) {
+    return "session.json";
+  }
+
+  const sanitized = basename.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^_+|_+$/g, "");
+  return sanitized.length === 0 ? "session.json" : sanitized;
+}
+
+function stableWorkspaceSessionPathHash(value: string): string {
+  const normalized = value.trim().replace(/\\/g, "/");
+  let hash = 0xcbf29ce484222325n;
+  const prime = 0x100000001b3n;
+
+  for (let index = 0; index < normalized.length; index += 1) {
+    hash ^= BigInt(normalized.charCodeAt(index));
+    hash = BigInt.asUintN(64, hash * prime);
+  }
+
+  return hash.toString(16).padStart(16, "0").slice(0, 12);
 }
 
 function stringOrFallback(value: unknown, fallback: string): string {

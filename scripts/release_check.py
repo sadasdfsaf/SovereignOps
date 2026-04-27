@@ -142,6 +142,22 @@ WORKSPACE_SESSION_API_REQUIRED_PATHS: tuple[str, ...] = (
     "apps/web/tests/workspace-session-api-state.test.mjs",
 )
 
+WORKSPACE_SESSION_PERSISTENCE_REQUIRED_PATHS: tuple[str, ...] = (
+    "docs/workspace-session-persistence.md",
+    "examples/workspace-session/session-store.json",
+    "tests/test_workspace_session_persistence_docs.py",
+    "tests/test_workspace_session_persistence_alignment.py",
+    "tests/security/workspace_session_persistence_threats.test.mjs",
+    "apps/api/src/workspaceSessionRoutes.ts",
+    "packages/sdk-js/src/client.ts",
+    "packages/sdk-js/src/localWorkspaceSession.ts",
+    "packages/sdk-js/src/localWorkspaceSessionApiClient.ts",
+    "packages/sdk-js/src/localWorkspaceSessionStore.ts",
+    "packages/cli/src/workspaceSessionApiReplay.ts",
+    "apps/web/src/workspaceSessionApiState.ts",
+    "apps/web/src/workspaceSessionState.ts",
+)
+
 
 @dataclass(frozen=True)
 class CheckSpec:
@@ -188,6 +204,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             *LOCAL_EVENT_CATALOG_REQUIRED_PATHS,
             *WORKSPACE_SESSION_REQUIRED_PATHS,
             *WORKSPACE_SESSION_API_REQUIRED_PATHS,
+            *WORKSPACE_SESSION_PERSISTENCE_REQUIRED_PATHS,
             "docs/local-data-lifecycle.md",
             "docs/maintainership.md",
             "docs/security-checklist.md",
@@ -451,6 +468,29 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "tests.test_workspace_session_api_alignment",
         ),
         required_paths=WORKSPACE_SESSION_API_REQUIRED_PATHS,
+    ),
+    CheckSpec(
+        name="workspace-session-persistence-security",
+        description="Validate workspace session persistence redaction and no raw body retention.",
+        command=(
+            "node",
+            "--test",
+            "tests/security/workspace_session_persistence_threats.test.mjs",
+        ),
+        required_paths=WORKSPACE_SESSION_PERSISTENCE_REQUIRED_PATHS,
+        tool_candidates=("node",),
+    ),
+    CheckSpec(
+        name="workspace-session-persistence-alignment",
+        description="Validate workspace session persistence docs, fixture names, and release wiring.",
+        command=(
+            PYTHON,
+            "-m",
+            "unittest",
+            "tests.test_workspace_session_persistence_docs",
+            "tests.test_workspace_session_persistence_alignment",
+        ),
+        required_paths=WORKSPACE_SESSION_PERSISTENCE_REQUIRED_PATHS,
     ),
     CheckSpec(
         name="mcp-gateway-fixtures",
