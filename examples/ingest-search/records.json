@@ -1,0 +1,15 @@
+{
+  "collection": "notes-lab",
+  "items": [
+    {
+      "id": "json_alpha",
+      "title": "Local query guide",
+      "summary": "Citation ranges keep answers traceable."
+    },
+    {
+      "id": "json_beta",
+      "title": "Checksum recap",
+      "summary": "Checksums detect repeated source content before indexing."
+    }
+  ]
+}

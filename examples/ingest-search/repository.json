@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "ingest-search-repository.v1",
+  "workspaceId": "wsp_ingest_demo",
+  "generatedAt": "2026-04-27T00:00:00.000Z",
+  "sources": [
+    {
+      "sourceUri": "fixture://ingest-search/notes.md",
+      "path": "examples/ingest-search/notes.md",
+      "mediaType": "text/markdown",
+      "checksum": "c6a91ee2a9789110ebb39cbd27c7f48c26087c5c13aff8bda69da669ada3cda7",
+      "state": "indexed"
+    },
+    {
+      "sourceUri": "fixture://ingest-search/records.csv",
+      "path": "examples/ingest-search/records.csv",
+      "mediaType": "text/csv",
+      "checksum": "42a535013f7103d295d7e9156b1cb748178d3bc3a0fe00079c6546f40db93e6a",
+      "state": "partly_quarantined"
+    },
+    {
+      "sourceUri": "fixture://ingest-search/records.json",
+      "path": "examples/ingest-search/records.json",
+      "mediaType": "application/json",
+      "checksum": "ecd867eb7c3f7043c7cfcb6e23d6776cad0543b287621cb892449ac45aa90063",
+      "state": "indexed"
+    }
+  ]
+}

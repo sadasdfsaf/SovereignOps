@@ -20,6 +20,9 @@ def make_release_root(root: Path) -> None:
     (root / "scripts").mkdir()
     (root / "docs").mkdir()
     (root / "examples" / "mcp-gateway").mkdir(parents=True)
+    (root / "examples" / "ingest-search").mkdir(parents=True)
+    (root / "services" / "ingest" / "src" / "sovereignops_ingest").mkdir(parents=True)
+    (root / "services" / "ingest" / "tests").mkdir(parents=True)
     (root / "tests").mkdir()
     for path in (
         "scripts/loc_budget.py",
@@ -36,6 +39,7 @@ def make_release_root(root: Path) -> None:
         "docs/security-checklist.md",
         "docs/dependency-review.md",
         "docs/fuzzing.md",
+        "docs/ingest-search.md",
         "scripts/loc_integrity.py",
         "scripts/release_notes.py",
         "examples/mcp-gateway/resources.json",
@@ -44,6 +48,24 @@ def make_release_root(root: Path) -> None:
         "examples/mcp-gateway/api-requests.json",
         "examples/mcp-gateway/safety-samples.json",
         "examples/mcp-gateway/runtime-router.json",
+        "examples/ingest-search/notes.md",
+        "examples/ingest-search/records.csv",
+        "examples/ingest-search/records.json",
+        "examples/ingest-search/repository.json",
+        "examples/ingest-search/ingest-log.json",
+        "examples/ingest-search/search-index.json",
+        "examples/ingest-search/quarantine.json",
+        "tests/test_ingest_search_docs.py",
+        "services/ingest/src/sovereignops_ingest/cli.py",
+        "services/ingest/src/sovereignops_ingest/index.py",
+        "services/ingest/src/sovereignops_ingest/logs.py",
+        "services/ingest/src/sovereignops_ingest/quarantine.py",
+        "services/ingest/src/sovereignops_ingest/repository.py",
+        "services/ingest/tests/test_ingest_cli.py",
+        "services/ingest/tests/test_log_connector.py",
+        "services/ingest/tests/test_quarantine.py",
+        "services/ingest/tests/test_repository_connector.py",
+        "services/ingest/tests/test_search_index.py",
         "package.json",
         "pnpm-workspace.yaml",
         "Cargo.toml",
@@ -62,6 +84,7 @@ class ReleaseCheckTests(unittest.TestCase):
 
         by_name = {check.spec.name: check for check in checks}
         self.assertTrue(by_name["python-tests"].available)
+        self.assertTrue(by_name["ingest-python-tests"].available)
         self.assertTrue(by_name["node-package-baseline"].available)
         self.assertTrue(by_name["npm-workspace-check"].available)
         self.assertTrue(by_name["cargo-check"].available)
@@ -112,6 +135,7 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(calls, [])
         self.assertIn("RUN python-tests: python -m unittest discover -s tests", output.getvalue())
+        self.assertIn("RUN ingest-python-tests: python -m unittest discover -s services/ingest/tests", output.getvalue())
         self.assertIn("RUN loc-integrity: python scripts/loc_integrity.py", output.getvalue())
         self.assertIn("SKIP release-notes-smoke:", output.getvalue())
         self.assertIn("SKIP cargo-check: missing tool: cargo", output.getvalue())

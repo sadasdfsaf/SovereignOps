@@ -48,6 +48,7 @@ def main() -> int:
     run([sys.executable, "scripts/rust_guard.py"], cwd=root)
     run([sys.executable, "scripts/validate_openapi.py"], cwd=root)
     run([sys.executable, "scripts/validate_mcp_gateway_fixtures.py"], cwd=root)
+    run([sys.executable, "-m", "unittest", "discover", "-s", "services/ingest/tests"], cwd=root)
 
     source_dirs = [root / "scripts", root / "services" / "ingest" / "src"]
     for source_dir in source_dirs:

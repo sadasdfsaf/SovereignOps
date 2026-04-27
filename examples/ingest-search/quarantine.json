@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "ingest-search-quarantine.v1",
+  "workspaceId": "wsp_ingest_demo",
+  "items": [
+    {
+      "id": "qtn_csv_beta_status",
+      "sourceUri": "fixture://ingest-search/records.csv",
+      "checksum": "42a535013f7103d295d7e9156b1cb748178d3bc3a0fe00079c6546f40db93e6a",
+      "reasonCode": "needs_local_review",
+      "reason": "The row is held outside the index until local review accepts the status value.",
+      "citation": {
+        "sourceUri": "fixture://ingest-search/records.csv",
+        "range": {
+          "row": 3,
+          "column": "status"
+        },
+        "trusted": false
+      },
+      "untrusted": true
+    }
+  ]
+}

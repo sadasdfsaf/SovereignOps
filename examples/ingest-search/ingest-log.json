@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "ingest-search-log.v1",
+  "workspaceId": "wsp_ingest_demo",
+  "entries": [
+    {
+      "id": "log_0001",
+      "sourceUri": "fixture://ingest-search/notes.md",
+      "action": "imported",
+      "at": "2026-04-27T00:00:00.000Z",
+      "checksum": "c6a91ee2a9789110ebb39cbd27c7f48c26087c5c13aff8bda69da669ada3cda7",
+      "documentsIndexed": 3,
+      "quarantinedItems": 0
+    },
+    {
+      "id": "log_0002",
+      "sourceUri": "fixture://ingest-search/records.csv",
+      "action": "imported",
+      "at": "2026-04-27T00:01:00.000Z",
+      "checksum": "42a535013f7103d295d7e9156b1cb748178d3bc3a0fe00079c6546f40db93e6a",
+      "documentsIndexed": 2,
+      "quarantinedItems": 1
+    },
+    {
+      "id": "log_0003",
+      "sourceUri": "fixture://ingest-search/records.json",
+      "action": "imported",
+      "at": "2026-04-27T00:02:00.000Z",
+      "checksum": "ecd867eb7c3f7043c7cfcb6e23d6776cad0543b287621cb892449ac45aa90063",
+      "documentsIndexed": 2,
+      "quarantinedItems": 0
+    }
+  ]
+}
