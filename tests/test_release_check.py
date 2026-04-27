@@ -11,6 +11,7 @@ from scripts import release_check
 
 
 def make_release_root(root: Path) -> None:
+    (root / ".git").mkdir()
     (root / "scripts").mkdir()
     (root / "docs").mkdir()
     (root / "tests").mkdir()
@@ -23,9 +24,12 @@ def make_release_root(root: Path) -> None:
         "scripts/node-check.mjs",
         "docs/openapi.yaml",
         "docs/local-data-lifecycle.md",
+        "docs/maintainership.md",
         "docs/security-checklist.md",
         "docs/dependency-review.md",
         "docs/fuzzing.md",
+        "scripts/loc_integrity.py",
+        "scripts/release_notes.py",
         "package.json",
         "pnpm-workspace.yaml",
         "Cargo.toml",
@@ -94,6 +98,8 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(calls, [])
         self.assertIn("RUN python-tests: python -m unittest discover -s tests", output.getvalue())
+        self.assertIn("RUN loc-integrity: python scripts/loc_integrity.py", output.getvalue())
+        self.assertIn("SKIP release-notes-smoke:", output.getvalue())
         self.assertIn("SKIP cargo-check: missing tool: cargo", output.getvalue())
 
     def test_missing_tools_are_skipped_when_running_available_checks(self) -> None:
@@ -128,6 +134,7 @@ class ReleaseCheckTests(unittest.TestCase):
             "docs/security-checklist.md": "Release Gate",
             "docs/dependency-review.md": "Dependency Admission",
             "docs/fuzzing.md": "Rust toolchain",
+            "docs/maintainership.md": "Release Stewardship",
         }
 
         for relative_path, required_text in expected.items():

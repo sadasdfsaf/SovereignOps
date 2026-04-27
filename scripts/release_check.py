@@ -56,10 +56,17 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
         required_paths=(
             "scripts/repo_health.py",
             "docs/local-data-lifecycle.md",
+            "docs/maintainership.md",
             "docs/security-checklist.md",
             "docs/dependency-review.md",
             "docs/fuzzing.md",
         ),
+    ),
+    CheckSpec(
+        name="loc-integrity",
+        description="Validate LOC floors and generated-file limits.",
+        command=(PYTHON, "scripts/loc_integrity.py"),
+        required_paths=("scripts/loc_integrity.py", "scripts/loc_budget.py"),
     ),
     CheckSpec(
         name="env-guard",
@@ -84,6 +91,13 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
         description="Run repository Python unit tests.",
         command=(PYTHON, "-m", "unittest", "discover", "-s", "tests"),
         required_paths=("tests",),
+    ),
+    CheckSpec(
+        name="release-notes-smoke",
+        description="Generate deterministic release notes from an empty git range.",
+        command=(PYTHON, "scripts/release_notes.py", "--version", "smoke", "--range", "HEAD..HEAD"),
+        required_paths=("scripts/release_notes.py", ".git"),
+        tool_candidates=("git",),
     ),
     CheckSpec(
         name="node-package-baseline",

@@ -1,0 +1,11 @@
+{
+  "name": "@sovereignops/event-compaction",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "check": "node ../../scripts/node-check.mjs --package && node tests/compaction.test.mjs",
+    "test": "node tests/compaction.test.mjs"
+  }
+}
