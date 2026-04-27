@@ -1,0 +1,11 @@
+{
+  "name": "@sovereignops/audit-export",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "check": "node ../../scripts/node-check.mjs --package && node tests/audit-export.test.mjs",
+    "test": "node tests/audit-export.test.mjs"
+  }
+}

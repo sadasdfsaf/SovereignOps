@@ -1,0 +1,11 @@
+{
+  "name": "@sovereignops/path-security",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "check": "node ../../scripts/node-check.mjs --package && node tests/path-security.test.mjs",
+    "test": "node tests/path-security.test.mjs"
+  }
+}

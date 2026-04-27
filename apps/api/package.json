@@ -5,7 +5,7 @@
   "private": true,
   "main": "src/index.ts",
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package && node tests/router.test.mjs && node tests/service-routes.test.mjs && node tests/api-contracts.test.mjs",
-    "test": "node tests/router.test.mjs && node tests/service-routes.test.mjs && node tests/api-contracts.test.mjs"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/router.test.mjs && node tests/service-routes.test.mjs && node tests/lifecycle-routes.test.mjs && node tests/api-contracts.test.mjs",
+    "test": "node tests/router.test.mjs && node tests/service-routes.test.mjs && node tests/lifecycle-routes.test.mjs && node tests/api-contracts.test.mjs"
   }
 }

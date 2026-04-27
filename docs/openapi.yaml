@@ -13,6 +13,8 @@ tags:
   - name: audit
   - name: sync
   - name: mcp
+  - name: lifecycle
+  - name: observability
 paths:
   /health:
     get:
@@ -288,6 +290,163 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuditEntryListResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/workspaces/{workspaceId}/migrations/plan:
+    post:
+      tags:
+        - lifecycle
+      summary: Plan workspace metadata migrations without applying changes.
+      operationId: planMigration
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MigrationPlanRequest"
+      responses:
+        "200":
+          description: Dry-run migration plan.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MigrationPlanResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/workspaces/{workspaceId}/migrations/run:
+    post:
+      tags:
+        - lifecycle
+      summary: Run workspace metadata migrations.
+      operationId: runMigration
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MigrationRunRequest"
+      responses:
+        "200":
+          description: Migration run result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MigrationRunResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/workspaces/{workspaceId}/backups/manifests:
+    post:
+      tags:
+        - lifecycle
+      summary: Submit an encrypted backup manifest for a workspace.
+      operationId: submitBackupManifest
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BackupManifestSubmitRequest"
+      responses:
+        "201":
+          description: Accepted backup manifest.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupManifest"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/workspaces/{workspaceId}/restores/plan:
+    post:
+      tags:
+        - lifecycle
+      summary: Plan a restore from an encrypted backup manifest.
+      operationId: planRestore
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RestorePlanRequest"
+      responses:
+        "200":
+          description: Restore plan and safety result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestorePlanResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/observability/events:
+    post:
+      tags:
+        - observability
+      summary: Submit a structured local observability event.
+      operationId: submitObservabilityEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ObservabilityEventSubmitRequest"
+      responses:
+        "202":
+          description: Accepted observability event.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObservabilityEvent"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/observability/metrics:
+    post:
+      tags:
+        - observability
+      summary: Submit a structured local observability metric.
+      operationId: submitObservabilityMetric
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ObservabilityMetric"
+      responses:
+        "202":
+          description: Accepted observability metric.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObservabilityMetric"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/workspaces/{workspaceId}/compactions/plan:
+    post:
+      tags:
+        - lifecycle
+      summary: Plan event compaction for a workspace sequence range.
+      operationId: planCompaction
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompactionPlanRequest"
+      responses:
+        "200":
+          description: Dry-run compaction plan.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompactionPlanResponse"
         default:
           $ref: "#/components/responses/Error"
 components:
@@ -932,6 +1091,810 @@ components:
         output:
           type: object
           additionalProperties: true
+    MigrationPlanRequest:
+      type: object
+      required:
+        - metadata
+      properties:
+        metadata:
+          type: object
+          required:
+            - schemaVersion
+          properties:
+            schemaVersion:
+              type: integer
+              minimum: 0
+          additionalProperties: true
+        targetVersion:
+          type: integer
+          minimum: 0
+    MigrationRunRequest:
+      allOf:
+        - $ref: "#/components/schemas/MigrationPlanRequest"
+        - type: object
+          properties:
+            dryRun:
+              type: boolean
+    MigrationStepDescriptor:
+      type: object
+      required:
+        - id
+        - fromVersion
+        - toVersion
+        - summary
+        - rollbackNote
+      properties:
+        id:
+          type: string
+          minLength: 1
+        fromVersion:
+          type: integer
+          minimum: 0
+        toVersion:
+          type: integer
+          minimum: 0
+        summary:
+          type: string
+          minLength: 1
+        rollbackNote:
+          type: string
+          minLength: 1
+    MigrationPlanStep:
+      allOf:
+        - $ref: "#/components/schemas/MigrationStepDescriptor"
+        - type: object
+          required:
+            - fingerprint
+          properties:
+            fingerprint:
+              type: string
+              minLength: 1
+    MigrationPlanSummary:
+      type: object
+      required:
+        - sourceVersion
+        - targetVersion
+        - stepCount
+        - stepIds
+        - alreadyCurrent
+        - dryRun
+        - sourceFingerprint
+        - fingerprint
+      properties:
+        sourceVersion:
+          type: integer
+          minimum: 0
+        targetVersion:
+          type: integer
+          minimum: 0
+        stepCount:
+          type: integer
+          minimum: 0
+        stepIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        alreadyCurrent:
+          type: boolean
+        dryRun:
+          type: boolean
+          const: true
+        sourceFingerprint:
+          type: string
+          minLength: 1
+        fingerprint:
+          type: string
+          minLength: 1
+    MigrationPlanResponse:
+      type: object
+      required:
+        - sourceVersion
+        - targetVersion
+        - steps
+        - rollbackNotes
+        - alreadyCurrent
+        - dryRun
+        - summary
+        - fingerprint
+      properties:
+        sourceVersion:
+          type: integer
+          minimum: 0
+        targetVersion:
+          type: integer
+          minimum: 0
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/MigrationPlanStep"
+        rollbackNotes:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        alreadyCurrent:
+          type: boolean
+        dryRun:
+          type: boolean
+          const: true
+        summary:
+          $ref: "#/components/schemas/MigrationPlanSummary"
+        fingerprint:
+          type: string
+          minLength: 1
+    MigrationAppliedStepStatus:
+      type: string
+      enum:
+        - applied
+        - skipped
+    MigrationAppliedStep:
+      allOf:
+        - $ref: "#/components/schemas/MigrationStepDescriptor"
+        - type: object
+          required:
+            - status
+            - fingerprintBefore
+            - fingerprintAfter
+          properties:
+            status:
+              $ref: "#/components/schemas/MigrationAppliedStepStatus"
+            fingerprintBefore:
+              type: string
+              minLength: 1
+            fingerprintAfter:
+              type: string
+              minLength: 1
+    MigrationRunSummary:
+      type: object
+      required:
+        - sourceVersion
+        - targetVersion
+        - plannedStepCount
+        - appliedStepCount
+        - skippedStepCount
+        - dryRun
+        - sourceFingerprint
+        - targetFingerprint
+        - fingerprint
+      properties:
+        sourceVersion:
+          type: integer
+          minimum: 0
+        targetVersion:
+          type: integer
+          minimum: 0
+        plannedStepCount:
+          type: integer
+          minimum: 0
+        appliedStepCount:
+          type: integer
+          minimum: 0
+        skippedStepCount:
+          type: integer
+          minimum: 0
+        dryRun:
+          type: boolean
+        sourceFingerprint:
+          type: string
+          minLength: 1
+        targetFingerprint:
+          type: string
+          minLength: 1
+        fingerprint:
+          type: string
+          minLength: 1
+    MigrationRunResponse:
+      type: object
+      required:
+        - metadata
+        - plan
+        - appliedSteps
+        - rollbackNotes
+        - summary
+        - fingerprint
+      properties:
+        metadata:
+          type: object
+          required:
+            - schemaVersion
+          properties:
+            schemaVersion:
+              type: integer
+              minimum: 0
+          additionalProperties: true
+        plan:
+          $ref: "#/components/schemas/MigrationPlanResponse"
+        appliedSteps:
+          type: array
+          items:
+            $ref: "#/components/schemas/MigrationAppliedStep"
+        rollbackNotes:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        summary:
+          $ref: "#/components/schemas/MigrationRunSummary"
+        fingerprint:
+          type: string
+          minLength: 1
+    BackupPayloadKind:
+      type: string
+      enum:
+        - workspace_state
+        - record
+        - asset
+        - settings
+    BackupEncryptionMetadata:
+      type: object
+      required:
+        - algorithm
+        - keyId
+        - keyFingerprint
+      properties:
+        algorithm:
+          type: string
+          minLength: 1
+        keyId:
+          type: string
+          minLength: 1
+        keyFingerprint:
+          type: string
+          minLength: 1
+    BackupPayloadEncryptionMetadata:
+      type: object
+      required:
+        - algorithm
+        - keyId
+        - nonceFingerprint
+        - encryptedPayloadFingerprint
+      properties:
+        algorithm:
+          type: string
+          minLength: 1
+        keyId:
+          type: string
+          minLength: 1
+        nonceFingerprint:
+          type: string
+          minLength: 1
+        encryptedPayloadFingerprint:
+          type: string
+          minLength: 1
+    BackupPayloadIntegrity:
+      type: object
+      required:
+        - plaintextFingerprint
+        - encryptedPayloadFingerprint
+        - descriptorFingerprint
+      properties:
+        plaintextFingerprint:
+          type: string
+          minLength: 1
+        encryptedPayloadFingerprint:
+          type: string
+          minLength: 1
+        descriptorFingerprint:
+          type: string
+          minLength: 1
+    BackupPayloadDescriptor:
+      type: object
+      required:
+        - id
+        - kind
+        - path
+        - plaintextByteSize
+        - encryptedByteSize
+        - createdAt
+        - encryption
+        - integrity
+      properties:
+        id:
+          type: string
+          minLength: 1
+        kind:
+          $ref: "#/components/schemas/BackupPayloadKind"
+        path:
+          type: string
+          minLength: 1
+        plaintextByteSize:
+          type: integer
+          minimum: 0
+        encryptedByteSize:
+          type: integer
+          minimum: 0
+        contentType:
+          type: string
+          minLength: 1
+        createdAt:
+          type: string
+          format: date-time
+        encryption:
+          $ref: "#/components/schemas/BackupPayloadEncryptionMetadata"
+        integrity:
+          $ref: "#/components/schemas/BackupPayloadIntegrity"
+    BackupManifest:
+      type: object
+      required:
+        - manifestVersion
+        - backupId
+        - workspaceId
+        - createdAt
+        - createdByActorId
+        - encryption
+        - payloads
+        - manifestFingerprint
+      properties:
+        manifestVersion:
+          type: string
+          minLength: 1
+        backupId:
+          type: string
+          minLength: 1
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        createdAt:
+          type: string
+          format: date-time
+        createdByActorId:
+          $ref: "#/components/schemas/ActorId"
+        encryption:
+          $ref: "#/components/schemas/BackupEncryptionMetadata"
+        payloads:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/BackupPayloadDescriptor"
+        manifestFingerprint:
+          type: string
+          minLength: 1
+    BackupManifestSubmitRequest:
+      type: object
+      required:
+        - manifest
+      properties:
+        manifest:
+          $ref: "#/components/schemas/BackupManifest"
+    RestoreMode:
+      type: string
+      enum:
+        - preview
+        - merge
+        - replace
+    RestoreActionType:
+      type: string
+      enum:
+        - restore
+        - skip
+        - conflict
+        - blocked
+    RestorePlanRequest:
+      type: object
+      required:
+        - manifest
+      properties:
+        manifest:
+          $ref: "#/components/schemas/BackupManifest"
+        mode:
+          $ref: "#/components/schemas/RestoreMode"
+        allowSourceWorkspaceOverwrite:
+          type: boolean
+        allowDestructiveRestore:
+          type: boolean
+        trustedManifestFingerprints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        availablePayloadIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        maxManifestAgeDays:
+          type: integer
+          minimum: 0
+        now:
+          type: string
+          format: date-time
+        includePayloadIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        excludePayloadIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        existingPayloadFingerprints:
+          type: object
+          additionalProperties:
+            type: string
+    RestoreSafetyResult:
+      type: object
+      required:
+        - safe
+        - blockers
+        - warnings
+      properties:
+        safe:
+          type: boolean
+        blockers:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        warnings:
+          type: array
+          items:
+            type: string
+            minLength: 1
+    RestorePlanAction:
+      type: object
+      required:
+        - type
+        - payloadId
+        - kind
+        - path
+        - reason
+        - sourceFingerprint
+      properties:
+        type:
+          $ref: "#/components/schemas/RestoreActionType"
+        payloadId:
+          type: string
+          minLength: 1
+        kind:
+          $ref: "#/components/schemas/BackupPayloadKind"
+        path:
+          type: string
+          minLength: 1
+        reason:
+          type: string
+          minLength: 1
+        sourceFingerprint:
+          type: string
+          minLength: 1
+        targetFingerprint:
+          type: string
+          minLength: 1
+    RestorePlanSummary:
+      type: object
+      required:
+        - restore
+        - skip
+        - conflict
+        - blocked
+      properties:
+        restore:
+          type: integer
+          minimum: 0
+        skip:
+          type: integer
+          minimum: 0
+        conflict:
+          type: integer
+          minimum: 0
+        blocked:
+          type: integer
+          minimum: 0
+    RestorePlanResponse:
+      type: object
+      required:
+        - backupId
+        - workspaceId
+        - targetWorkspaceId
+        - mode
+        - canRun
+        - safety
+        - actions
+        - summary
+      properties:
+        backupId:
+          type: string
+          minLength: 1
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        targetWorkspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        mode:
+          $ref: "#/components/schemas/RestoreMode"
+        canRun:
+          type: boolean
+        safety:
+          $ref: "#/components/schemas/RestoreSafetyResult"
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestorePlanAction"
+        summary:
+          $ref: "#/components/schemas/RestorePlanSummary"
+    ObservationLevel:
+      type: string
+      enum:
+        - debug
+        - info
+        - warn
+        - error
+    ObservabilityMetricKind:
+      type: string
+      enum:
+        - counter
+        - gauge
+        - histogram
+    ObservabilityResourceDescriptor:
+      type: object
+      required:
+        - serviceName
+      properties:
+        serviceName:
+          type: string
+          minLength: 1
+        serviceVersion:
+          type: string
+          minLength: 1
+        instanceId:
+          type: string
+          minLength: 1
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        attributes:
+          type: object
+          additionalProperties: true
+    ObservabilityEventSubmitRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+        level:
+          $ref: "#/components/schemas/ObservationLevel"
+        timestamp:
+          type: string
+          format: date-time
+        message:
+          type: string
+          minLength: 1
+        resource:
+          $ref: "#/components/schemas/ObservabilityResourceDescriptor"
+        traceId:
+          type: string
+          minLength: 1
+        spanId:
+          type: string
+          minLength: 1
+        attributes:
+          type: object
+          additionalProperties: true
+    ObservabilityEvent:
+      type: object
+      required:
+        - kind
+        - sequence
+        - name
+        - level
+        - timestamp
+        - attributes
+        - redactedPaths
+      properties:
+        kind:
+          type: string
+          const: event
+        sequence:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+        level:
+          $ref: "#/components/schemas/ObservationLevel"
+        timestamp:
+          type: string
+          format: date-time
+        message:
+          type: string
+          minLength: 1
+        resource:
+          $ref: "#/components/schemas/ObservabilityResourceDescriptor"
+        traceId:
+          type: string
+          minLength: 1
+        spanId:
+          type: string
+          minLength: 1
+        attributes:
+          type: object
+          additionalProperties: true
+        redactedPaths:
+          type: array
+          items:
+            type: string
+            minLength: 1
+    ObservabilityMetricBase:
+      type: object
+      required:
+        - kind
+        - name
+        - attributes
+        - updatedAt
+        - redactedPaths
+      properties:
+        kind:
+          $ref: "#/components/schemas/ObservabilityMetricKind"
+        name:
+          type: string
+          minLength: 1
+        unit:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        attributes:
+          type: object
+          additionalProperties: true
+        updatedAt:
+          type: string
+          format: date-time
+        redactedPaths:
+          type: array
+          items:
+            type: string
+            minLength: 1
+    CounterMetric:
+      allOf:
+        - $ref: "#/components/schemas/ObservabilityMetricBase"
+        - type: object
+          required:
+            - kind
+            - value
+          properties:
+            kind:
+              type: string
+              const: counter
+            value:
+              type: number
+    GaugeMetric:
+      allOf:
+        - $ref: "#/components/schemas/ObservabilityMetricBase"
+        - type: object
+          required:
+            - kind
+            - value
+          properties:
+            kind:
+              type: string
+              const: gauge
+            value:
+              type: number
+    HistogramBucket:
+      type: object
+      required:
+        - le
+        - count
+      properties:
+        le:
+          type: number
+        count:
+          type: integer
+          minimum: 0
+    HistogramMetric:
+      allOf:
+        - $ref: "#/components/schemas/ObservabilityMetricBase"
+        - type: object
+          required:
+            - kind
+            - count
+            - sum
+            - min
+            - max
+            - buckets
+            - overflow
+          properties:
+            kind:
+              type: string
+              const: histogram
+            count:
+              type: integer
+              minimum: 0
+            sum:
+              type: number
+            min:
+              type:
+                - number
+                - "null"
+            max:
+              type:
+                - number
+                - "null"
+            buckets:
+              type: array
+              items:
+                $ref: "#/components/schemas/HistogramBucket"
+            overflow:
+              type: integer
+              minimum: 0
+    ObservabilityMetric:
+      oneOf:
+        - $ref: "#/components/schemas/CounterMetric"
+        - $ref: "#/components/schemas/GaugeMetric"
+        - $ref: "#/components/schemas/HistogramMetric"
+    CompactionPlanRequest:
+      type: object
+      required:
+        - fromSequence
+        - toSequence
+        - reducerVersion
+        - sourceEventCount
+      properties:
+        fromSequence:
+          type: integer
+          minimum: 0
+        toSequence:
+          type: integer
+          minimum: 0
+        reducerVersion:
+          type: string
+          minLength: 1
+        sourceEventCount:
+          type: integer
+          minimum: 0
+        sourceByteCount:
+          type: integer
+          minimum: 0
+        targetByteLimit:
+          type: integer
+          minimum: 0
+        checkpointFingerprint:
+          type: string
+          minLength: 1
+    CompactionPlanResponse:
+      type: object
+      required:
+        - workspaceId
+        - fromSequence
+        - toSequence
+        - reducerVersion
+        - checkpointFingerprint
+        - sourceEventCount
+        - compactedByteCount
+        - dryRun
+        - rollbackNote
+        - fingerprint
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        fromSequence:
+          type: integer
+          minimum: 0
+        toSequence:
+          type: integer
+          minimum: 0
+        reducerVersion:
+          type: string
+          minLength: 1
+        checkpointFingerprint:
+          type: string
+          minLength: 1
+        sourceEventCount:
+          type: integer
+          minimum: 0
+        compactedByteCount:
+          type: integer
+          minimum: 0
+        dryRun:
+          type: boolean
+          const: true
+        rollbackNote:
+          type: string
+          minLength: 1
+        fingerprint:
+          type: string
+          minLength: 1
     ValidationIssue:
       type: object
       required:
