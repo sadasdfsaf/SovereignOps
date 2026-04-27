@@ -32,6 +32,8 @@ REQUIRED_PATHS = [
     "docs/openapi.yaml",
     "docs/mcp-contract.md",
     "docs/schema-alignment.md",
+    "docs/local-workflows.md",
+    "docs/service-contracts.md",
     "docs/adr/000-template.md",
     "docs/adr/001-local-first-event-model.md",
     "scripts/validate_openapi.py",

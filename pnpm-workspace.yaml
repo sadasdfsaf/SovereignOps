@@ -3,4 +3,3 @@ packages:
   - "packages/*"
   - "services/mcp-gateway"
   - "services/sync"
-

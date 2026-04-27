@@ -22,6 +22,18 @@ from .connectors import (
     parse_markdown,
 )
 from .pipeline import IngestItem, IngestResult, normalize_item
+from .structured import (
+    CSVStructuredConnector,
+    JSONStructuredConnector,
+    LocalDataSafetyFinding,
+    MarkdownStructuredConnector,
+    StructuredDocument,
+    StructuredImportResult,
+    StructuredValidationError,
+    import_csv,
+    import_json,
+    import_markdown,
+)
 
 __all__ = [
     "CSVConnector",
@@ -37,10 +49,20 @@ __all__ = [
     "IngestResult",
     "JSONConnector",
     "MarkdownConnector",
+    "CSVStructuredConnector",
+    "JSONStructuredConnector",
+    "LocalDataSafetyFinding",
+    "MarkdownStructuredConnector",
+    "StructuredDocument",
+    "StructuredImportResult",
+    "StructuredValidationError",
     "checksum_bytes",
     "checksum_text",
     "deduplicate_texts",
     "duplicate_checksums",
+    "import_csv",
+    "import_json",
+    "import_markdown",
     "normalize_item",
     "parse_csv",
     "parse_json",
