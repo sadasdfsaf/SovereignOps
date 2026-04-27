@@ -1185,6 +1185,30 @@ paths:
           $ref: "#/components/responses/Error"
         default:
           $ref: "#/components/responses/Error"
+  /v1/workspace-session/snapshot-retention-cleanup/inventory/preview:
+    post:
+      tags:
+        - workspace-session
+      summary: Preview workspace session snapshot retention cleanup inventory.
+      description: Builds a local-only dry-run inventory of redacted cleanup candidates without durable writes, deletions, raw paths, secrets, tokens, or request body retention.
+      operationId: previewWorkspaceSessionSnapshotRetentionCleanupInventory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupInventoryPreviewRequest"
+      responses:
+        "200":
+          description: Redacted local-only retention cleanup inventory preview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupPreviewResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
   /v1/plugins/review-artifacts/preview:
     post:
       tags:
@@ -6625,6 +6649,129 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupAction"
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionCleanupInventoryInputItem:
+      type: object
+      properties:
+        path:
+          type: string
+          pattern: '^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\.\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}$'
+        relativePath:
+          type: string
+          pattern: '^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\.\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}$'
+        snapshotId:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotId"
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/WorkspaceSessionDeviceId"
+        sourceKind:
+          type: string
+          enum:
+            - file-metadata
+            - snapshot-record
+            - snapshot-record-summary
+            - unknown
+        label:
+          type: string
+          minLength: 1
+          maxLength: 80
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        sizeBytes:
+          type: integer
+          minimum: 0
+        eventCount:
+          type: integer
+          minimum: 0
+        fingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+        auditSafe:
+          type: boolean
+          const: true
+        redacted:
+          type: boolean
+          const: true
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionCleanupInventoryPolicy:
+      type: object
+      properties:
+        maxCount:
+          type: integer
+          minimum: 0
+        maxAgeMs:
+          type: integer
+          minimum: 0
+        now:
+          type: string
+          format: date-time
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionCleanupInventoryPreviewRequest:
+      type: object
+      oneOf:
+        - required:
+            - inventory
+        - required:
+            - entries
+        - required:
+            - files
+        - required:
+            - records
+      properties:
+        inventory:
+          oneOf:
+            - type: array
+              maxItems: 1000
+              items:
+                $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupInventoryInputItem"
+            - type: object
+              properties:
+                entries:
+                  type: array
+                  maxItems: 1000
+                  items:
+                    $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupInventoryInputItem"
+                files:
+                  type: array
+                  maxItems: 1000
+                  items:
+                    $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupInventoryInputItem"
+                records:
+                  type: array
+                  maxItems: 1000
+                  items:
+                    $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupInventoryInputItem"
+              additionalProperties: false
+        entries:
+          type: array
+          maxItems: 1000
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupInventoryInputItem"
+        files:
+          type: array
+          maxItems: 1000
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupInventoryInputItem"
+        records:
+          type: array
+          maxItems: 1000
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupInventoryInputItem"
+        policy:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupInventoryPolicy"
+        maxCount:
+          type: integer
+          minimum: 0
+        maxAgeMs:
+          type: integer
+          minimum: 0
+        now:
+          type: string
+          format: date-time
       additionalProperties: false
     PluginReviewArtifactPreviewRequest:
       type: object

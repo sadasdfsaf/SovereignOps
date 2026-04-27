@@ -444,6 +444,47 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("API replay", alignment.description)
         self.assertIn("E2E replay", alignment.description)
 
+    def test_retention_cleanup_release_gate_tracks_round45_inventory_preview_files(self) -> None:
+        required = set(release_check.WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS)
+        expected = {
+            "docs/workspace-session-snapshot-retention-cleanup.md",
+            "docs/openapi.yaml",
+            "examples/workspace-session/snapshot-retention-cleanup-inventory.json",
+            "tests/test_workspace_session_snapshot_retention_cleanup_docs.py",
+            "tests/test_workspace_session_snapshot_retention_cleanup_alignment.py",
+            "tests/test_validate_openapi_workspace_session_snapshot_retention_cleanup.py",
+            "tests/security/workspace_session_snapshot_retention_cleanup_inventory_threats.test.mjs",
+            "apps/api/src/workspaceSessionSnapshotRetentionCleanupInventoryRoutes.ts",
+            "apps/api/tests/workspace-session-snapshot-retention-cleanup-inventory-routes.test.mjs",
+            "packages/cli/src/workspaceSessionSnapshotRetentionCleanupInventory.ts",
+            "packages/cli/tests/workspace-session-snapshot-retention-cleanup-inventory.test.mjs",
+            "apps/web/src/workspaceSessionSnapshotRetentionCleanupInventoryState.ts",
+            "apps/web/tests/workspace-session-snapshot-retention-cleanup-inventory-state.test.mjs",
+        }
+        self.assertLessEqual(expected, required)
+
+        checks = {spec.name: spec for spec in release_check.CHECK_SPECS}
+        alignment = checks["workspace-session-snapshot-retention-cleanup-alignment"]
+        security = checks["workspace-session-snapshot-retention-cleanup-security"]
+        self.assertIn("inventory preview", alignment.description)
+        self.assertIn("inventory preview", security.description)
+        self.assertIn(
+            "tests/security/workspace_session_snapshot_retention_cleanup_inventory_threats.test.mjs",
+            security.command,
+        )
+        self.assertIn(
+            "apps/api/tests/workspace-session-snapshot-retention-cleanup-inventory-routes.test.mjs",
+            security.command,
+        )
+        self.assertIn(
+            "packages/cli/tests/workspace-session-snapshot-retention-cleanup-inventory.test.mjs",
+            security.command,
+        )
+        self.assertIn(
+            "apps/web/tests/workspace-session-snapshot-retention-cleanup-inventory-state.test.mjs",
+            security.command,
+        )
+
     def test_missing_tools_are_skipped_when_running_available_checks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

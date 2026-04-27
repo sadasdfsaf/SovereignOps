@@ -19,6 +19,7 @@ EXPECTED_SECTIONS = (
     "## Dry-Run Contract",
     "## SDK And Command Names",
     "## Round 44 Release Handoff",
+    "## Inventory Preview",
     "## Fixture",
     "## Validation Commands",
 )
@@ -57,10 +58,38 @@ EXPECTED_REFERENCES = (
     "POST /v1/workspace-session/snapshot-retention-cleanup/preview",
 )
 
+EXPECTED_INVENTORY_REFERENCES = (
+    "examples/workspace-session/snapshot-retention-cleanup-inventory.json",
+    "packages/sdk-js/src/localWorkspaceSessionSnapshotRetention.ts",
+    "planFileBackedLocalWorkspaceSessionSnapshotRetentionCleanup",
+    "POST /v1/workspace-session/snapshot-retention-cleanup/inventory/preview",
+    "apps/api/src/workspaceSessionSnapshotRetentionCleanupInventoryRoutes.ts",
+    "apps/api/tests/workspace-session-snapshot-retention-cleanup-inventory-routes.test.mjs",
+    "createWorkspaceSessionSnapshotRetentionCleanupInventoryPreview",
+    "createWorkspaceSessionSnapshotRetentionCleanupInventoryRoutes",
+    "WorkspaceSessionSnapshotRetentionCleanupInventoryPreviewRequest",
+    "WorkspaceSessionSnapshotRetentionCleanupPreviewResponse",
+    "packages/cli/src/workspaceSessionSnapshotRetentionCleanupInventory.ts",
+    "packages/cli/tests/workspace-session-snapshot-retention-cleanup-inventory.test.mjs",
+    "runWorkspaceSessionSnapshotRetentionCleanupInventoryCli",
+    "loadWorkspaceSessionSnapshotRetentionCleanupInventoryInput",
+    "isWorkspaceSessionSnapshotRetentionCleanupInventoryCommand",
+    "apps/web/src/workspaceSessionSnapshotRetentionCleanupInventoryState.ts",
+    "apps/web/tests/workspace-session-snapshot-retention-cleanup-inventory-state.test.mjs",
+    "buildWorkspaceSessionSnapshotRetentionCleanupInventoryState",
+    "tests/security/workspace_session_snapshot_retention_cleanup_inventory_threats.test.mjs",
+)
+
 EXPECTED_VALIDATION_COMMANDS = (
     r"python -m json.tool examples\workspace-session\snapshot-retention-cleanup.json",
     "python -m unittest tests.test_workspace_session_snapshot_retention_cleanup_docs",
     "python -m unittest tests.test_workspace_session_snapshot_retention_cleanup_alignment",
+)
+
+EXPECTED_INVENTORY_VALIDATION_COMMANDS = (
+    "python -m unittest tests.test_validate_openapi_workspace_session_snapshot_retention_cleanup",
+    "node --test tests/security/workspace_session_snapshot_retention_cleanup_inventory_threats.test.mjs",
+    r"python scripts\validate_openapi.py docs\openapi.yaml",
 )
 
 EXPECTED_PLACEHOLDERS = (
@@ -131,8 +160,23 @@ class WorkspaceSessionSnapshotRetentionCleanupDocsTests(unittest.TestCase):
             with self.subTest(reference=reference):
                 self.assertIn(reference, self.doc_text)
 
-        for command in EXPECTED_VALIDATION_COMMANDS + EXPECTED_PLACEHOLDERS:
+        for reference in EXPECTED_INVENTORY_REFERENCES:
+            with self.subTest(inventory_reference=reference):
+                self.assertIn(reference, self.doc_text)
+
+        for command in (
+            EXPECTED_VALIDATION_COMMANDS
+            + EXPECTED_INVENTORY_VALIDATION_COMMANDS
+            + EXPECTED_PLACEHOLDERS
+        ):
             with self.subTest(command=command):
+                self.assertIn(command, self.doc_text)
+
+        for command in (
+            "sovereignops workspace-session snapshot retention-cleanup inventory --fixture <path>",
+            "sovereignops workspace-session-snapshot-retention-cleanup inventory --fixture <path>",
+        ):
+            with self.subTest(inventory_command=command):
                 self.assertIn(command, self.doc_text)
 
         for phrase in (
@@ -143,6 +187,9 @@ class WorkspaceSessionSnapshotRetentionCleanupDocsTests(unittest.TestCase):
             "The Round 44 release gate also tracks the parent SDK API client",
             "The API replay fixture is expected to",
             "expected to use the checked-in cleanup fixture across SDK, API",
+            "The retention cleanup inventory preview is the Round 45 handoff",
+            "The OpenAPI contract is body-only JSON.",
+            "omit raw secret, token, request-body,",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, self.doc_text)

@@ -16,6 +16,7 @@ export * from "./pluginReviewArtifactRecordRoutes.ts";
 export * from "./router.ts";
 export * from "./syncRoutes.ts";
 export * from "./workspaceSessionRoutes.ts";
+export * from "./workspaceSessionSnapshotRetentionCleanupInventoryRoutes.ts";
 export * from "./workspaceSessionSnapshotRetentionCleanupRoutes.ts";
 export * from "./workspaceSessionSnapshotReviewRoutes.ts";
 export * from "./workspaceSessionStoreFileAdapter.ts";

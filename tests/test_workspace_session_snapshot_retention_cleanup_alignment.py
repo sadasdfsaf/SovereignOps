@@ -28,6 +28,29 @@ CLI_API_REPLAY_PATH = "packages/cli/src/workspaceSessionSnapshotRetentionCleanup
 CLI_API_REPLAY_TEST_PATH = (
     "packages/cli/tests/workspace-session-snapshot-retention-cleanup-api-replay.test.mjs"
 )
+INVENTORY_SECURITY_TEST_PATH = (
+    "tests/security/workspace_session_snapshot_retention_cleanup_inventory_threats.test.mjs"
+)
+INVENTORY_FIXTURE_PATH = "examples/workspace-session/snapshot-retention-cleanup-inventory.json"
+INVENTORY_API_ROUTE_TEST_PATH = (
+    "apps/api/tests/workspace-session-snapshot-retention-cleanup-inventory-routes.test.mjs"
+)
+INVENTORY_API_ROUTE_PATH = (
+    "apps/api/src/workspaceSessionSnapshotRetentionCleanupInventoryRoutes.ts"
+)
+INVENTORY_CLI_MODULE_PATH = (
+    "packages/cli/src/workspaceSessionSnapshotRetentionCleanupInventory.ts"
+)
+INVENTORY_CLI_TEST_PATH = (
+    "packages/cli/tests/workspace-session-snapshot-retention-cleanup-inventory.test.mjs"
+)
+INVENTORY_WEB_STATE_PATH = (
+    "apps/web/src/workspaceSessionSnapshotRetentionCleanupInventoryState.ts"
+)
+INVENTORY_WEB_STATE_TEST_PATH = (
+    "apps/web/tests/workspace-session-snapshot-retention-cleanup-inventory-state.test.mjs"
+)
+INVENTORY_ROUTE = "POST /v1/workspace-session/snapshot-retention-cleanup/inventory/preview"
 API_ROUTE_PATH = "apps/api/src/workspaceSessionSnapshotRetentionCleanupRoutes.ts"
 CLI_SOURCE_PATH = "packages/cli/src/workspaceSessionSnapshotRetentionCleanup.ts"
 WEB_STATE_PATH = "apps/web/src/workspaceSessionSnapshotRetentionCleanupState.ts"
@@ -52,6 +75,26 @@ ROUND44_REQUIRED_PATHS = (
     SCHEMA_SOURCE_PATH,
     SCHEMA_TEST_PATH,
     *SCHEMA_FIXTURE_PATHS,
+)
+ROUND45_INVENTORY_REFERENCES = (
+    INVENTORY_SECURITY_TEST_PATH,
+    INVENTORY_FIXTURE_PATH,
+    INVENTORY_API_ROUTE_PATH,
+    INVENTORY_API_ROUTE_TEST_PATH,
+    INVENTORY_CLI_MODULE_PATH,
+    INVENTORY_CLI_TEST_PATH,
+    INVENTORY_WEB_STATE_PATH,
+    INVENTORY_WEB_STATE_TEST_PATH,
+    INVENTORY_ROUTE,
+    "planFileBackedLocalWorkspaceSessionSnapshotRetentionCleanup",
+    "createWorkspaceSessionSnapshotRetentionCleanupInventoryPreview",
+    "createWorkspaceSessionSnapshotRetentionCleanupInventoryRoutes",
+    "WorkspaceSessionSnapshotRetentionCleanupInventoryPreviewRequest",
+    "WorkspaceSessionSnapshotRetentionCleanupPreviewResponse",
+    "runWorkspaceSessionSnapshotRetentionCleanupInventoryCli",
+    "loadWorkspaceSessionSnapshotRetentionCleanupInventoryInput",
+    "isWorkspaceSessionSnapshotRetentionCleanupInventoryCommand",
+    "buildWorkspaceSessionSnapshotRetentionCleanupInventoryState",
 )
 
 EXPECTED_SCHEMA_VERSION = "local-workspace-session-snapshot-retention/v1"
@@ -128,6 +171,7 @@ class WorkspaceSessionSnapshotRetentionCleanupAlignmentTests(unittest.TestCase):
         cls.cli_text = read_text(CLI_SOURCE_PATH)
         cls.web_text = read_text(WEB_STATE_PATH)
         cls.release_check_text = read_text("scripts/release_check.py")
+        cls.openapi_text = read_text("docs/openapi.yaml")
         cls.combined_text = cls.doc_text + "\n" + cls.fixture_text
 
     def test_owned_retention_cleanup_files_exist(self) -> None:
@@ -204,6 +248,47 @@ class WorkspaceSessionSnapshotRetentionCleanupAlignmentTests(unittest.TestCase):
         self.assertIn(SDK_API_CLIENT_TEST_PATH, security_check.command)
         self.assertIn(SCHEMA_TEST_PATH, security_check.command)
         self.assertIn(CLI_API_REPLAY_TEST_PATH, security_check.command)
+
+    def test_round45_inventory_preview_contract_is_documented_and_gated(self) -> None:
+        required_paths = set(
+            release_check.WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS
+        )
+        check_specs = {spec.name: spec for spec in release_check.CHECK_SPECS}
+        alignment_check = check_specs["workspace-session-snapshot-retention-cleanup-alignment"]
+        security_check = check_specs["workspace-session-snapshot-retention-cleanup-security"]
+
+        for expected in ROUND45_INVENTORY_REFERENCES:
+            with self.subTest(expected=expected):
+                self.assertIn(expected, self.doc_text)
+
+        for rel_path in (
+            INVENTORY_SECURITY_TEST_PATH,
+            INVENTORY_FIXTURE_PATH,
+            INVENTORY_API_ROUTE_PATH,
+            INVENTORY_API_ROUTE_TEST_PATH,
+            INVENTORY_CLI_MODULE_PATH,
+            INVENTORY_CLI_TEST_PATH,
+            INVENTORY_WEB_STATE_PATH,
+            INVENTORY_WEB_STATE_TEST_PATH,
+        ):
+            with self.subTest(release_path=rel_path):
+                self.assertIn(rel_path, self.release_check_text)
+                self.assertIn(rel_path, required_paths)
+
+        self.assertIn(INVENTORY_SECURITY_TEST_PATH, security_check.command)
+        self.assertIn(INVENTORY_API_ROUTE_TEST_PATH, security_check.command)
+        self.assertIn(INVENTORY_CLI_TEST_PATH, security_check.command)
+        self.assertIn(INVENTORY_WEB_STATE_TEST_PATH, security_check.command)
+        self.assertIn("inventory preview", security_check.description)
+        self.assertIn("inventory preview", alignment_check.description)
+        self.assertIn(
+            "/v1/workspace-session/snapshot-retention-cleanup/inventory/preview",
+            self.openapi_text,
+        )
+        self.assertIn(
+            "operationId: previewWorkspaceSessionSnapshotRetentionCleanupInventory",
+            self.openapi_text,
+        )
 
     def test_fixture_schema_shape_matches_dry_run_cleanup_plan(self) -> None:
         fixture = self.fixture

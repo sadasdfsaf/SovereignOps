@@ -11,6 +11,18 @@ EXPECTED_METHOD = "post"
 EXPECTED_OPERATION_ID = "previewWorkspaceSessionSnapshotRetentionCleanup"
 EXPECTED_REQUEST_SCHEMA = "WorkspaceSessionSnapshotRetentionCleanupPreviewRequest"
 EXPECTED_RESPONSE_SCHEMA = "WorkspaceSessionSnapshotRetentionCleanupPreviewResponse"
+EXPECTED_INVENTORY_ROUTE_PATH = (
+    "/v1/workspace-session/snapshot-retention-cleanup/inventory/preview"
+)
+EXPECTED_INVENTORY_OPERATION_ID = (
+    "previewWorkspaceSessionSnapshotRetentionCleanupInventory"
+)
+EXPECTED_INVENTORY_REQUEST_SCHEMA = (
+    "WorkspaceSessionSnapshotRetentionCleanupInventoryPreviewRequest"
+)
+EXPECTED_INVENTORY_RESPONSE_SCHEMA = (
+    "WorkspaceSessionSnapshotRetentionCleanupPreviewResponse"
+)
 
 EXPECTED_DECLARED_SCHEMAS = (
     "WorkspaceSessionSnapshotRetentionCleanupInputEntry",
@@ -20,6 +32,12 @@ EXPECTED_DECLARED_SCHEMAS = (
     "WorkspaceSessionSnapshotRetentionCleanupSummary",
     "WorkspaceSessionSnapshotRetentionCleanupAction",
     "WorkspaceSessionSnapshotRetentionCleanupIssue",
+)
+
+EXPECTED_INVENTORY_SCHEMAS = (
+    "WorkspaceSessionSnapshotRetentionCleanupInventoryInputItem",
+    "WorkspaceSessionSnapshotRetentionCleanupInventoryPolicy",
+    "WorkspaceSessionSnapshotRetentionCleanupInventoryPreviewRequest",
 )
 
 FORBIDDEN_RAW_RETENTION_MARKERS = (
@@ -39,6 +57,32 @@ FORBIDDEN_RAW_RETENTION_MARKERS = (
     "storagePath:",
     "token:",
     "lockToken:",
+)
+
+FORBIDDEN_INVENTORY_RAW_RETENTION_MARKERS = (
+    "rawBody:",
+    "rawRequestBody:",
+    "requestBody:",
+    "bodySnapshot:",
+    "absolutePath:",
+    "filePath:",
+    "rawLockToken:",
+    "rawToken:",
+    "rawPath:",
+    "rawSecret:",
+    "apiKey:",
+    "authorization:",
+    "bearerToken:",
+    "password:",
+    "secret:",
+    "storagePath:",
+    "token:",
+    "lockToken:",
+    "writes:",
+    "deletes:",
+    "deletedSnapshotIds:",
+    "removedSnapshotIds:",
+    "unlinkedPaths:",
 )
 
 
@@ -84,9 +128,47 @@ class ValidateOpenApiWorkspaceSessionSnapshotRetentionCleanupTests(unittest.Test
         self.assertEqual(_media_types(status_block), ["application/json"])
         self.assertEqual(_media_types(error_response_block), ["application/json"])
 
+    def test_inventory_preview_path_has_json_only_error_response_contract(self) -> None:
+        path_block = _require_block(self, self.lines, EXPECTED_INVENTORY_ROUTE_PATH, 2)
+        method_block = _require_block(self, path_block, EXPECTED_METHOD, 4)
+        tag_block = _require_block(self, method_block, "tags", 6)
+        request_block = _require_block(self, method_block, "requestBody", 6)
+        responses_block = _require_block(self, method_block, "responses", 6)
+        status_block = _require_block(self, responses_block, '"200"', 8)
+        bad_request_block = _require_block(self, responses_block, '"400"', 8)
+        default_block = _require_block(self, responses_block, "default", 8)
+
+        self.assertIn("- workspace-session", _stripped_lines(tag_block))
+        self.assertIn(
+            f"operationId: {EXPECTED_INVENTORY_OPERATION_ID}",
+            _stripped_lines(method_block),
+        )
+        self.assertNotIn("parameters:", _stripped_lines(method_block))
+        self.assertIn("required: true", _stripped_lines(request_block))
+        self.assertEqual(_media_types(request_block), ["application/json"])
+        self.assertEqual(_media_types(status_block), ["application/json"])
+        self.assertTrue(_has_schema_ref(request_block, EXPECTED_INVENTORY_REQUEST_SCHEMA))
+        self.assertTrue(_has_schema_ref(status_block, EXPECTED_INVENTORY_RESPONSE_SCHEMA))
+        self.assertIn('$ref: "#/components/responses/Error"', _stripped_lines(bad_request_block))
+        self.assertIn('$ref: "#/components/responses/Error"', _stripped_lines(default_block))
+        self.assertIn("local-only dry-run", "\n".join(method_block).lower())
+
     def test_retention_cleanup_preview_response_is_local_dry_run_only(self) -> None:
         _require_cleanup_route_or_skip(self, self.lines)
         response_block = _require_block(self, self.lines, EXPECTED_RESPONSE_SCHEMA, 4)
+
+        for field, expected_const in (
+            ("localOnly", "const: true"),
+            ("dryRun", "const: true"),
+            ("durableWrites", "const: false"),
+        ):
+            with self.subTest(field=field):
+                field_block = _require_nested_block(self, response_block, field)
+                self.assertIn("type: boolean", _stripped_lines(field_block))
+                self.assertIn(expected_const, _stripped_lines(field_block))
+
+    def test_inventory_preview_response_is_local_dry_run_only(self) -> None:
+        response_block = _require_block(self, self.lines, EXPECTED_INVENTORY_RESPONSE_SCHEMA, 4)
 
         for field, expected_const in (
             ("localOnly", "const: true"),
@@ -116,6 +198,67 @@ class ValidateOpenApiWorkspaceSessionSnapshotRetentionCleanupTests(unittest.Test
             with self.subTest(schema=schema_name):
                 _require_block(self, self.lines, schema_name, 4)
 
+    def test_inventory_preview_components_are_cleanup_safe(self) -> None:
+        request_block = _require_block(self, self.lines, EXPECTED_INVENTORY_REQUEST_SCHEMA, 4)
+        item_block = _require_block(
+            self,
+            self.lines,
+            "WorkspaceSessionSnapshotRetentionCleanupInventoryInputItem",
+            4,
+        )
+        policy_block = _require_block(
+            self,
+            self.lines,
+            "WorkspaceSessionSnapshotRetentionCleanupInventoryPolicy",
+            4,
+        )
+
+        self.assertIn("additionalProperties: false", _stripped_lines(request_block))
+        self.assertIn("additionalProperties: false", _stripped_lines(item_block))
+        self.assertIn("additionalProperties: false", _stripped_lines(policy_block))
+        self.assertTrue(
+            _has_schema_ref(
+                request_block,
+                "WorkspaceSessionSnapshotRetentionCleanupInventoryInputItem",
+            )
+        )
+        self.assertTrue(
+            _has_schema_ref(
+                request_block,
+                "WorkspaceSessionSnapshotRetentionCleanupInventoryPolicy",
+            )
+        )
+
+        for source_field in (
+            "inventory",
+            "entries",
+            "files",
+            "records",
+        ):
+            with self.subTest(source_field=source_field):
+                field_block = _require_nested_block(self, request_block, source_field)
+                self.assertTrue(
+                    _has_schema_ref(
+                        field_block,
+                        "WorkspaceSessionSnapshotRetentionCleanupInventoryInputItem",
+                    )
+                )
+
+        for path_field in (
+            "path",
+            "relativePath",
+        ):
+            with self.subTest(path_field=path_field):
+                path_block = _require_nested_block(self, item_block, path_field)
+                path_lines = _stripped_lines(path_block)
+                self.assertIn("type: string", path_lines)
+                self.assertTrue(any("(?![A-Za-z]:)" in line for line in path_lines))
+                self.assertTrue(any(r"\.\." in line for line in path_lines))
+
+        for schema_name in EXPECTED_INVENTORY_SCHEMAS:
+            with self.subTest(schema=schema_name):
+                _require_block(self, self.lines, schema_name, 4)
+
     def test_retention_cleanup_preview_schema_omits_raw_retention_fields(self) -> None:
         _require_cleanup_route_or_skip(self, self.lines)
         cleanup_schema_text = "\n".join(
@@ -126,6 +269,16 @@ class ValidateOpenApiWorkspaceSessionSnapshotRetentionCleanupTests(unittest.Test
         for marker in FORBIDDEN_RAW_RETENTION_MARKERS:
             with self.subTest(marker=marker):
                 self.assertNotIn(marker, cleanup_schema_text)
+
+    def test_inventory_preview_schema_omits_raw_retention_and_mutation_fields(self) -> None:
+        inventory_schema_text = "\n".join(
+            "\n".join(_require_block(self, self.lines, schema_name, 4))
+            for schema_name in EXPECTED_INVENTORY_SCHEMAS
+        )
+
+        for marker in FORBIDDEN_INVENTORY_RAW_RETENTION_MARKERS:
+            with self.subTest(marker=marker):
+                self.assertNotIn(marker, inventory_schema_text)
 
 
 def _require_cleanup_route_or_skip(

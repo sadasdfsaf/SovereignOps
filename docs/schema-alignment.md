@@ -67,6 +67,8 @@ Rust enum variants use PascalCase in code and map to snake_case strings on the w
 
 TypeScript callers should emit the same camelCase JSON consumed by Python and described by OpenAPI. The MCP gateway uses the same capability and decision strings for resource and tool checks.
 
+JavaScript SDK usage notes, including the workspace session snapshot retention cleanup API preview client, live in `docs/sdk-js.md`.
+
 ## Python Alignment
 
 Python services treat the TypeScript/OpenAPI JSON shape as the interchange format:

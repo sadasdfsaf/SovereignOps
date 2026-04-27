@@ -31,6 +31,7 @@ export * from "./tasks.ts";
 export * from "./workspaceSessionApiFixtureState.ts";
 export * from "./workspaceSessionApiState.ts";
 export * from "./workspaceSessionSnapshotRetentionCleanupState.ts";
+export * from "./workspaceSessionSnapshotRetentionCleanupInventoryState.ts";
 export * from "./workspaceSessionSnapshotReviewState.ts";
 export * from "./workspaceSessionSnapshotState.ts";
 export type {
