@@ -22,6 +22,7 @@ export class WorkspaceClient {
 
 export * from "./client.ts";
 export * from "./ingestClient.ts";
+export * from "./ingestFixtureFetch.ts";
 export * from "./localIngest.ts";
 export * from "./localLifecycle.ts";
 export * from "./localMcp.ts";

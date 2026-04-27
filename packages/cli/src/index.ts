@@ -5,6 +5,7 @@ export * from "./commands.ts";
 export * from "./lifecycle.ts";
 export * from "./auditExport.ts";
 export * from "./ingestApiReplay.ts";
+export * from "./ingestApiVerify.ts";
 export * from "./ingestSearch.ts";
 export * from "./mcpClient.ts";
 export * from "./mcpDemo.ts";
@@ -13,6 +14,7 @@ export * from "./mcpReplay.ts";
 import { runAuditExportCli } from "./auditExport.ts";
 import { runCli as runCoreCli } from "./commands.ts";
 import { runIngestApiReplayCli } from "./ingestApiReplay.ts";
+import { runIngestApiVerifyCli } from "./ingestApiVerify.ts";
 import { runIngestSearchCli } from "./ingestSearch.ts";
 import { runLifecycleCli } from "./lifecycle.ts";
 import { runMcpApiCli } from "./mcpClient.ts";
@@ -25,6 +27,7 @@ export async function runCli(
     Parameters<typeof runLifecycleCli>[1] &
     Parameters<typeof runAuditExportCli>[1] &
     Parameters<typeof runIngestApiReplayCli>[1] &
+    Parameters<typeof runIngestApiVerifyCli>[1] &
     Parameters<typeof runIngestSearchCli>[1] &
     Parameters<typeof runMcpReplayCli>[1] &
     Parameters<typeof runMcpApiCli>[1] &
@@ -33,6 +36,7 @@ export async function runCli(
   return (
     (await runAuditExportCli(argv, options)) ??
     (await runIngestApiReplayCli(argv, options)) ??
+    (await runIngestApiVerifyCli(argv, options)) ??
     (await runIngestSearchCli(argv, options)) ??
     (await runMcpReplayCli(argv, options)) ??
     (await runMcpApiCli(argv, options)) ??
