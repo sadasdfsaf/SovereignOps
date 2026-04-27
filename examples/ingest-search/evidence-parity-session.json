@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "ingest-evidence-parity-session.v1",
+  "generatedAt": "2026-04-27T08:25:00.000Z",
+  "workspaceId": "wsp_ingest_demo",
+  "sessionId": "sess_ingest_search_local_001",
+  "localOnly": true,
+  "evidenceFixture": {
+    "path": "examples/ingest-search/audit-evidence.json",
+    "schemaVersion": "ingest-search-audit-evidence.v1",
+    "sha256": "582ffdf85628e0584af37df39aa85d94d78dd3d8209abc88e9d9ef01978f7980",
+    "expectedRecordCount": 27,
+    "expectedNormalizedRecordCount": 28,
+    "expectedSummary": {
+      "sourceCount": 3,
+      "evidenceFileCount": 9,
+      "citationCount": 4,
+      "quarantineDecisionCount": 1,
+      "apiRequestTraceCount": 6,
+      "clientSessionTraceCount": 4
+    }
+  },
+  "selectedFilters": {
+    "sections": [
+      "evidenceFiles",
+      "sourceSnapshots",
+      "citationEvidence",
+      "quarantineDecisions",
+      "apiRequestTrace",
+      "clientSessionTrace"
+    ],
+    "evidenceFileIds": [],
+    "sourceUris": [],
+    "citationKinds": []
+  },
+  "localOnlySurfaces": [
+    {
+      "id": "package_helpers",
+      "entryPoint": "packages/ingest-evidence/src/index.ts",
+      "network": "none"
+    },
+    {
+      "id": "api_router_dispatch",
+      "entryPoint": "apps/api/src/ingestEvidenceRoutes.ts",
+      "network": "none"
+    },
+    {
+      "id": "cli_runner",
+      "entryPoint": "packages/cli/src/ingestEvidence.ts",
+      "network": "none"
+    }
+  ],
+  "expectedParity": {
+    "recordCount": 27,
+    "normalizedRecordCount": 28,
+    "sourceChecksumCount": 9,
+    "fingerprintPatterns": {
+      "package": "^fnv1a64:[0-9a-f]{16}$",
+      "api": "^sha256:[0-9a-f]{64}$",
+      "cli": "^sha256:[0-9a-f]{64}$",
+      "checksumSet": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

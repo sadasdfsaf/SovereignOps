@@ -664,6 +664,54 @@ paths:
                 $ref: "#/components/schemas/RepositoryScanResponse"
         default:
           $ref: "#/components/responses/IngestSearchError"
+  /v1/ingest/evidence/export:
+    post:
+      tags:
+        - ingest
+      summary: Preview a local ingest evidence export.
+      description: Local preview only; callers provide evidence JSON in the request body. The route does not read files or call network services.
+      operationId: exportIngestEvidence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestEvidenceExportRequest"
+      responses:
+        "200":
+          description: Redacted export content with manifest metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestEvidenceExportResponse"
+        "400":
+          $ref: "#/components/responses/IngestEvidenceError"
+        default:
+          $ref: "#/components/responses/IngestEvidenceError"
+  /v1/ingest/evidence/package:
+    post:
+      tags:
+        - ingest
+      summary: Preview a local ingest evidence package.
+      description: Local preview only; callers provide evidence JSON in the request body. The route does not read files or call network services.
+      operationId: packageIngestEvidence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestEvidenceExportRequest"
+      responses:
+        "200":
+          description: Package file previews with manifest metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestEvidencePackageResponse"
+        "400":
+          $ref: "#/components/responses/IngestEvidenceError"
+        default:
+          $ref: "#/components/responses/IngestEvidenceError"
   /v1/search/query:
     post:
       tags:
@@ -769,6 +817,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/IngestSearchErrorResponse"
+    IngestEvidenceError:
+      description: Ingest evidence JSON error envelope.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/IngestEvidenceErrorResponse"
   schemas:
     WorkspaceId:
       type: string
@@ -3122,6 +3176,364 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RepositorySourceRecord"
+      additionalProperties: false
+    IngestEvidenceJsonValue:
+      oneOf:
+        - type: "null"
+        - type: boolean
+        - type: integer
+        - type: number
+        - type: string
+        - type: array
+          items:
+            $ref: "#/components/schemas/IngestEvidenceJsonValue"
+        - type: object
+          additionalProperties:
+            $ref: "#/components/schemas/IngestEvidenceJsonValue"
+    IngestEvidenceInput:
+      type: object
+      description: Local evidence JSON supplied by the caller; source references are expected to be workspace fixture values.
+      additionalProperties:
+        $ref: "#/components/schemas/IngestEvidenceJsonValue"
+    IngestEvidenceSection:
+      type: string
+      enum:
+        - evidenceFiles
+        - sourceSnapshots
+        - citationEvidence
+        - quarantineDecisions
+        - apiRequestTrace
+        - clientSessionTrace
+    IngestEvidenceExportFormat:
+      type: string
+      enum:
+        - json
+        - summary
+        - manifest
+      default: json
+    IngestEvidenceStringList:
+      type: array
+      items:
+        type: string
+        minLength: 1
+    IngestEvidenceFilters:
+      type: object
+      description: Optional selectors for local evidence sections and source identifiers already present in the evidence body.
+      properties:
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngestEvidenceSection"
+        evidenceFileIds:
+          $ref: "#/components/schemas/IngestEvidenceStringList"
+        sourceUris:
+          $ref: "#/components/schemas/IngestEvidenceStringList"
+        citationKinds:
+          $ref: "#/components/schemas/IngestEvidenceStringList"
+      additionalProperties: true
+    IngestEvidenceRequestOptions:
+      type: object
+      properties:
+        format:
+          $ref: "#/components/schemas/IngestEvidenceExportFormat"
+        filters:
+          $ref: "#/components/schemas/IngestEvidenceFilters"
+        createdAt:
+          type: string
+          format: date-time
+        exportId:
+          type: string
+          minLength: 1
+      additionalProperties: true
+    IngestEvidenceExportRequest:
+      type: object
+      required:
+        - evidence
+      properties:
+        evidence:
+          $ref: "#/components/schemas/IngestEvidenceInput"
+        format:
+          $ref: "#/components/schemas/IngestEvidenceExportFormat"
+        filters:
+          $ref: "#/components/schemas/IngestEvidenceFilters"
+        createdAt:
+          type: string
+          format: date-time
+        exportId:
+          type: string
+          minLength: 1
+        options:
+          $ref: "#/components/schemas/IngestEvidenceRequestOptions"
+      additionalProperties: true
+    IngestEvidenceNormalizedFilters:
+      type: object
+      required:
+        - sections
+        - evidenceFileIds
+        - sourceUris
+        - citationKinds
+      properties:
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngestEvidenceSection"
+        evidenceFileIds:
+          $ref: "#/components/schemas/IngestEvidenceStringList"
+        sourceUris:
+          $ref: "#/components/schemas/IngestEvidenceStringList"
+        citationKinds:
+          $ref: "#/components/schemas/IngestEvidenceStringList"
+      additionalProperties: false
+    IngestEvidenceSummary:
+      type: object
+      required:
+        - sourceCount
+        - evidenceFileCount
+        - citationCount
+        - quarantineDecisionCount
+        - apiRequestTraceCount
+        - clientSessionTraceCount
+      properties:
+        sourceCount:
+          type: integer
+          minimum: 0
+        evidenceFileCount:
+          type: integer
+          minimum: 0
+        citationCount:
+          type: integer
+          minimum: 0
+        quarantineDecisionCount:
+          type: integer
+          minimum: 0
+        apiRequestTraceCount:
+          type: integer
+          minimum: 0
+        clientSessionTraceCount:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    IngestEvidenceContentDescriptor:
+      type: object
+      required:
+        - mediaType
+        - bytes
+        - fingerprint
+      properties:
+        mediaType:
+          type: string
+          const: application/json
+        bytes:
+          type: integer
+          minimum: 0
+        fingerprint:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+      additionalProperties: false
+    IngestEvidenceSectionDescriptor:
+      type: object
+      required:
+        - section
+        - itemCount
+        - mediaType
+        - bytes
+        - fingerprint
+      properties:
+        section:
+          $ref: "#/components/schemas/IngestEvidenceSection"
+        itemCount:
+          type: integer
+          minimum: 0
+        mediaType:
+          type: string
+          const: application/json
+        bytes:
+          type: integer
+          minimum: 0
+        fingerprint:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+      additionalProperties: false
+    IngestEvidenceManifest:
+      type: object
+      required:
+        - kind
+        - version
+        - exportId
+        - createdAt
+        - schemaVersion
+        - workspaceId
+        - sessionId
+        - localOnly
+        - filters
+        - evidenceSummary
+        - sections
+        - content
+        - fingerprint
+      properties:
+        kind:
+          type: string
+          const: ingest-evidence.manifest
+        version:
+          type: integer
+          const: 1
+        exportId:
+          type: string
+          minLength: 1
+        createdAt:
+          type: string
+          format: date-time
+        schemaVersion:
+          type:
+            - string
+            - "null"
+          minLength: 1
+        workspaceId:
+          type:
+            - string
+            - "null"
+          minLength: 1
+        sessionId:
+          type:
+            - string
+            - "null"
+          minLength: 1
+        localOnly:
+          type: boolean
+        filters:
+          $ref: "#/components/schemas/IngestEvidenceNormalizedFilters"
+        evidenceSummary:
+          $ref: "#/components/schemas/IngestEvidenceSummary"
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngestEvidenceSectionDescriptor"
+        content:
+          $ref: "#/components/schemas/IngestEvidenceContentDescriptor"
+        fingerprint:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+      additionalProperties: false
+    IngestEvidenceExportResponse:
+      type: object
+      required:
+        - kind
+        - version
+        - format
+        - mediaType
+        - content
+        - fingerprint
+        - exportId
+        - createdAt
+        - manifest
+      properties:
+        kind:
+          type: string
+          const: ingest-evidence.export
+        version:
+          type: integer
+          const: 1
+        format:
+          $ref: "#/components/schemas/IngestEvidenceExportFormat"
+        mediaType:
+          type: string
+          const: application/json
+        content:
+          type: string
+        fingerprint:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+        exportId:
+          type: string
+          minLength: 1
+        createdAt:
+          type: string
+          format: date-time
+        manifest:
+          $ref: "#/components/schemas/IngestEvidenceManifest"
+      additionalProperties: false
+    IngestEvidencePackageFile:
+      type: object
+      required:
+        - path
+        - content
+        - mediaType
+        - bytes
+        - fingerprint
+      properties:
+        path:
+          type: string
+          enum:
+            - manifest.json
+            - evidence.json
+        content:
+          type: string
+        mediaType:
+          type: string
+          const: application/json
+        bytes:
+          type: integer
+          minimum: 0
+        fingerprint:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+      additionalProperties: false
+    IngestEvidencePackageResponse:
+      type: object
+      required:
+        - kind
+        - version
+        - manifest
+        - files
+        - fingerprint
+      properties:
+        kind:
+          type: string
+          const: ingest-evidence.package
+        version:
+          type: integer
+          const: 1
+        manifest:
+          $ref: "#/components/schemas/IngestEvidenceManifest"
+        files:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngestEvidencePackageFile"
+        fingerprint:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+      additionalProperties: false
+    IngestEvidenceErrorDetails:
+      type: object
+      properties:
+        path:
+          type: string
+          minLength: 1
+        value:
+          $ref: "#/components/schemas/IngestEvidenceJsonValue"
+      additionalProperties: true
+    IngestEvidenceErrorBody:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          minLength: 1
+        message:
+          type: string
+          minLength: 1
+        details:
+          $ref: "#/components/schemas/IngestEvidenceErrorDetails"
+      additionalProperties: false
+    IngestEvidenceErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          $ref: "#/components/schemas/IngestEvidenceErrorBody"
       additionalProperties: false
     SearchFilters:
       type: object

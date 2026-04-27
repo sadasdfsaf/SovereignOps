@@ -21,6 +21,9 @@ def make_release_root(root: Path) -> None:
     (root / "docs").mkdir()
     (root / "examples" / "mcp-gateway").mkdir(parents=True)
     (root / "examples" / "ingest-search").mkdir(parents=True)
+    (root / "apps" / "api" / "src").mkdir(parents=True)
+    (root / "packages" / "cli" / "src").mkdir(parents=True)
+    (root / "packages" / "ingest-evidence" / "src").mkdir(parents=True)
     (root / "services" / "ingest" / "src" / "sovereignops_ingest").mkdir(parents=True)
     (root / "services" / "ingest" / "tests").mkdir(parents=True)
     (root / "tests").mkdir()
@@ -44,6 +47,7 @@ def make_release_root(root: Path) -> None:
         "docs/ingest-integration.md",
         "docs/ingest-audit-evidence.md",
         "docs/ingest-evidence-export.md",
+        "docs/ingest-evidence-parity.md",
         "scripts/loc_integrity.py",
         "scripts/release_notes.py",
         "examples/mcp-gateway/resources.json",
@@ -63,13 +67,20 @@ def make_release_root(root: Path) -> None:
         "examples/ingest-search/client-session.json",
         "examples/ingest-search/audit-evidence.json",
         "examples/ingest-search/evidence-export-session.json",
+        "examples/ingest-search/evidence-parity-session.json",
         "tests/test_ingest_search_docs.py",
         "tests/test_ingest_api_docs.py",
         "tests/test_ingest_integration_docs.py",
         "tests/test_ingest_audit_evidence_docs.py",
         "tests/test_ingest_evidence_export_docs.py",
+        "tests/test_ingest_evidence_parity_docs.py",
         "tests/test_ingest_contract_alignment.py",
         "tests/test_validate_openapi_ingest_search.py",
+        "tests/test_validate_openapi_ingest_evidence.py",
+        "tests/ingest_evidence_parity.test.mjs",
+        "apps/api/src/ingestEvidenceRoutes.ts",
+        "packages/cli/src/ingestEvidence.ts",
+        "packages/ingest-evidence/src/index.ts",
         "services/ingest/src/sovereignops_ingest/cli.py",
         "services/ingest/src/sovereignops_ingest/index.py",
         "services/ingest/src/sovereignops_ingest/logs.py",
@@ -100,6 +111,7 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertTrue(by_name["python-tests"].available)
         self.assertTrue(by_name["ingest-python-tests"].available)
         self.assertTrue(by_name["node-package-baseline"].available)
+        self.assertTrue(by_name["ingest-evidence-parity"].available)
         self.assertTrue(by_name["npm-workspace-check"].available)
         self.assertTrue(by_name["cargo-check"].available)
         self.assertFalse(by_name["pnpm-workspace-check"].available)

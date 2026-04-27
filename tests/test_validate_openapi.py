@@ -41,6 +41,12 @@ paths:
   /v1/audit/export/package:
     post:
       operationId: exportAuditPackage
+  /v1/ingest/evidence/export:
+    post:
+      operationId: exportIngestEvidence
+  /v1/ingest/evidence/package:
+    post:
+      operationId: packageIngestEvidence
 components:
   responses:
     Error:

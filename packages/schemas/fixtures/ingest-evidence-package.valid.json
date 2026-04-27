@@ -1,0 +1,66 @@
+{
+  "kind": "ingest-evidence.package",
+  "version": 1,
+  "manifest": {
+    "kind": "ingest-evidence.manifest",
+    "version": 1,
+    "packageId": "ingevid_compact_alignment",
+    "createdAt": "2026-04-27T09:10:00.000Z",
+    "evidence": {
+      "schemaVersion": "ingest-search-audit-evidence.v1",
+      "generatedAt": "2026-04-27T09:00:00.000Z",
+      "workspaceId": "wsp_package_alignment",
+      "sessionId": "[REDACTED]",
+      "localOnly": true,
+      "fingerprint": "fnv1a64:a5b3b16213346339"
+    },
+    "recordCount": 3,
+    "recordTypes": [
+      "evidenceSummary",
+      "evidenceFile",
+      "sourceSnapshot"
+    ],
+    "sourceChecksums": [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    ],
+    "recordFingerprints": [
+      "fnv1a64:c9271f258c7a67ce",
+      "fnv1a64:ca24a587ec6c2f0f",
+      "fnv1a64:76958109a9b1bfb5"
+    ],
+    "evidenceFiles": [
+      {
+        "id": "compactNotes",
+        "fixturePath": "examples/ingest-search/compact-notes.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schemaVersion": "compact-notes.v1",
+        "fingerprint": "fnv1a64:ca24a587ec6c2f0f"
+      }
+    ],
+    "jsonl": {
+      "fingerprint": "fnv1a64:dd494d99bc90d812",
+      "mediaType": "application/jsonl",
+      "bytes": 1546,
+      "lines": 3
+    },
+    "csv": {
+      "fingerprint": "fnv1a64:ee3fa5b6c7019d58",
+      "mediaType": "text/csv",
+      "bytes": 1242,
+      "rows": 3,
+      "columns": [
+        "recordType",
+        "recordId",
+        "sourceUri",
+        "fixturePath",
+        "checksum",
+        "payload",
+        "fingerprint"
+      ]
+    },
+    "fingerprint": "fnv1a64:2d47944b32b42d68"
+  },
+  "jsonl": "{\"checksum\":null,\"fingerprint\":\"fnv1a64:c9271f258c7a67ce\",\"fixturePath\":null,\"kind\":\"ingest-evidence.record\",\"payload\":{\"apiRequestTraceCount\":0,\"citationCount\":0,\"clientSessionTraceCount\":0,\"evidenceFileCount\":1,\"quarantineDecisionCount\":0,\"sourceCount\":1},\"recordId\":\"evidenceSummary\",\"recordType\":\"evidenceSummary\",\"sourceUri\":null,\"version\":1}\n{\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"fingerprint\":\"fnv1a64:ca24a587ec6c2f0f\",\"fixturePath\":\"examples/ingest-search/compact-notes.json\",\"kind\":\"ingest-evidence.record\",\"payload\":{\"fixturePath\":\"examples/ingest-search/compact-notes.json\",\"id\":\"compactNotes\",\"schemaVersion\":\"compact-notes.v1\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"recordId\":\"compactNotes\",\"recordType\":\"evidenceFile\",\"sourceUri\":null,\"version\":1}\n{\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"fingerprint\":\"fnv1a64:76958109a9b1bfb5\",\"fixturePath\":\"examples/ingest-search/compact-notes.json\",\"kind\":\"ingest-evidence.record\",\"payload\":{\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"indexDocumentIds\":[],\"logEntryIds\":[\"log_compact_notes\"],\"mediaType\":\"application/json\",\"path\":\"examples/ingest-search/compact-notes.json\",\"quarantineItemIds\":[],\"repositoryState\":\"indexed\",\"sourceUri\":\"fixture://ingest-search/compact-notes.json\"},\"recordId\":\"fixture://ingest-search/compact-notes.json\",\"recordType\":\"sourceSnapshot\",\"sourceUri\":\"fixture://ingest-search/compact-notes.json\",\"version\":1}",
+  "csv": "recordType,recordId,sourceUri,fixturePath,checksum,payload,fingerprint\nevidenceSummary,evidenceSummary,,,,\"{\"\"apiRequestTraceCount\"\":0,\"\"citationCount\"\":0,\"\"clientSessionTraceCount\"\":0,\"\"evidenceFileCount\"\":1,\"\"quarantineDecisionCount\"\":0,\"\"sourceCount\"\":1}\",fnv1a64:c9271f258c7a67ce\nevidenceFile,compactNotes,,examples/ingest-search/compact-notes.json,aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,\"{\"\"fixturePath\"\":\"\"examples/ingest-search/compact-notes.json\"\",\"\"id\"\":\"\"compactNotes\"\",\"\"schemaVersion\"\":\"\"compact-notes.v1\"\",\"\"sha256\"\":\"\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\"}\",fnv1a64:ca24a587ec6c2f0f\nsourceSnapshot,fixture://ingest-search/compact-notes.json,fixture://ingest-search/compact-notes.json,examples/ingest-search/compact-notes.json,aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,\"{\"\"checksum\"\":\"\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\",\"\"indexDocumentIds\"\":[],\"\"logEntryIds\"\":[\"\"log_compact_notes\"\"],\"\"mediaType\"\":\"\"application/json\"\",\"\"path\"\":\"\"examples/ingest-search/compact-notes.json\"\",\"\"quarantineItemIds\"\":[],\"\"repositoryState\"\":\"\"indexed\"\",\"\"sourceUri\"\":\"\"fixture://ingest-search/compact-notes.json\"\"}\",fnv1a64:76958109a9b1bfb5",
+  "fingerprint": "fnv1a64:5333ce42e447620c"
+}
