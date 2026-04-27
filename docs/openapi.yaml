@@ -826,6 +826,113 @@ paths:
           $ref: "#/components/responses/Error"
         default:
           $ref: "#/components/responses/Error"
+  /v1/mcp/approval-evidence/records:
+    get:
+      tags:
+        - mcp
+      summary: List stored local MCP approval evidence records.
+      description: Local-only listing of redacted approval evidence record baselines.
+      operationId: listMcpApprovalEvidenceRecords
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/McpApprovalEvidenceRecordListRequest"
+      responses:
+        "200":
+          description: Stored approval evidence record summaries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpApprovalEvidenceRecordListResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags:
+        - mcp
+      summary: Store a local MCP approval evidence record.
+      description: Stores a redacted local approval evidence preview as a baseline record.
+      operationId: createMcpApprovalEvidenceRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/McpApprovalEvidenceRecordCreateRequest"
+      responses:
+        "201":
+          description: Stored local approval evidence record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpApprovalEvidenceRecordCreateResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/mcp/approval-evidence/records/{recordId}:
+    get:
+      tags:
+        - mcp
+      summary: Retrieve a stored local MCP approval evidence record.
+      description: Reads one redacted local approval evidence record by id.
+      operationId: getMcpApprovalEvidenceRecord
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Stored approval evidence record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpApprovalEvidenceRecordGetResponse"
+        "404":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/mcp/approval-evidence/records/{recordId}/compare:
+    post:
+      tags:
+        - mcp
+      summary: Compare current MCP approval evidence with a stored baseline.
+      description: Compares a new local preview payload against a stored redacted record.
+      operationId: compareMcpApprovalEvidenceRecord
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/McpApprovalEvidenceRecordCompareRequest"
+      responses:
+        "200":
+          description: Approval evidence comparison result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpApprovalEvidenceRecordCompareResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
 components:
   parameters:
     WorkspaceId:
@@ -4041,6 +4148,291 @@ components:
           type: boolean
           const: true
         evidence:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+    McpApprovalEvidenceRecordListRequest:
+      type: object
+      properties:
+        filters:
+          type: object
+          additionalProperties: true
+        recordIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        fingerprints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        labels:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        createdAfter:
+          type: string
+          format: date-time
+        createdBefore:
+          type: string
+          format: date-time
+        offset:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+      additionalProperties: false
+    McpApprovalEvidenceRecordCreateRequest:
+      type: object
+      properties:
+        recordId:
+          type: string
+          minLength: 1
+        id:
+          type: string
+          minLength: 1
+        label:
+          type: string
+          minLength: 1
+        metadata:
+          type: object
+          additionalProperties: true
+        payload:
+          type: object
+          additionalProperties: true
+        preview:
+          $ref: "#/components/schemas/McpApprovalEvidencePreviewResponse"
+        baseline:
+          $ref: "#/components/schemas/McpApprovalEvidencePreviewResponse"
+        evidencePayload:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+    McpApprovalEvidenceRecord:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - localOnly
+        - redacted
+        - recordId
+        - createdAt
+        - updatedAt
+        - fingerprint
+        - baselineFingerprint
+        - baseline
+      properties:
+        kind:
+          type: string
+          const: mcp-approval-evidence.record
+        schemaVersion:
+          type: string
+          const: mcp-approval-evidence-record/v1
+        localOnly:
+          type: boolean
+          const: true
+        redacted:
+          type: boolean
+          const: true
+        recordId:
+          type: string
+          minLength: 1
+        label:
+          type: string
+          minLength: 1
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        fingerprint:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+        baselineFingerprint:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+        baseline:
+          $ref: "#/components/schemas/McpApprovalEvidencePreviewResponse"
+      additionalProperties: false
+    McpApprovalEvidenceRecordSummary:
+      type: object
+      required:
+        - recordId
+        - createdAt
+        - updatedAt
+        - fingerprint
+        - baselineFingerprint
+        - evidenceCount
+      properties:
+        recordId:
+          type: string
+          minLength: 1
+        label:
+          type: string
+          minLength: 1
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        fingerprint:
+          type: string
+          minLength: 1
+        baselineFingerprint:
+          type: string
+          minLength: 1
+        evidenceCount:
+          type: integer
+          minimum: 0
+        approvalRequiredCount:
+          type: integer
+          minimum: 0
+        terminalDecisionCount:
+          type: integer
+          minimum: 0
+        sources:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+        statuses:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+      additionalProperties: false
+    McpApprovalEvidenceRecordCreateResponse:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - localOnly
+        - record
+      properties:
+        kind:
+          type: string
+          const: mcp-approval-evidence.record.created
+        schemaVersion:
+          type: string
+          const: mcp-approval-evidence-record/v1
+        localOnly:
+          type: boolean
+          const: true
+        record:
+          $ref: "#/components/schemas/McpApprovalEvidenceRecord"
+      additionalProperties: false
+    McpApprovalEvidenceRecordListResponse:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - localOnly
+        - pagination
+        - records
+      properties:
+        kind:
+          type: string
+          const: mcp-approval-evidence.record.list
+        schemaVersion:
+          type: string
+          const: mcp-approval-evidence-record/v1
+        localOnly:
+          type: boolean
+          const: true
+        filters:
+          type: object
+          additionalProperties: true
+        pagination:
+          type: object
+          additionalProperties: true
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/McpApprovalEvidenceRecordSummary"
+      additionalProperties: false
+    McpApprovalEvidenceRecordGetResponse:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - localOnly
+        - record
+      properties:
+        kind:
+          type: string
+          const: mcp-approval-evidence.record.read
+        schemaVersion:
+          type: string
+          const: mcp-approval-evidence-record/v1
+        localOnly:
+          type: boolean
+          const: true
+        record:
+          $ref: "#/components/schemas/McpApprovalEvidenceRecord"
+      additionalProperties: false
+    McpApprovalEvidenceRecordCompareRequest:
+      type: object
+      properties:
+        payload:
+          type: object
+          additionalProperties: true
+        preview:
+          $ref: "#/components/schemas/McpApprovalEvidencePreviewResponse"
+        baseline:
+          $ref: "#/components/schemas/McpApprovalEvidencePreviewResponse"
+        evidencePayload:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+    McpApprovalEvidenceRecordCompareResponse:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - localOnly
+        - recordId
+        - equivalent
+        - stored
+        - candidate
+        - summary
+        - differences
+      properties:
+        kind:
+          type: string
+          const: mcp-approval-evidence.record.compare
+        schemaVersion:
+          type: string
+          const: mcp-approval-evidence-record/v1
+        localOnly:
+          type: boolean
+          const: true
+        recordId:
+          type: string
+          minLength: 1
+        equivalent:
+          type: boolean
+        stored:
+          type: object
+          additionalProperties: true
+        candidate:
+          type: object
+          additionalProperties: true
+        summary:
+          type: object
+          additionalProperties: true
+        differences:
           type: object
           additionalProperties: true
       additionalProperties: false

@@ -53,6 +53,17 @@ paths:
   /v1/mcp/approval-evidence/preview:
     post:
       operationId: previewMcpApprovalEvidence
+  /v1/mcp/approval-evidence/records:
+    get:
+      operationId: listMcpApprovalEvidenceRecords
+    post:
+      operationId: createMcpApprovalEvidenceRecord
+  /v1/mcp/approval-evidence/records/{recordId}:
+    get:
+      operationId: getMcpApprovalEvidenceRecord
+  /v1/mcp/approval-evidence/records/{recordId}/compare:
+    post:
+      operationId: compareMcpApprovalEvidenceRecord
 components:
   responses:
     Error:

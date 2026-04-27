@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "mcp-approval-evidence-record-create-request/v1",
+  "requestedAt": "2026-04-27T13:04:00.000Z",
+  "workspaceId": "wsp_localReview",
+  "sourcePreviewFingerprint": "1111111111111111111111111111111111111111111111111111111111111111",
+  "localOnly": true,
+  "redacted": true,
+  "policyDecision": "require_approval",
+  "approvalStatus": "approved",
+  "evidenceRefs": [
+    {
+      "evidenceId": "mcpae_localNotesReview",
+      "evidenceSchemaVersion": "mcp-approval-evidence/v1",
+      "role": "source",
+      "fingerprint": "1111111111111111111111111111111111111111111111111111111111111111",
+      "capturedAt": "2026-04-27T13:00:00.000Z",
+      "redacted": true
+    }
+  ],
+  "redactionSummary": {
+    "redacted": true,
+    "redactedFieldCount": 2,
+    "redactedPaths": [
+      "request.arguments.previewText",
+      "transition.metadata.reviewerNote"
+    ],
+    "retainedMetadataKeys": [
+      "clientLabel",
+      "maskedValue",
+      "workflowId"
+    ]
+  },
+  "metadata": {
+    "clientLabel": "local-notes",
+    "maskedValue": "[REDACTED]",
+    "workflowId": "wf_offline_review",
+    "retryCount": 0
+  }
+}

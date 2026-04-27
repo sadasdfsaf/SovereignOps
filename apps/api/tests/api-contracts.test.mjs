@@ -10,6 +10,7 @@ import {
   jsonResponse,
 } from "../src/router.ts";
 import { mountMcpApprovalEvidenceRoutes } from "../src/mcpApprovalEvidenceRoutes.ts";
+import { mountMcpApprovalEvidenceRecordRoutes } from "../src/mcpApprovalEvidenceRecordRoutes.ts";
 import { mountMcpRoutes } from "../src/mcpRoutes.ts";
 import { mountPluginReviewArtifactRoutes } from "../src/pluginReviewArtifactRoutes.ts";
 import { mountSyncRoutes } from "../src/syncRoutes.ts";
@@ -71,6 +72,14 @@ test("documented OpenAPI sync and MCP operations are mounted by public routes", 
     routeKeys.has("POST /v1/mcp/approval-evidence/preview"),
     "POST /v1/mcp/approval-evidence/preview is not mounted",
   );
+  for (const expectedRouteKey of [
+    "GET /v1/mcp/approval-evidence/records",
+    "GET /v1/mcp/approval-evidence/records/:recordId",
+    "POST /v1/mcp/approval-evidence/records",
+    "POST /v1/mcp/approval-evidence/records/:recordId/compare",
+  ]) {
+    assert.ok(routeKeys.has(expectedRouteKey), `${expectedRouteKey} is not mounted`);
+  }
 });
 
 test("JSON errors keep a stable envelope across router, sync, and MCP routes", async () => {
@@ -331,11 +340,85 @@ test("MCP approval evidence public route previews local snapshot payloads", asyn
   assert.equal(JSON.stringify(response.body).includes("tok_contract_evidence_secret_123456"), false);
 });
 
+test("MCP approval evidence record public routes persist and compare local baselines", async () => {
+  const router = createPublicContractRouter();
+
+  const createResponse = await router.dispatch({
+    method: "POST",
+    path: "/v1/mcp/approval-evidence/records",
+    body: {
+      recordId: "approval-evidence-record-contract-1",
+      label: "local-contract-baseline",
+      payload: createContractApprovalEvidenceBody("contract route review"),
+    },
+  });
+  assertJsonResponse(createResponse, 201);
+  assert.equal(createResponse.body.kind, "mcp-approval-evidence.record.created");
+  assert.equal(createResponse.body.record.recordId, "approval-evidence-record-contract-1");
+  assert.equal(createResponse.body.record.localOnly, true);
+  assert.equal(createResponse.body.record.redacted, true);
+  assert.match(createResponse.body.record.fingerprint, /^sha256:[a-f0-9]{64}$/);
+
+  const listResponse = await router.dispatch({
+    method: "GET",
+    path: "/v1/mcp/approval-evidence/records",
+    body: {
+      filters: { labels: ["local-contract-baseline"] },
+      limit: 10,
+    },
+  });
+  assertJsonResponse(listResponse, 200);
+  assert.equal(listResponse.body.pagination.totalRecordCount, 1);
+  assert.equal(listResponse.body.pagination.matchedRecordCount, 1);
+  assert.deepEqual(
+    listResponse.body.records.map((record) => [record.recordId, record.evidenceCount]),
+    [["approval-evidence-record-contract-1", 2]],
+  );
+
+  const getResponse = await router.dispatch({
+    method: "GET",
+    path: "/v1/mcp/approval-evidence/records/approval-evidence-record-contract-1",
+  });
+  assertJsonResponse(getResponse, 200);
+  assert.equal(
+    getResponse.body.record.baselineFingerprint,
+    createResponse.body.record.baseline.fingerprint,
+  );
+
+  const sameCompare = await router.dispatch({
+    method: "POST",
+    path: "/v1/mcp/approval-evidence/records/approval-evidence-record-contract-1/compare",
+    body: {
+      baseline: createResponse.body.record.baseline,
+    },
+  });
+  assertJsonResponse(sameCompare, 200);
+  assert.equal(sameCompare.body.equivalent, true);
+  assert.equal(sameCompare.body.summary.changedEvidenceCount, 0);
+
+  const changedCompare = await router.dispatch({
+    method: "POST",
+    path: "/v1/mcp/approval-evidence/records/approval-evidence-record-contract-1/compare",
+    body: {
+      payload: createContractApprovalEvidenceBody("updated contract route review"),
+    },
+  });
+  assertJsonResponse(changedCompare, 200);
+  assert.equal(changedCompare.body.equivalent, false);
+  assert.equal(changedCompare.body.summary.changedEvidenceCount, 1);
+  assert.deepEqual(
+    changedCompare.body.differences.changed.map((item) => item.key),
+    ["tool_audit:tool-evidence-contract-1"],
+  );
+});
+
 test("index exports MCP approval evidence route helpers", async () => {
   const api = await import("../src/index.ts");
 
   assert.equal(typeof api.createMcpApprovalEvidenceRoutes, "function");
   assert.equal(typeof api.mountMcpApprovalEvidenceRoutes, "function");
+  assert.equal(typeof api.createMcpApprovalEvidenceRecordRoutes, "function");
+  assert.equal(typeof api.mountMcpApprovalEvidenceRecordRoutes, "function");
 });
 
 test("router dispatch normalizes requests deterministically without mutating callers", async () => {
@@ -430,9 +513,49 @@ function createPublicContractRouter(options = {}) {
     { basePath: "/v1/mcp", pathStyle: "openapi" },
   );
   mountMcpApprovalEvidenceRoutes(router);
+  mountMcpApprovalEvidenceRecordRoutes(router);
   mountPluginReviewArtifactRoutes(router);
 
   return router;
+}
+
+function createContractApprovalEvidenceBody(reason) {
+  return {
+    approvalSessions: [
+      {
+        id: "approval-evidence-contract-1",
+        status: "pending",
+        createdAt: "2026-04-27T00:00:00.000Z",
+        updatedAt: "2026-04-27T00:00:00.000Z",
+        request: {
+          toolName: "create_task_proposal",
+          arguments: {
+            title: "Review local notes",
+            apiKey: "sk_contract_evidence_secret_123456",
+          },
+        },
+        actor: { id: "act_local" },
+        metadata: {
+          source: "api-contract-test",
+          token: "tok_contract_evidence_secret_123456",
+        },
+      },
+    ],
+    toolAuditRecords: [
+      {
+        id: "tool-evidence-contract-1",
+        timestamp: "2026-04-27T00:00:01.000Z",
+        type: "tool_call_approval_required",
+        toolName: "create_task_proposal",
+        actorId: "act_local",
+        decision: "require_approval",
+        reason,
+      },
+    ],
+    filters: {
+      statuses: ["approval_required"],
+    },
+  };
 }
 
 function createMcpDependencies(overrides = {}) {

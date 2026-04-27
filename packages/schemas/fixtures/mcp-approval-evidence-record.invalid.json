@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "mcp-approval-evidence-record.v0",
+  "id": "mcpaer_bad",
+  "fingerprint": "NOT_A_SHA256_DIGEST",
+  "createdAt": "2026-04-27 13:05:00",
+  "workspaceId": "workspace_localReview",
+  "sourcePreviewFingerprint": "1111",
+  "localOnly": false,
+  "redacted": false,
+  "policyDecision": "Require Approval",
+  "approvalStatus": "APPROVED",
+  "evidenceRefs": [
+    {
+      "evidenceId": "mcpae_zeta",
+      "evidenceSchemaVersion": "mcp-approval-evidence/v0",
+      "role": "source",
+      "fingerprint": "3333333333333333333333333333333333333333333333333333333333333333",
+      "capturedAt": "2026-04-27 13:00:00",
+      "redacted": false
+    },
+    {
+      "evidenceId": "mcpae_alpha",
+      "evidenceSchemaVersion": "mcp-approval-evidence/v1",
+      "role": "custom",
+      "fingerprint": "UPPERCASE_DIGEST",
+      "capturedAt": "2026-04-27T13:01:00.000Z",
+      "redacted": true,
+      "extra": true
+    }
+  ],
+  "redactionSummary": {
+    "redacted": false,
+    "redactedFieldCount": 2,
+    "redactedPaths": [
+      "request metadata.note"
+    ],
+    "retainedMetadataKeys": [
+      "clientLabel",
+      "apiKey"
+    ],
+    "rawValue": "visible"
+  },
+  "metadata": {
+    "clientLabel": "local-notes",
+    "accessToken": "not-a-real-token",
+    "rawArguments": "visible",
+    "nested": {
+      "unsafe": true
+    }
+  },
+  "unexpected": true
+}

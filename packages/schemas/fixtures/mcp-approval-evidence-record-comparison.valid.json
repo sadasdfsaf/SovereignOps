@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "mcp-approval-evidence-record-comparison/v1",
+  "createdAt": "2026-04-27T13:07:00.000Z",
+  "workspaceId": "wsp_localReview",
+  "localOnly": true,
+  "redacted": true,
+  "baseRecordId": "mcpaer_222222222222222222222222",
+  "candidateRecordId": "mcpaer_222222222222222222222222",
+  "baseFingerprint": "2222222222222222222222222222222222222222222222222222222222222222",
+  "candidateFingerprint": "2222222222222222222222222222222222222222222222222222222222222222",
+  "sourcePreviewFingerprint": "1111111111111111111111111111111111111111111111111111111111111111",
+  "compatible": true,
+  "differences": []
+}

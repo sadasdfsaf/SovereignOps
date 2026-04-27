@@ -6,6 +6,12 @@ import { fileURLToPath } from "node:url";
 
 import { jsonSchemaCatalog, jsonSchemas, schemaKinds } from "../src/jsonSchema.ts";
 import { mcpApprovalEvidenceSchema } from "../src/mcpApprovalEvidence.ts";
+import {
+  mcpApprovalEvidenceRecordComparisonSchema,
+  mcpApprovalEvidenceRecordCreateRequestSchema,
+  mcpApprovalEvidenceRecordListSchema,
+  mcpApprovalEvidenceRecordSchema,
+} from "../src/mcpApprovalEvidenceRecord.ts";
 import { pluginReviewArtifactPreviewSchema } from "../src/pluginReviewArtifact.ts";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -16,6 +22,10 @@ const outputs = [
   ["schema-catalog.json", jsonSchemaCatalog],
   ...schemaKinds.map((kind) => [`${kind}.schema.json`, jsonSchemas[kind]]),
   ["mcp-approval-evidence.schema.json", mcpApprovalEvidenceSchema],
+  ["mcp-approval-evidence-record.schema.json", mcpApprovalEvidenceRecordSchema],
+  ["mcp-approval-evidence-record-list.schema.json", mcpApprovalEvidenceRecordListSchema],
+  ["mcp-approval-evidence-record-comparison.schema.json", mcpApprovalEvidenceRecordComparisonSchema],
+  ["mcp-approval-evidence-record-create-request.schema.json", mcpApprovalEvidenceRecordCreateRequestSchema],
   ["plugin-review-artifact-preview.schema.json", pluginReviewArtifactPreviewSchema],
 ];
 

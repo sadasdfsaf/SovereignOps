@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sovereignops.local/mcp/approval-evidence-record-comparison.schema.json",
+  "title": "Persisted MCP approval evidence record comparison",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "createdAt",
+    "workspaceId",
+    "localOnly",
+    "redacted",
+    "baseRecordId",
+    "candidateRecordId",
+    "baseFingerprint",
+    "candidateFingerprint",
+    "sourcePreviewFingerprint",
+    "compatible",
+    "differences"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "mcp-approval-evidence-record-comparison/v1"
+    },
+    "createdAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$"
+    },
+    "workspaceId": {
+      "type": "string",
+      "pattern": "^wsp_[A-Za-z0-9_-]{1,88}$"
+    },
+    "localOnly": {
+      "type": "boolean",
+      "const": true
+    },
+    "redacted": {
+      "type": "boolean",
+      "const": true
+    },
+    "baseRecordId": {
+      "type": "string",
+      "pattern": "^mcpaer_[a-f0-9]{24}$"
+    },
+    "candidateRecordId": {
+      "type": "string",
+      "pattern": "^mcpaer_[a-f0-9]{24}$"
+    },
+    "baseFingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "candidateFingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sourcePreviewFingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "compatible": {
+      "type": "boolean"
+    },
+    "differences": {
+      "type": "array",
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "MCP approval evidence record comparison difference",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "change"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z][A-Za-z0-9_.\\[\\]-]{0,191}$"
+          },
+          "change": {
+            "type": "string",
+            "enum": [
+              "added",
+              "removed",
+              "changed"
+            ]
+          },
+          "baseFingerprint": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "candidateFingerprint": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    }
+  }
+}

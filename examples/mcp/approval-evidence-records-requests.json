@@ -1,0 +1,179 @@
+{
+  "schemaVersion": "mcp-approval-evidence-records-requests.v1",
+  "generatedAt": "2026-04-27T12:30:00.000Z",
+  "apiBase": "local://mcp-approval-evidence-records",
+  "requests": [
+    {
+      "id": "api_mcp_approval_evidence_records_create_local_notes",
+      "title": "Create a local MCP approval evidence record",
+      "route": {
+        "method": "POST",
+        "path": "/v1/mcp/approval-evidence/records"
+      },
+      "request": {
+        "headers": {
+          "x-fixture-scope": "public-local-example"
+        },
+        "body": {
+          "record": {
+            "id": "aer_local_notes_001",
+            "status": "approved",
+            "createdAt": "2026-04-27T12:20:00.000Z",
+            "updatedAt": "2026-04-27T12:24:00.000Z",
+            "actor": {
+              "id": "user_local_operator"
+            },
+            "decision": {
+              "status": "approved",
+              "at": "2026-04-27T12:24:00.000Z",
+              "actor": {
+                "id": "user_local_reviewer"
+              },
+              "reason": "Approved for local example replay."
+            },
+            "request": {
+              "toolName": "summarize_local_notes",
+              "arguments": {
+                "workspaceId": "wsp_local_alpha",
+                "noteSetId": "notes_review_batch"
+              }
+            },
+            "metadata": {
+              "source": "local_fixture",
+              "retention": "example_only"
+            }
+          }
+        }
+      },
+      "expect": {
+        "status": 201,
+        "contentType": "application/json",
+        "kind": "mcp-approval-evidence.record",
+        "schemaVersion": "mcp-approval-evidence-record/v1",
+        "recordId": "aer_local_notes_001"
+      }
+    },
+    {
+      "id": "api_mcp_approval_evidence_records_list_local_notes",
+      "title": "List local MCP approval evidence records",
+      "route": {
+        "method": "GET",
+        "path": "/v1/mcp/approval-evidence/records"
+      },
+      "request": {
+        "headers": {
+          "x-fixture-scope": "public-local-example"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "kind": "mcp-approval-evidence.records.list",
+        "schemaVersion": "mcp-approval-evidence-records/v1",
+        "recordCount": 1,
+        "statuses": {
+          "approved": 1
+        }
+      }
+    },
+    {
+      "id": "api_mcp_approval_evidence_records_get_local_notes",
+      "title": "Get a local MCP approval evidence record",
+      "route": {
+        "method": "GET",
+        "path": "/v1/mcp/approval-evidence/records/aer_local_notes_001"
+      },
+      "request": {
+        "headers": {
+          "x-fixture-scope": "public-local-example"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "kind": "mcp-approval-evidence.record",
+        "schemaVersion": "mcp-approval-evidence-record/v1",
+        "recordId": "aer_local_notes_001"
+      }
+    },
+    {
+      "id": "api_mcp_approval_evidence_records_compare_local_notes",
+      "title": "Compare matching local MCP approval evidence records",
+      "route": {
+        "method": "POST",
+        "path": "/v1/mcp/approval-evidence/records/compare"
+      },
+      "request": {
+        "headers": {
+          "x-fixture-scope": "public-local-example"
+        },
+        "body": {
+          "leftRecord": {
+            "id": "aer_local_notes_001",
+            "status": "approved",
+            "createdAt": "2026-04-27T12:20:00.000Z",
+            "updatedAt": "2026-04-27T12:24:00.000Z",
+            "actor": {
+              "id": "user_local_operator"
+            },
+            "decision": {
+              "status": "approved",
+              "at": "2026-04-27T12:24:00.000Z",
+              "actor": {
+                "id": "user_local_reviewer"
+              },
+              "reason": "Approved for local example replay."
+            },
+            "request": {
+              "toolName": "summarize_local_notes",
+              "arguments": {
+                "workspaceId": "wsp_local_alpha",
+                "noteSetId": "notes_review_batch"
+              }
+            },
+            "metadata": {
+              "source": "local_fixture",
+              "retention": "example_only"
+            }
+          },
+          "rightRecord": {
+            "id": "aer_local_notes_001",
+            "status": "approved",
+            "createdAt": "2026-04-27T12:20:00.000Z",
+            "updatedAt": "2026-04-27T12:24:00.000Z",
+            "actor": {
+              "id": "user_local_operator"
+            },
+            "decision": {
+              "status": "approved",
+              "at": "2026-04-27T12:24:00.000Z",
+              "actor": {
+                "id": "user_local_reviewer"
+              },
+              "reason": "Approved for local example replay."
+            },
+            "request": {
+              "toolName": "summarize_local_notes",
+              "arguments": {
+                "workspaceId": "wsp_local_alpha",
+                "noteSetId": "notes_review_batch"
+              }
+            },
+            "metadata": {
+              "source": "local_fixture",
+              "retention": "example_only"
+            }
+          }
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "kind": "mcp-approval-evidence.records.compare",
+        "schemaVersion": "mcp-approval-evidence-record-compare/v1",
+        "matches": true,
+        "differenceCount": 0
+      }
+    }
+  ]
+}

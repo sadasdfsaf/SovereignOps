@@ -4,6 +4,7 @@ export * from "./ingestFixtureServices.ts";
 export * from "./ingestOpenApiRoutes.ts";
 export * from "./ingestRoutes.ts";
 export * from "./mcpApprovalEvidenceRoutes.ts";
+export * from "./mcpApprovalEvidenceRecordRoutes.ts";
 export * from "./mcpRoutes.ts";
 export * from "./mcpRuntime.ts";
 export * from "./lifecycleRoutes.ts";

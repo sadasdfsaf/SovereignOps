@@ -347,6 +347,7 @@ export const validators = {
 export * from "./ingestEvidence.ts";
 export * from "./ingestSearch.ts";
 export * from "./mcpApprovalEvidence.ts";
+export * from "./mcpApprovalEvidenceRecord.ts";
 export * from "./pluginReviewArtifact.ts";
 
 function isOneOf<TValue extends string>(value: unknown, allowed: readonly TValue[]): value is TValue {

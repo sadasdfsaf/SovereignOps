@@ -19,6 +19,7 @@ export * from "./documents.ts";
 export * from "./lifecycleDashboard.ts";
 export * from "./lifecycleReview.ts";
 export * from "./mcpApprovalEvidenceApiState.ts";
+export * from "./mcpApprovalEvidenceRecordState.ts";
 export * from "./mcpApprovalState.ts";
 export * from "./mcpReview.ts";
 export * from "./onboarding.ts";
