@@ -1,6 +1,13 @@
 import type { ToolAuditEvent, ToolAuditRecord, ToolAuditSink } from "./auditEmitter.ts";
 import { createToolAuditEmitter } from "./auditEmitter.ts";
 import {
+  annotateStructuredContent,
+  annotateTextContent,
+  assessContentSafety,
+  cloneSafetyAnnotation,
+  type SafetyAnnotation,
+} from "./safety.ts";
+import {
   SAFE_LOCAL_TOOL_NAMES,
   type NormalizedToolPolicyResult,
   type SafeLocalToolName,
@@ -35,11 +42,13 @@ export interface McpListSafeLocalToolsResult {
 export interface McpTextContent {
   type: "text";
   text: string;
+  safety?: SafetyAnnotation;
 }
 
 export interface McpCallSafeLocalToolResult {
   content: McpTextContent[];
   structuredContent: unknown;
+  safety?: SafetyAnnotation;
 }
 
 export type SafeLocalToolAdapterErrorCode =
@@ -470,14 +479,21 @@ function policyError(
 }
 
 function toMcpToolResult(output: unknown): McpCallSafeLocalToolResult {
+  const safety = assessContentSafety(output);
+  const text = stringifyToolOutput(output);
+
   return {
     content: [
-      {
-        type: "text",
-        text: stringifyToolOutput(output),
-      },
+      annotateTextContent(
+        {
+          type: "text",
+          text,
+        },
+        safety,
+      ),
     ],
-    structuredContent: cloneJsonLike(output),
+    structuredContent: annotateStructuredContent(output, safety),
+    safety: cloneSafetyAnnotation(safety),
   };
 }
 

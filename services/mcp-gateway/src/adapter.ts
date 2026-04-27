@@ -7,6 +7,12 @@ import type {
   PolicyEvaluator,
 } from "./policy.ts";
 import { evaluatePolicy } from "./policy.ts";
+import { assessContentSafety } from "./safety.ts";
+import type {
+  SafetyAnnotation,
+  SafetyFinding,
+  SafetyTrustLevel,
+} from "./safety.ts";
 
 export const MCP_GATEWAY_ADAPTER_METADATA = Object.freeze({
   name: "sovereignops-mcp-gateway-adapter",
@@ -33,6 +39,19 @@ export interface GatewayResourceContent {
   mimeType?: string;
   text?: string;
   blob?: string;
+  trust?: GatewayResourceTrust;
+  safety?: GatewayResourceSafetyAnnotation;
+}
+
+export type GatewayResourceTrust = SafetyTrustLevel;
+
+export interface GatewayResourceSafetyAnnotation {
+  schemaVersion: SafetyAnnotation["schemaVersion"];
+  scope: SafetyAnnotation["scope"] | "mcp_resource_content";
+  trustLevel: GatewayResourceTrust;
+  action: SafetyAnnotation["action"];
+  reasons: string[];
+  findings: SafetyFinding[];
 }
 
 export interface GatewayResourceDefinition {
@@ -347,12 +366,135 @@ function normalizeContents(
 ): GatewayResourceContent[] {
   const values = Array.isArray(contents) ? contents : [contents];
 
-  return values.map((content) => ({
-    uri: content.uri || resource.uri,
-    mimeType: content.mimeType ?? resource.mimeType,
-    text: content.text,
-    blob: content.blob,
-  }));
+  return values.map((content) => {
+    const safety = annotateResourceContentSafety(content);
+
+    const normalized: GatewayResourceContent = {
+      uri: content.uri || resource.uri,
+      mimeType: content.mimeType ?? resource.mimeType,
+      text: content.text,
+      blob: content.blob,
+    };
+
+    if (safety) {
+      normalized.trust = safety.trustLevel;
+      normalized.safety = safety;
+    }
+
+    return normalized;
+  });
+}
+
+function annotateResourceContentSafety(
+  content: GatewayResourceContent,
+): GatewayResourceSafetyAnnotation | undefined {
+  const assessed =
+    typeof content.text === "string"
+      ? toResourceSafetyAnnotation(assessContentSafety(content.text))
+      : undefined;
+  let safety = content.safety ? cloneResourceSafetyAnnotation(content.safety) : assessed;
+
+  if (content.safety && assessed) {
+    safety = mergeResourceSafetyAnnotations(content.safety, assessed);
+  }
+
+  if (safety && content.trust) {
+    const trustLevel = elevateTrustLevel(safety.trustLevel, content.trust);
+    safety = {
+      ...safety,
+      trustLevel,
+      reasons:
+        trustLevel === safety.trustLevel
+          ? safety.reasons
+          : uniqueStrings([
+              ...safety.reasons,
+              `Resource content declared ${content.trust}.`,
+            ]),
+    };
+  }
+
+  if (!safety && content.trust) {
+    safety = createDeclaredResourceSafetyAnnotation(content.trust);
+  }
+
+  if (!content.safety && !content.trust && safety?.trustLevel === "trusted") {
+    return undefined;
+  }
+
+  return safety;
+}
+
+function toResourceSafetyAnnotation(
+  safety: SafetyAnnotation,
+): GatewayResourceSafetyAnnotation {
+  return {
+    schemaVersion: safety.schemaVersion,
+    scope: "mcp_resource_content",
+    trustLevel: safety.trustLevel,
+    action: safety.action,
+    reasons: [...safety.reasons],
+    findings: safety.findings.map((finding) => ({ ...finding })),
+  };
+}
+
+function cloneResourceSafetyAnnotation(
+  safety: GatewayResourceSafetyAnnotation,
+): GatewayResourceSafetyAnnotation {
+  return {
+    schemaVersion: safety.schemaVersion,
+    scope: safety.scope,
+    trustLevel: safety.trustLevel,
+    action: safety.action,
+    reasons: [...safety.reasons],
+    findings: safety.findings.map((finding) => ({ ...finding })),
+  };
+}
+
+function mergeResourceSafetyAnnotations(
+  first: GatewayResourceSafetyAnnotation,
+  second: GatewayResourceSafetyAnnotation,
+): GatewayResourceSafetyAnnotation {
+  return {
+    schemaVersion: 1,
+    scope: first.scope,
+    trustLevel: elevateTrustLevel(first.trustLevel, second.trustLevel),
+    action: "mark_only",
+    reasons: uniqueStrings([...first.reasons, ...second.reasons]),
+    findings: [
+      ...first.findings.map((finding) => ({ ...finding })),
+      ...second.findings.map((finding) => ({ ...finding })),
+    ],
+  };
+}
+
+function createDeclaredResourceSafetyAnnotation(
+  trustLevel: GatewayResourceTrust,
+): GatewayResourceSafetyAnnotation {
+  return {
+    schemaVersion: 1,
+    scope: "mcp_resource_content",
+    trustLevel,
+    action: "mark_only",
+    reasons: [`Resource content declared ${trustLevel}.`],
+    findings: [],
+  };
+}
+
+function elevateTrustLevel(
+  current: GatewayResourceTrust,
+  next: GatewayResourceTrust,
+): GatewayResourceTrust {
+  const order: Record<GatewayResourceTrust, number> = {
+    trusted: 0,
+    review: 1,
+    untrusted: 2,
+  };
+
+  return order[next] > order[current] ? next : current;
+}
+
+function uniqueStrings(values: readonly string[]): string[] {
+  return [...new Set(values)];
 }
 
 function cloneTools(tools: readonly GatewayToolMetadata[]): GatewayToolMetadata[] {

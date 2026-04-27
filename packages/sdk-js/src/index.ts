@@ -22,5 +22,6 @@ export class WorkspaceClient {
 
 export * from "./client.ts";
 export * from "./localLifecycle.ts";
+export * from "./localMcp.ts";
 export * from "./storage.ts";
 export * from "./workspace.ts";

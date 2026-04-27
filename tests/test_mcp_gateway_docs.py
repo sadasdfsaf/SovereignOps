@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -9,6 +10,7 @@ from scripts.repo_health import RESTRICTED_PUBLIC_TERM_PARTS
 
 ROOT = Path(__file__).resolve().parents[1]
 DOC_PATH = ROOT / "docs" / "mcp-gateway.md"
+SAFETY_SAMPLES_PATH = ROOT / "examples" / "mcp-gateway" / "safety-samples.json"
 
 EXPECTED_SECTIONS = (
     "# MCP Gateway",
@@ -16,10 +18,12 @@ EXPECTED_SECTIONS = (
     "## Protocol API",
     "## Resource Surface",
     "## Safe Local Tools",
+    "## Untrusted Output Markers",
     "## SDK Workflow",
     "## Approval Sessions",
     "## Policy Gates",
     "## CLI Demo Workflow",
+    "## Fixture Replay",
     "## Audit And Redaction",
     "## Local Validation",
 )
@@ -150,6 +154,7 @@ class McpGatewayDocsTests(unittest.TestCase):
             "`listResources`",
             "`readResource`",
             "`listTools`",
+            "`callTool`",
             "`handle`",
             "`handleRequest`",
             "`listMcpResources`",
@@ -158,6 +163,9 @@ class McpGatewayDocsTests(unittest.TestCase):
             "`callMcpTool`",
             "`listMcpApprovalSessions`",
             "`decideMcpApprovalSession`",
+            "`resourceAuditEntries`",
+            "`toolAuditEntries`",
+            "`auditEntries`",
         ):
             with self.subTest(method=method):
                 self.assertIn(method, self.text)
@@ -174,6 +182,23 @@ class McpGatewayDocsTests(unittest.TestCase):
         self.assertNotIn("https://", self.lower_text)
         self.assertNotIn("npm install -g", self.lower_text)
         self.assertNotIn("npx ", self.lower_text)
+
+    def test_documents_safety_markers_fixture_replay_and_runtime_sdk(self) -> None:
+        safety_samples = json.loads(SAFETY_SAMPLES_PATH.read_text(encoding="utf-8"))
+        markers = safety_samples["markers"]
+
+        self.assertIn("`examples/mcp-gateway/safety-samples.json`", self.text)
+        self.assertIn(f"`{markers['begin']}`", self.text)
+        self.assertIn(f"`{markers['end']}`", self.text)
+        self.assertIn(f"`trust: \"{markers['trust']}\"`", self.text)
+        self.assertIn(f"`{markers['rawContentArgument']}`", self.text)
+
+        for command in safety_samples["replay"]["commands"]:
+            with self.subTest(command=command):
+                self.assertIn(command, self.text)
+
+        self.assertIn("`createMcpGatewayRuntime`", self.text)
+        self.assertIn("one in-process object", self.text)
 
     def test_documents_approval_audit_and_redaction_guarantees(self) -> None:
         for guarantee in EXPECTED_GUARANTEES:

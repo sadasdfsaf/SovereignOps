@@ -63,6 +63,17 @@ Safe local tool names are fixed and proposal-only:
 
 Tools run through policy before handler execution. Denied and approval-required calls return terminal status without invoking the handler. Allowed tools emit requested, approved, and executed audit records. Default outputs set `durableSideEffects: false` and are intended for review before any separate write path runs.
 
+## Untrusted Output Markers
+
+Callers that pass external or generated text through the gateway keep that text marked as data:
+
+- Begin marker: `<UNTRUSTED_CONTENT>`
+- End marker: `</UNTRUSTED_CONTENT>`
+- Trust metadata: `trust: "untrusted"`
+- Raw payload argument: `rawUntrustedContent`
+
+Markers do not grant tool permission. Tool selection still goes through policy, approval-required results still stop before handlers run, and proposal outputs still keep `durableSideEffects: false`. Public marker examples live in `examples/mcp-gateway/safety-samples.json`.
+
 ## SDK Workflow
 
 Use the TypeScript exports directly from `services/mcp-gateway/src/index.ts` for local integration:
@@ -84,6 +95,8 @@ Use the TypeScript exports directly from `services/mcp-gateway/src/index.ts` for
 | `redactSensitiveArguments` | Redact nested sensitive names and credential-shaped values. |
 
 The JavaScript client exposes HTTP helpers with the same names as the OpenAPI operations: `listMcpResources`, `readMcpResource`, `listMcpTools`, `callMcpTool`, `listMcpApprovalSessions`, and `decideMcpApprovalSession`.
+
+For local runtime wiring, `createMcpGatewayRuntime` exposes `listResources`, `readResource`, `listTools`, `callTool`, `resourceAuditEntries`, `toolAuditEntries`, and `auditEntries` in one in-process object.
 
 ## Approval Sessions
 
@@ -128,6 +141,18 @@ node packages\cli\src\index.ts mcp api tools --base-url http://127.0.0.1:3000
 node packages\cli\src\index.ts mcp api call --base-url http://127.0.0.1:3000 --tool-name create_task_proposal --args-json "{\"title\":\"Prepare local note summary\"}"
 node packages\cli\src\index.ts mcp api approvals --base-url http://127.0.0.1:3000
 node packages\cli\src\index.ts mcp api approval-decide --base-url http://127.0.0.1:3000 --session-id approval-route-1 --decision approve --reason checked
+```
+
+## Fixture Replay
+
+The public gateway fixtures are deterministic local examples. Validate the fixture set, then replay representative safety samples through the CLI and runtime SDK:
+
+```powershell
+python scripts\validate_mcp_gateway_fixtures.py
+node packages\cli\src\index.ts mcp api replay --fixture examples\mcp-gateway\api-requests.json
+node packages\cli\src\index.ts mcp demo tool --name create_task_proposal --args-json "{\"title\":\"Review untrusted partner note\",\"description\":\"Create a local review task from marked untrusted content.\"}"
+node packages\cli\src\index.ts mcp demo tool --name draft_document_patch --args-json "{\"targetPath\":\"docs/public-note-summary.md\",\"summary\":\"Draft patch from marked untrusted content\",\"patch\":\"Record the requested note summary as a reviewed draft.\"}" --policy-mode require-approval
+node --input-type=module -e "import { createMcpGatewayRuntime } from './services/mcp-gateway/src/index.ts'; const gateway = createMcpGatewayRuntime(); console.log(gateway.listTools().value.tools.map((tool) => tool.name));"
 ```
 
 For the full local smoke pass:

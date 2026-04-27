@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -9,6 +10,7 @@ from scripts.repo_health import RESTRICTED_PUBLIC_TERM_PARTS
 
 ROOT = Path(__file__).resolve().parents[1]
 DOC_PATH = ROOT / "docs" / "mcp-contract.md"
+SAFETY_SAMPLES_PATH = ROOT / "examples" / "mcp-gateway" / "safety-samples.json"
 
 EXPECTED_SECTIONS = (
     "# MCP Contract",
@@ -16,11 +18,13 @@ EXPECTED_SECTIONS = (
     "## Adapter Tool Names",
     "## Default Resources",
     "## Safe Local Tools",
+    "## Untrusted Output Contract",
     "## SDK Entry Points",
     "## Policy Gates",
     "## Approval Sessions",
     "## Audit Outputs",
     "## Error Shape",
+    "## Fixture Replay Contract",
     "## CLI Commands",
 )
 
@@ -101,6 +105,7 @@ EXPECTED_SECURITY_GUARANTEES = (
     "Denied and approval-required calls return terminal status without invoking the handler.",
     "Every resource read and tool call is wrapped by a policy gate before user code runs.",
     "`require_approval` and `deny` stop before handler execution.",
+    "Markers only identify data boundaries.",
     "Tool arguments are redacted recursively for sensitive names and credential-shaped values.",
     "Redaction replaces matching values with `[REDACTED]` while preserving non-sensitive fields.",
 )
@@ -136,6 +141,29 @@ class McpContractDocsTests(unittest.TestCase):
         for mode in ("`allow`", "`require_approval`", "`deny`", "`pending`", "`approved`", "`rejected`", "`expired`"):
             with self.subTest(mode=mode):
                 self.assertIn(mode, self.text)
+
+    def test_documents_safety_marker_contract_and_replay(self) -> None:
+        safety_samples = json.loads(SAFETY_SAMPLES_PATH.read_text(encoding="utf-8"))
+        markers = safety_samples["markers"]
+
+        self.assertIn("`examples/mcp-gateway/safety-samples.json`", self.text)
+        self.assertIn(f"`{markers['begin']}`", self.text)
+        self.assertIn(f"`{markers['end']}`", self.text)
+        self.assertIn(f"`trust: \"{markers['trust']}\"`", self.text)
+        self.assertIn(f"`{markers['rawContentArgument']}`", self.text)
+
+        for command in safety_samples["replay"]["commands"]:
+            with self.subTest(command=command):
+                self.assertIn(command, self.text)
+
+        for value in (
+            "`createMcpGatewayRuntime`",
+            "`callTool`",
+            "`auditEntries`",
+            "without remote credentials",
+        ):
+            with self.subTest(value=value):
+                self.assertIn(value, self.text)
 
     def test_documents_audit_errors_and_security_guarantees(self) -> None:
         for guarantee in EXPECTED_SECURITY_GUARANTEES:

@@ -1491,6 +1491,75 @@ components:
           type: string
         blob:
           type: string
+        trust:
+          $ref: "#/components/schemas/McpSafetyTrustLevel"
+        safety:
+          $ref: "#/components/schemas/McpSafetyAnnotation"
+    McpSafetyTrustLevel:
+      type: string
+      enum:
+        - trusted
+        - review
+        - untrusted
+    McpSafetyFinding:
+      type: object
+      required:
+        - id
+        - severity
+        - path
+        - reason
+        - excerpt
+      properties:
+        id:
+          type: string
+          minLength: 1
+        severity:
+          type: string
+          enum:
+            - medium
+            - high
+        path:
+          type: string
+          minLength: 1
+        reason:
+          type: string
+          minLength: 1
+        excerpt:
+          type: string
+          minLength: 1
+    McpSafetyAnnotation:
+      type: object
+      required:
+        - schemaVersion
+        - scope
+        - trustLevel
+        - action
+        - reasons
+        - findings
+      properties:
+        schemaVersion:
+          type: integer
+          const: 1
+        scope:
+          type: string
+          enum:
+            - mcp_tool_output
+            - mcp_resource_content
+        trustLevel:
+          $ref: "#/components/schemas/McpSafetyTrustLevel"
+        action:
+          type: string
+          enum:
+            - mark_only
+        reasons:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/McpSafetyFinding"
     McpReadResourceResponse:
       type: object
       required:
@@ -1604,6 +1673,8 @@ components:
         type:
           type: string
           minLength: 1
+        safety:
+          $ref: "#/components/schemas/McpSafetyAnnotation"
       additionalProperties: true
     McpToolCallResponse:
       type: object
@@ -1615,6 +1686,8 @@ components:
           items:
             $ref: "#/components/schemas/McpToolContentItem"
         structuredContent: {}
+        safety:
+          $ref: "#/components/schemas/McpSafetyAnnotation"
         isError:
           type: boolean
     McpActor:

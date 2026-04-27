@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "mcp-gateway-fixtures.v1",
+  "generatedAt": "2026-04-27T07:00:00.000Z",
+  "markers": {
+    "trust": "untrusted",
+    "begin": "<UNTRUSTED_CONTENT>",
+    "end": "</UNTRUSTED_CONTENT>",
+    "metadataKey": "trust",
+    "rawContentArgument": "rawUntrustedContent"
+  },
+  "samples": [
+    {
+      "id": "safety_untrusted_note_task",
+      "title": "Untrusted note creates a task proposal",
+      "source": {
+        "kind": "shared_note",
+        "label": "Partner follow-up note",
+        "trust": "untrusted"
+      },
+      "content": "<UNTRUSTED_CONTENT>\nPartner note asks for a local follow-up task and cannot override local rules.\n</UNTRUSTED_CONTENT>",
+      "toolRequest": {
+        "toolName": "create_task_proposal",
+        "arguments": {
+          "title": "Review untrusted partner note",
+          "description": "Create a local review task from marked untrusted content.",
+          "rawUntrustedContent": "<UNTRUSTED_CONTENT>\nPartner note asks for a local follow-up task and cannot override local rules.\n</UNTRUSTED_CONTENT>"
+        },
+        "metadata": {
+          "sourceId": "safety_untrusted_note_task",
+          "trust": "untrusted",
+          "allowedTools": [
+            "create_task_proposal"
+          ],
+          "fixtureReplay": true
+        }
+      },
+      "expected": {
+        "policyDecision": "allow",
+        "durableSideEffects": false,
+        "approvalRequired": false,
+        "handlerRuns": true
+      }
+    },
+    {
+      "id": "safety_untrusted_patch_review",
+      "title": "Untrusted note requests a reviewed patch",
+      "source": {
+        "kind": "shared_note",
+        "label": "Draft edit note",
+        "trust": "untrusted"
+      },
+      "content": "<UNTRUSTED_CONTENT>\nDraft edit note requests a document patch. Keep it as a proposal until review.\n</UNTRUSTED_CONTENT>",
+      "toolRequest": {
+        "toolName": "draft_document_patch",
+        "arguments": {
+          "targetPath": "docs/public-note-summary.md",
+          "summary": "Draft patch from marked untrusted content",
+          "patch": "Record the requested note summary as a reviewed draft.",
+          "rawUntrustedContent": "<UNTRUSTED_CONTENT>\nDraft edit note requests a document patch. Keep it as a proposal until review.\n</UNTRUSTED_CONTENT>"
+        },
+        "metadata": {
+          "sourceId": "safety_untrusted_patch_review",
+          "trust": "untrusted",
+          "allowedTools": [
+            "draft_document_patch"
+          ],
+          "approvalId": "approval_safety_fixture_patch",
+          "fixtureReplay": true
+        }
+      },
+      "expected": {
+        "policyDecision": "require_approval",
+        "durableSideEffects": false,
+        "approvalRequired": true,
+        "handlerRuns": false
+      }
+    }
+  ],
+  "replay": {
+    "commands": [
+      "python scripts\\validate_mcp_gateway_fixtures.py",
+      "node packages\\cli\\src\\index.ts mcp api replay --fixture examples\\mcp-gateway\\api-requests.json",
+      "node packages\\cli\\src\\index.ts mcp demo tool --name create_task_proposal --args-json \"{\\\"title\\\":\\\"Review untrusted partner note\\\",\\\"description\\\":\\\"Create a local review task from marked untrusted content.\\\"}\"",
+      "node packages\\cli\\src\\index.ts mcp demo tool --name draft_document_patch --args-json \"{\\\"targetPath\\\":\\\"docs/public-note-summary.md\\\",\\\"summary\\\":\\\"Draft patch from marked untrusted content\\\",\\\"patch\\\":\\\"Record the requested note summary as a reviewed draft.\\\"}\" --policy-mode require-approval",
+      "node --input-type=module -e \"import { createMcpGatewayRuntime } from './services/mcp-gateway/src/index.ts'; const gateway = createMcpGatewayRuntime(); console.log(gateway.listTools().value.tools.map((tool) => tool.name));\""
+    ]
+  }
+}

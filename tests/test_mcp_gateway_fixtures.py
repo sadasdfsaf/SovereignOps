@@ -13,6 +13,9 @@ from scripts.validate_mcp_gateway_fixtures import (
 )
 
 
+SAFETY_SAMPLES_PATH = DEFAULT_FIXTURE_ROOT / "safety-samples.json"
+
+
 class McpGatewayFixtureTests(unittest.TestCase):
     def test_checked_in_fixtures_are_valid(self) -> None:
         report = validate_mcp_gateway_fixtures(DEFAULT_FIXTURE_ROOT)
@@ -21,6 +24,36 @@ class McpGatewayFixtureTests(unittest.TestCase):
 
     def test_cli_accepts_default_fixture_root(self) -> None:
         self.assertEqual(main([str(DEFAULT_FIXTURE_ROOT)]), 0)
+
+    def test_safety_samples_define_marker_vocabulary_and_replay(self) -> None:
+        safety_samples = json.loads(SAFETY_SAMPLES_PATH.read_text(encoding="utf-8"))
+        markers = safety_samples["markers"]
+
+        self.assertEqual(markers["trust"], "untrusted")
+        self.assertEqual(markers["begin"], "<UNTRUSTED_CONTENT>")
+        self.assertEqual(markers["end"], "</UNTRUSTED_CONTENT>")
+        self.assertEqual(markers["metadataKey"], "trust")
+        self.assertEqual(markers["rawContentArgument"], "rawUntrustedContent")
+        self.assertGreaterEqual(len(safety_samples["samples"]), 2)
+
+        commands = "\n".join(safety_samples["replay"]["commands"])
+        self.assertIn("scripts\\validate_mcp_gateway_fixtures.py", commands)
+        self.assertIn("mcp api replay", commands)
+        self.assertIn("examples\\mcp-gateway\\api-requests.json", commands)
+        self.assertIn("mcp demo tool", commands)
+        self.assertIn("createMcpGatewayRuntime", commands)
+
+        for sample in safety_samples["samples"]:
+            with self.subTest(sample=sample["id"]):
+                content = sample["content"].strip()
+                self.assertTrue(content.startswith(markers["begin"]))
+                self.assertTrue(content.endswith(markers["end"]))
+                self.assertEqual(sample["source"]["trust"], markers["trust"])
+                self.assertEqual(sample["toolRequest"]["metadata"]["trust"], markers["trust"])
+                self.assertEqual(
+                    sample["toolRequest"]["arguments"][markers["rawContentArgument"]],
+                    sample["content"],
+                )
 
     def test_rejects_duplicate_resource_uri(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -169,6 +202,70 @@ class McpGatewayFixtureTests(unittest.TestCase):
 
         self.assertFalse(report.ok)
         self.assertIn("secret-shaped", "\n".join(report.issues))
+
+    def test_rejects_safety_sample_without_markers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "mcp-gateway"
+            shutil.copytree(DEFAULT_FIXTURE_ROOT, root)
+            safety_path = root / "safety-samples.json"
+            safety_samples = json.loads(safety_path.read_text(encoding="utf-8"))
+            safety_samples["samples"][0]["content"] = "Partner note without markers."
+            safety_path.write_text(json.dumps(safety_samples, indent=2), encoding="utf-8")
+
+            report = validate_mcp_gateway_fixtures(root)
+
+        self.assertFalse(report.ok)
+        self.assertIn("must start with <UNTRUSTED_CONTENT>", "\n".join(report.issues))
+
+    def test_rejects_safety_sample_trust_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "mcp-gateway"
+            shutil.copytree(DEFAULT_FIXTURE_ROOT, root)
+            safety_path = root / "safety-samples.json"
+            safety_samples = json.loads(safety_path.read_text(encoding="utf-8"))
+            safety_samples["samples"][0]["toolRequest"]["metadata"]["trust"] = "trusted"
+            safety_path.write_text(json.dumps(safety_samples, indent=2), encoding="utf-8")
+
+            report = validate_mcp_gateway_fixtures(root)
+
+        self.assertFalse(report.ok)
+        self.assertIn("must be untrusted", "\n".join(report.issues))
+
+    def test_rejects_safety_replay_without_runtime_sdk_command(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "mcp-gateway"
+            shutil.copytree(DEFAULT_FIXTURE_ROOT, root)
+            safety_path = root / "safety-samples.json"
+            safety_samples = json.loads(safety_path.read_text(encoding="utf-8"))
+            safety_samples["replay"]["commands"] = [
+                command
+                for command in safety_samples["replay"]["commands"]
+                if "createMcpGatewayRuntime" not in command
+            ]
+            safety_path.write_text(json.dumps(safety_samples, indent=2), encoding="utf-8")
+
+            report = validate_mcp_gateway_fixtures(root)
+
+        self.assertFalse(report.ok)
+        self.assertIn("must include local runtime SDK use", "\n".join(report.issues))
+
+    def test_rejects_safety_replay_without_api_fixture_command(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "mcp-gateway"
+            shutil.copytree(DEFAULT_FIXTURE_ROOT, root)
+            safety_path = root / "safety-samples.json"
+            safety_samples = json.loads(safety_path.read_text(encoding="utf-8"))
+            safety_samples["replay"]["commands"] = [
+                command
+                for command in safety_samples["replay"]["commands"]
+                if "mcp api replay" not in command
+            ]
+            safety_path.write_text(json.dumps(safety_samples, indent=2), encoding="utf-8")
+
+            report = validate_mcp_gateway_fixtures(root)
+
+        self.assertFalse(report.ok)
+        self.assertIn("must include API fixture replay", "\n".join(report.issues))
 
 
 if __name__ == "__main__":

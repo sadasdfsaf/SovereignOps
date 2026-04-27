@@ -18,6 +18,32 @@ const resourceContent = Object.freeze({
   uri: resourceSummary.uri,
   mimeType: "text/plain",
   text: "Local operator note.",
+  trust: "trusted",
+  safety: {
+    schemaVersion: 1,
+    scope: "mcp_resource_content",
+    trustLevel: "trusted",
+    action: "mark_only",
+    reasons: ["No prompt-injection heuristic findings detected in scanned text."],
+    findings: [],
+  },
+});
+
+const toolSafety = Object.freeze({
+  schemaVersion: 1,
+  scope: "mcp_tool_output",
+  trustLevel: "untrusted",
+  action: "mark_only",
+  reasons: ["Explicit untrusted content marker found."],
+  findings: [
+    {
+      id: "explicit_untrusted_marker",
+      severity: "high",
+      path: "$.description",
+      reason: "Explicit untrusted content marker found.",
+      excerpt: "<UNTRUSTED_CONTENT>candidate</UNTRUSTED_CONTENT>",
+    },
+  ],
 });
 
 const toolDescriptor = Object.freeze({
@@ -121,12 +147,15 @@ test("lists and calls MCP tools with stable request payloads", async () => {
       {
         type: "text",
         text: JSON.stringify({ kind: "document_patch", durableSideEffects: false }),
+        safety: toolSafety,
       },
     ],
     structuredContent: {
       kind: "document_patch",
       durableSideEffects: false,
+      _safety: toolSafety,
     },
+    safety: toolSafety,
   };
   const fetch = fakeFetch([
     jsonResponse(200, { tools: [toolDescriptor] }),

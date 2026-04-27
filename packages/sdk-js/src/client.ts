@@ -477,11 +477,35 @@ export interface McpReadResourceRequest extends McpRequestContext {
   readonly uri: string;
 }
 
+export type McpSafetyTrustLevel = "trusted" | "review" | "untrusted";
+export type McpSafetyScope = "mcp_tool_output" | "mcp_resource_content";
+export type McpSafetyAction = "mark_only";
+export type McpSafetyFindingSeverity = "medium" | "high";
+
+export interface McpSafetyFinding extends JsonObject {
+  readonly id: string;
+  readonly severity: McpSafetyFindingSeverity;
+  readonly path: string;
+  readonly reason: string;
+  readonly excerpt: string;
+}
+
+export interface McpSafetyAnnotation extends JsonObject {
+  readonly schemaVersion: 1;
+  readonly scope: McpSafetyScope;
+  readonly trustLevel: McpSafetyTrustLevel;
+  readonly action: McpSafetyAction;
+  readonly reasons: readonly string[];
+  readonly findings: readonly McpSafetyFinding[];
+}
+
 export interface McpResourceContent {
   readonly uri: string;
   readonly mimeType?: string;
   readonly text?: string;
   readonly blob?: string;
+  readonly trust?: McpSafetyTrustLevel;
+  readonly safety?: McpSafetyAnnotation;
 }
 
 export interface McpReadResourceResponse {
@@ -513,12 +537,14 @@ export interface McpCallToolRequest extends McpRequestContext {
 
 export interface McpContentItem {
   readonly type: string;
+  readonly safety?: McpSafetyAnnotation;
   readonly [key: string]: JsonValue;
 }
 
 export interface McpCallToolResponse {
   readonly content: readonly McpContentItem[];
   readonly structuredContent?: JsonValue;
+  readonly safety?: McpSafetyAnnotation;
   readonly isError?: boolean;
 }
 
@@ -2045,6 +2071,10 @@ const MCP_APPROVAL_SESSION_DECISION_ACTIONS = [
   "approve",
   "reject",
 ] as const;
+const MCP_SAFETY_TRUST_LEVELS = ["trusted", "review", "untrusted"] as const;
+const MCP_SAFETY_SCOPES = ["mcp_tool_output", "mcp_resource_content"] as const;
+const MCP_SAFETY_ACTIONS = ["mark_only"] as const;
+const MCP_SAFETY_FINDING_SEVERITIES = ["medium", "high"] as const;
 const AUDIT_EXPORT_MANIFEST_KIND = "audit-export.manifest";
 const AUDIT_EXPORT_PACKAGE_KIND = "audit-export.package";
 const AUDIT_EXPORT_CONTENT_KIND = "audit-export.content";
@@ -2127,6 +2157,12 @@ function collectMcpResourceContentIssues(
   if (value.blob !== undefined) {
     requireString(value, "blob", joinPath(path, "blob"), issues);
   }
+  if (value.trust !== undefined) {
+    requireOneOf(value, "trust", joinPath(path, "trust"), MCP_SAFETY_TRUST_LEVELS, issues);
+  }
+  if (value.safety !== undefined) {
+    collectMcpSafetyAnnotationIssues(value.safety, joinPath(path, "safety"), issues);
+  }
 }
 
 function collectMcpToolDescriptorIssues(
@@ -2183,6 +2219,67 @@ function collectMcpContentItemIssues(
 
   requireNonEmptyString(value, "type", joinPath(path, "type"), issues);
   collectJsonObjectIssues(value, path, issues);
+  if (value.safety !== undefined) {
+    collectMcpSafetyAnnotationIssues(value.safety, joinPath(path, "safety"), issues);
+  }
+}
+
+function collectMcpSafetyAnnotationIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "safety must be an object" });
+    return;
+  }
+
+  if (value.schemaVersion !== 1) {
+    issues.push({
+      path: joinPath(path, "schemaVersion"),
+      message: "schemaVersion must be 1",
+    });
+  }
+  requireOneOf(value, "scope", joinPath(path, "scope"), MCP_SAFETY_SCOPES, issues);
+  requireOneOf(
+    value,
+    "trustLevel",
+    joinPath(path, "trustLevel"),
+    MCP_SAFETY_TRUST_LEVELS,
+    issues,
+  );
+  requireOneOf(value, "action", joinPath(path, "action"), MCP_SAFETY_ACTIONS, issues);
+  collectStringArrayIssues(value.reasons, joinPath(path, "reasons"), issues);
+  if (!Array.isArray(value.findings)) {
+    issues.push({ path: joinPath(path, "findings"), message: "findings must be an array" });
+  } else {
+    value.findings.forEach((finding, index) => {
+      collectMcpSafetyFindingIssues(finding, joinPath(path, `findings.${index}`), issues);
+    });
+  }
+}
+
+function collectMcpSafetyFindingIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "safety finding must be an object" });
+    return;
+  }
+
+  requireNonEmptyString(value, "id", joinPath(path, "id"), issues);
+  requireOneOf(
+    value,
+    "severity",
+    joinPath(path, "severity"),
+    MCP_SAFETY_FINDING_SEVERITIES,
+    issues,
+  );
+  requireNonEmptyString(value, "path", joinPath(path, "path"), issues);
+  requireNonEmptyString(value, "reason", joinPath(path, "reason"), issues);
+  requireNonEmptyString(value, "excerpt", joinPath(path, "excerpt"), issues);
 }
 
 function collectMcpApprovalSessionIssues(

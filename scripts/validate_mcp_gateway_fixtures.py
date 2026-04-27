@@ -17,6 +17,7 @@ FIXTURE_FILE_NAMES = (
     "tools.json",
     "approval-sessions.json",
     "api-requests.json",
+    "safety-samples.json",
 )
 DEFAULT_FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "examples" / "mcp-gateway"
 SCHEMA_VERSION = "mcp-gateway-fixtures.v1"
@@ -29,16 +30,27 @@ SESSION_ID_PATTERN = re.compile(r"^aps_[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 DECISION_ID_PATTERN = re.compile(r"^apd_[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 EVENT_ID_PATTERN = re.compile(r"^ape_[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 USER_ID_PATTERN = re.compile(r"^user_[A-Za-z0-9_-]{1,64}$")
+SAFETY_SAMPLE_ID_PATTERN = re.compile(r"^safety_[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 API_REQUEST_ID_PATTERN = re.compile(
     r"^api_(?:resource_list|resource_read|tool_list|tool_call|approval_list|approval_decision)$"
 )
 
 ALLOWED_LOCAL_SCHEMES = {"fixture", "local", "memory", "workspace"}
+SAFE_LOCAL_TOOL_NAMES = {
+    "create_task_proposal",
+    "draft_document_patch",
+    "link_evidence",
+    "propose_automation_rule",
+}
 RESOURCE_MIME_TYPES = {"application/json", "text/plain", "text/markdown"}
 SESSION_STATUSES = {"pending", "approved", "rejected", "expired", "canceled"}
 TERMINAL_STATUSES = {"approved", "rejected", "expired", "canceled"}
 DECISION_STATUSES = {"approved", "rejected", "canceled"}
 EVENT_TYPES = {"requested", "approved", "rejected", "expired", "canceled", "noted"}
+SAFETY_POLICY_DECISIONS = {"allow", "require_approval", "deny"}
+SAFETY_TRUST_VALUE = "untrusted"
+SAFETY_MARKER_BEGIN = "<UNTRUSTED_CONTENT>"
+SAFETY_MARKER_END = "</UNTRUSTED_CONTENT>"
 API_ROUTE_KINDS = {
     ("GET", "/v1/mcp/resources"): "resource_list",
     ("POST", "/v1/mcp/resources/read"): "resource_read",
@@ -116,6 +128,12 @@ def validate_mcp_gateway_fixtures(root: Optional[Path] = None) -> ValidationRepo
             resources_by_uri,
             tools_by_name,
             sessions_by_id,
+            issues,
+        )
+    if "safety-samples.json" in data:
+        _validate_safety_samples(
+            data["safety-samples.json"],
+            "safety-samples.json",
             issues,
         )
 
@@ -389,6 +407,206 @@ def _validate_api_requests(
 
     for route_kind in sorted(EXPECTED_API_ROUTE_KINDS - seen_route_kinds):
         issues.append(f"{path}.requests: missing {route_kind} example")
+
+
+def _validate_safety_samples(value: Any, path: str, issues: list[str]) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+
+    _reject_unknown_fields(value, {"schemaVersion", "generatedAt", "markers", "samples", "replay"}, path, issues)
+    _require_exact_string(value, "schemaVersion", SCHEMA_VERSION, path, issues)
+    _require_timestamp(value, "generatedAt", path, issues)
+    _validate_safety_markers(value.get("markers"), f"{path}.markers", issues)
+    samples = _require_array(value, "samples", path, issues, min_length=2)
+    _validate_safety_replay(value.get("replay"), f"{path}.replay", issues)
+
+    seen_ids: set[str] = set()
+    decisions: set[str] = set()
+    for index, sample in enumerate(samples):
+        item_path = f"{path}.samples[{index}]"
+        decision = _validate_safety_sample(sample, item_path, issues)
+        if isinstance(decision, str):
+            decisions.add(decision)
+        if _is_record(sample):
+            _track_unique(sample.get("id"), seen_ids, f"{item_path}.id", "safety sample id", issues)
+
+    if "allow" not in decisions:
+        issues.append(f"{path}.samples: must include an allowed safety sample")
+    if "require_approval" not in decisions:
+        issues.append(f"{path}.samples: must include an approval-required safety sample")
+
+
+def _validate_safety_markers(value: Any, path: str, issues: list[str]) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+
+    _reject_unknown_fields(value, {"trust", "begin", "end", "metadataKey", "rawContentArgument"}, path, issues)
+    _require_exact_string(value, "trust", SAFETY_TRUST_VALUE, path, issues)
+    _require_exact_string(value, "begin", SAFETY_MARKER_BEGIN, path, issues)
+    _require_exact_string(value, "end", SAFETY_MARKER_END, path, issues)
+    _require_exact_string(value, "metadataKey", "trust", path, issues)
+    _require_exact_string(value, "rawContentArgument", "rawUntrustedContent", path, issues)
+
+
+def _validate_safety_sample(value: Any, path: str, issues: list[str]) -> Optional[str]:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return None
+
+    _reject_unknown_fields(value, {"id", "title", "source", "content", "toolRequest", "expected"}, path, issues)
+    sample_id = _require_string(value, "id", path, issues, SAFETY_SAMPLE_ID_PATTERN)
+    _require_string(value, "title", path, issues, min_length=1, max_length=100)
+    _validate_safety_source(value.get("source"), f"{path}.source", issues)
+    content = _require_string(value, "content", path, issues, min_length=1)
+    if isinstance(content, str):
+        _validate_safety_marked_content(content, f"{path}.content", issues)
+    tool_name = _validate_safety_tool_request(
+        value.get("toolRequest"),
+        f"{path}.toolRequest",
+        sample_id,
+        content,
+        issues,
+    )
+    return _validate_safety_expected(value.get("expected"), f"{path}.expected", tool_name, issues)
+
+
+def _validate_safety_source(value: Any, path: str, issues: list[str]) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+
+    _reject_unknown_fields(value, {"kind", "label", "trust"}, path, issues)
+    _require_string(value, "kind", path, issues, TOOL_NAME_PATTERN)
+    _require_string(value, "label", path, issues, min_length=1, max_length=80)
+    _require_exact_string(value, "trust", SAFETY_TRUST_VALUE, path, issues)
+
+
+def _validate_safety_marked_content(value: str, path: str, issues: list[str]) -> None:
+    trimmed = value.strip()
+    if not trimmed.startswith(SAFETY_MARKER_BEGIN):
+        issues.append(f"{path}: must start with {SAFETY_MARKER_BEGIN}")
+    if not trimmed.endswith(SAFETY_MARKER_END):
+        issues.append(f"{path}: must end with {SAFETY_MARKER_END}")
+    if value.count(SAFETY_MARKER_BEGIN) != 1:
+        issues.append(f"{path}: must include exactly one begin marker")
+    if value.count(SAFETY_MARKER_END) != 1:
+        issues.append(f"{path}: must include exactly one end marker")
+    begin = value.find(SAFETY_MARKER_BEGIN)
+    end = value.find(SAFETY_MARKER_END)
+    if begin >= 0 and end > begin:
+        inner = value[begin + len(SAFETY_MARKER_BEGIN):end].strip()
+        if not inner:
+            issues.append(f"{path}: must include marked untrusted text")
+
+
+def _validate_safety_tool_request(
+    value: Any,
+    path: str,
+    sample_id: Optional[str],
+    content: Optional[str],
+    issues: list[str],
+) -> Optional[str]:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return None
+
+    _reject_unknown_fields(value, {"toolName", "arguments", "metadata"}, path, issues)
+    tool_name = _require_string(value, "toolName", path, issues, TOOL_NAME_PATTERN, allowed=SAFE_LOCAL_TOOL_NAMES)
+    arguments = value.get("arguments")
+    if not _is_record(arguments):
+        issues.append(f"{path}.arguments: must be an object")
+    else:
+        raw_content = _require_string(arguments, "rawUntrustedContent", f"{path}.arguments", issues, min_length=1)
+        if isinstance(content, str) and isinstance(raw_content, str) and raw_content != content:
+            issues.append(f"{path}.arguments.rawUntrustedContent: must match sample content")
+
+    metadata = value.get("metadata")
+    if not _is_record(metadata):
+        issues.append(f"{path}.metadata: must be an object")
+    else:
+        _reject_unknown_fields(
+            metadata,
+            {"sourceId", "trust", "allowedTools", "approvalId", "fixtureReplay"},
+            f"{path}.metadata",
+            issues,
+        )
+        source_id = _require_string(metadata, "sourceId", f"{path}.metadata", issues, SAFETY_SAMPLE_ID_PATTERN)
+        if isinstance(source_id, str) and isinstance(sample_id, str) and source_id != sample_id:
+            issues.append(f"{path}.metadata.sourceId: must match sample id")
+        _require_exact_string(metadata, "trust", SAFETY_TRUST_VALUE, f"{path}.metadata", issues)
+        _validate_string_array(metadata.get("allowedTools"), f"{path}.metadata.allowedTools", issues, min_length=1)
+        allowed_tools = metadata.get("allowedTools")
+        if isinstance(tool_name, str) and isinstance(allowed_tools, list) and tool_name not in allowed_tools:
+            issues.append(f"{path}.metadata.allowedTools: must include toolName")
+        if "approvalId" in metadata:
+            _require_string(metadata, "approvalId", f"{path}.metadata", issues, min_length=1, max_length=100)
+        if "fixtureReplay" in metadata:
+            _require_exact_bool(metadata, "fixtureReplay", True, f"{path}.metadata", issues)
+
+    return tool_name
+
+
+def _validate_safety_expected(
+    value: Any,
+    path: str,
+    tool_name: Optional[str],
+    issues: list[str],
+) -> Optional[str]:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return None
+
+    _reject_unknown_fields(
+        value,
+        {"policyDecision", "durableSideEffects", "approvalRequired", "handlerRuns"},
+        path,
+        issues,
+    )
+    decision = _require_string(value, "policyDecision", path, issues, allowed=SAFETY_POLICY_DECISIONS)
+    _require_exact_bool(value, "durableSideEffects", False, path, issues)
+    approval_required = _require_bool(value, "approvalRequired", path, issues)
+    handler_runs = _require_bool(value, "handlerRuns", path, issues)
+    if decision == "require_approval" and approval_required is not True:
+        issues.append(f"{path}.approvalRequired: must be true when policyDecision is require_approval")
+    if decision == "allow" and approval_required is not False:
+        issues.append(f"{path}.approvalRequired: must be false when policyDecision is allow")
+    if decision in {"deny", "require_approval"} and handler_runs is not False:
+        issues.append(f"{path}.handlerRuns: must be false when policy stops execution")
+    if decision == "allow" and handler_runs is not True:
+        issues.append(f"{path}.handlerRuns: must be true when policyDecision is allow")
+    if tool_name == "draft_document_patch" and decision == "allow":
+        issues.append(f"{path}.policyDecision: draft_document_patch examples must require review")
+    return decision
+
+
+def _validate_safety_replay(value: Any, path: str, issues: list[str]) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+
+    _reject_unknown_fields(value, {"commands"}, path, issues)
+    commands = _require_array(value, "commands", path, issues, min_length=3)
+    command_text = "\n".join(command for command in commands if isinstance(command, str))
+    for index, command in enumerate(commands):
+        if not isinstance(command, str) or not command:
+            issues.append(f"{path}.commands[{index}]: must be a non-empty string")
+            continue
+        lower_command = command.lower()
+        if "https://" in lower_command or "curl " in lower_command or "npx " in lower_command:
+            issues.append(f"{path}.commands[{index}]: must stay local and deterministic")
+        if "npm install -g" in lower_command:
+            issues.append(f"{path}.commands[{index}]: must not require global installs")
+
+    if "scripts\\validate_mcp_gateway_fixtures.py" not in command_text:
+        issues.append(f"{path}.commands: must include fixture validation")
+    if "mcp api replay" not in command_text or "examples\\mcp-gateway\\api-requests.json" not in command_text:
+        issues.append(f"{path}.commands: must include API fixture replay")
+    if "mcp demo tool" not in command_text:
+        issues.append(f"{path}.commands: must include CLI tool replay")
+    if "createMcpGatewayRuntime" not in command_text:
+        issues.append(f"{path}.commands: must include local runtime SDK use")
 
 
 def _validate_api_route(value: Any, path: str, issues: list[str]) -> Optional[dict[str, str]]:

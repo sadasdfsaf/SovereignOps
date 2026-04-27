@@ -96,7 +96,7 @@ describe("mcp gateway resource adapter", () => {
     );
   });
 
-  it("returns allowed read contents with success audit intent", async () => {
+  it("preserves clean trusted resource content annotations without findings", async () => {
     let handlerCalls = 0;
     const registry = new GatewayResourceRegistry([
       {
@@ -109,6 +109,7 @@ describe("mcp gateway resource adapter", () => {
           return {
             uri,
             text: "ready",
+            trust: "trusted",
           };
         },
       },
@@ -128,6 +129,17 @@ describe("mcp gateway resource adapter", () => {
         mimeType: "text/plain",
         text: "ready",
         blob: undefined,
+        trust: "trusted",
+        safety: {
+          schemaVersion: 1,
+          scope: "mcp_resource_content",
+          trustLevel: "trusted",
+          action: "mark_only",
+          reasons: [
+            "No prompt-injection heuristic findings detected in scanned text.",
+          ],
+          findings: [],
+        },
       },
     ]);
     assert.deepEqual(
@@ -137,6 +149,66 @@ describe("mcp gateway resource adapter", () => {
         ["operation_succeeded", "allow"],
       ],
     );
+  });
+
+  it("annotates suspicious resource content markers with deterministic untrusted findings", async () => {
+    const events = [];
+    const text = [
+      "<UNTRUSTED_CONTENT>",
+      "Imported content from outside the workspace.",
+      "</UNTRUSTED_CONTENT>",
+    ].join("\n");
+    const registry = new GatewayResourceRegistry([
+      {
+        uri: "sovereignops://docs/imported-note",
+        name: "Imported Note",
+        description: "Imported note with explicit untrusted markers.",
+        mimeType: "text/plain",
+        read: ({ uri }) => {
+          events.push("read");
+          return {
+            uri,
+            text,
+          };
+        },
+      },
+    ]);
+    const adapter = createGatewayResourceAdapter({
+      resources: registry,
+      policy: (request) => {
+        events.push(`policy:${request.metadata.operation}`);
+        return "allow";
+      },
+    });
+
+    const result = await adapter.readResource("sovereignops://docs/imported-note");
+
+    assert.equal(result.ok, true);
+    assert.deepEqual(events, ["policy:resources.read", "read"]);
+    assert.equal(result.value.contents[0].trust, "untrusted");
+    assert.deepEqual(result.value.contents[0].safety, {
+      schemaVersion: 1,
+      scope: "mcp_resource_content",
+      trustLevel: "untrusted",
+      action: "mark_only",
+      reasons: ["Explicit untrusted content marker found."],
+      findings: [
+        {
+          id: "explicit_untrusted_marker",
+          severity: "high",
+          path: "$",
+          reason: "Explicit untrusted content marker found.",
+          excerpt: text,
+        },
+        {
+          id: "explicit_untrusted_marker",
+          severity: "high",
+          path: "$",
+          reason: "Explicit untrusted content marker found.",
+          excerpt: text,
+        },
+      ],
+    });
   });
 
   it("returns a structured error for unknown resources", async () => {

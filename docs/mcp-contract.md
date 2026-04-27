@@ -45,6 +45,19 @@ Unknown URIs return `resource_not_found` before policy or handlers run. Traversa
 
 Safe local tools run through policy first and default to `durableSideEffects: false`. Denied and approval-required calls return terminal status without invoking the handler.
 
+## Untrusted Output Contract
+
+Untrusted text that appears in tool arguments or returned content uses the same public marker vocabulary everywhere:
+
+| Contract field | Required value |
+| --- | --- |
+| Begin marker | `<UNTRUSTED_CONTENT>` |
+| End marker | `</UNTRUSTED_CONTENT>` |
+| Trust metadata | `trust: "untrusted"` |
+| Raw payload argument | `rawUntrustedContent` |
+
+Markers only identify data boundaries. The policy gate still decides whether a tool can run, and `require_approval` or `deny` still stops execution before the handler. The public alignment fixture is `examples/mcp-gateway/safety-samples.json`.
+
 ## SDK Entry Points
 
 Use these TypeScript exports for local wiring:
@@ -66,6 +79,8 @@ Use these TypeScript exports for local wiring:
 | `redactSensitiveArguments` | Redacts nested sensitive names and credential-shaped values. |
 
 The JavaScript SDK client mirrors the OpenAPI operation ids with `listMcpResources`, `readMcpResource`, `listMcpTools`, `callMcpTool`, `listMcpApprovalSessions`, and `decideMcpApprovalSession`.
+
+`createMcpGatewayRuntime` is the local SDK entry point for one-object runtime use: it exposes resource reads, `callTool`, approval sessions, and `auditEntries` snapshots without remote credentials.
 
 ## Policy Gates
 
@@ -108,6 +123,18 @@ Audit ids use `audit_` for resource and registry records and `tool_audit_` for t
 JSON-RPC protocol errors return `error.code`, `error.message`, and `error.data`. Gateway data errors include `ok: false`, a stable `error.code`, and any audit intents collected before the stop.
 
 Known gateway codes are `resource_not_found`, `policy_denied`, `approval_required`, and `handler_failed`. Protocol validation can return `invalid_request`, `invalid_params`, `method_not_found`, and `internal_error`.
+
+## Fixture Replay Contract
+
+Fixture replay stays local and deterministic:
+
+```powershell
+python scripts\validate_mcp_gateway_fixtures.py
+node packages\cli\src\index.ts mcp api replay --fixture examples\mcp-gateway\api-requests.json
+node packages\cli\src\index.ts mcp demo tool --name create_task_proposal --args-json "{\"title\":\"Review untrusted partner note\",\"description\":\"Create a local review task from marked untrusted content.\"}"
+node packages\cli\src\index.ts mcp demo tool --name draft_document_patch --args-json "{\"targetPath\":\"docs/public-note-summary.md\",\"summary\":\"Draft patch from marked untrusted content\",\"patch\":\"Record the requested note summary as a reviewed draft.\"}" --policy-mode require-approval
+node --input-type=module -e "import { createMcpGatewayRuntime } from './services/mcp-gateway/src/index.ts'; const gateway = createMcpGatewayRuntime(); console.log(gateway.listTools().value.tools.map((tool) => tool.name));"
+```
 
 ## CLI Commands
 

@@ -96,6 +96,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "examples/mcp-gateway/tools.json",
             "examples/mcp-gateway/approval-sessions.json",
             "examples/mcp-gateway/api-requests.json",
+            "examples/mcp-gateway/safety-samples.json",
         ),
     ),
     CheckSpec(
