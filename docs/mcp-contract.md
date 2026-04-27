@@ -10,8 +10,10 @@ This contract describes the local MCP gateway surface for clients and plugins. T
 | `resources/list` | optional object | Resource summaries allowed by policy. |
 | `resources/read` | `{ "uri": "sovereignops://..." }` | One or more content entries for the exact URI. |
 | `tools/list` | optional object | Tool metadata for `gateway.list_resources` and `gateway.read_resource`. |
+| `tools/call` | `{ "name": "create_task_proposal", "arguments": { ... } }` | Safe local tool result with `content` and optional `structuredContent`. |
 
 Protocol constants are `MCP_PROTOCOL_JSONRPC_VERSION` set to `2.0` and `MCP_GATEWAY_PROTOCOL_VERSION` set to `2024-11-05`.
+Tool-call JSON-RPC responses include `auditRecords` when the adapter emits tool audit rows.
 
 ## Adapter Tool Names
 
@@ -69,18 +71,31 @@ Use these TypeScript exports for local wiring:
 | `createGatewayResourceAdapter` | Provides `listResources`, `readResource`, and `listTools`. |
 | `createMcpProtocolAdapter` | Provides `handle` and `handleRequest` for JSON-RPC requests. |
 | `handleMcpProtocolRequest` | Handles a JSON-RPC request with an adapter and context. |
+| `createGatewayProtocolAdapter` | Alias for `createMcpProtocolAdapter`. |
+| `handleGatewayProtocolRequest` | Alias for `handleMcpProtocolRequest`. |
 | `createSafeLocalToolRegistry` | Creates the default safe local tool registry. |
 | `createSafeLocalToolAdapter` | Provides `listTools` and `callTool` for safe local tools. |
 | `createMcpSafeLocalToolAdapter` | Alias for `createSafeLocalToolAdapter`. |
 | `createApprovalSessionStore` | Creates an in-memory approval session store. |
 | `createMcpGatewayRuntime` | Composes resources, tools, approvals, policy, and audit capture for local API wiring. |
+| `createLocalMcpRuntimeClient` | Creates the local JavaScript SDK helper around `createMcpGatewayRuntime`. |
+| `createLocalMcpClient` | Alias for `createLocalMcpRuntimeClient`. |
+| `createLocalMcpProtocolClient` | Creates a local JSON-RPC SDK helper for `tools/call` and resource methods. |
+| `createLocalMcpJsonRpcClient` | Alias for `createLocalMcpProtocolClient`. |
+| `createLocalMcpProtocolRuntimeClient` | Alias for `createLocalMcpProtocolClient`. |
+| `createMcpRuntimeRouteDependencies` | Creates runtime-backed dependencies for `mountMcpRoutes`. |
+| `previewRuntimeToolCall` | Runs route preview calls against a local runtime. |
 | `createAuditEmitter` | Emits resource and registry audit records. |
 | `createToolAuditEmitter` | Emits tool audit records with redacted arguments. |
 | `redactSensitiveArguments` | Redacts nested sensitive names and credential-shaped values. |
+| `createAuditReplayEntries` | Normalizes tool, resource, approval, and safety records into replay rows. |
+| `normalizeAuditReplay` | Alias for `createAuditReplayEntries`. |
+| `createMcpAuditReplayEntries` | Alias for `createAuditReplayEntries`. |
+| `normalizeMcpAuditReplayEntries` | Alias for `createAuditReplayEntries`. |
 
 The JavaScript SDK client mirrors the OpenAPI operation ids with `listMcpResources`, `readMcpResource`, `listMcpTools`, `callMcpTool`, `listMcpApprovalSessions`, and `decideMcpApprovalSession`.
 
-`createMcpGatewayRuntime` is the local SDK entry point for one-object runtime use: it exposes resource reads, `callTool`, approval sessions, and `auditEntries` snapshots without remote credentials.
+`createMcpGatewayRuntime` is the local SDK entry point for one-object runtime use: it exposes resource reads, `callTool`, approval sessions, and `auditEntries` snapshots without remote credentials. `packages/sdk-js/src/localMcp.ts` wraps it with `listApprovalSessions`, `decideApprovalSession`, `resourceAuditEntries`, `toolAuditEntries`, and `auditEntries`. `packages/sdk-js/src/localMcpProtocol.ts` wraps the same runtime with `request`, `dispatch`, `initialize`, `listResources`, `readResource`, `listTools`, and `callTool` JSON-RPC helpers.
 
 ## Policy Gates
 
@@ -118,6 +133,12 @@ Session snapshots include `request`, optional `actor`, `reason`, `ruleId`, `meta
 
 Audit ids use `audit_` for resource and registry records and `tool_audit_` for tool records. Tool arguments are redacted recursively for sensitive names and credential-shaped values. Redaction replaces matching values with `[REDACTED]` while preserving non-sensitive fields.
 
+## Audit Replay Output
+
+`services/mcp-gateway/src/auditReplay.ts` exports `createAuditReplayEntries`, `normalizeAuditReplay`, `createMcpAuditReplayEntries`, and `normalizeMcpAuditReplayEntries`. Replay output rows use the `AuditReplayEntry` shape: `id`, `timestamp`, `source`, `kind`, `status`, `title`, `subject`, and optional `actorId`, `decision`, `reason`, `arguments`, `request`, `metadata`, `resultSummary`, and `safety`.
+
+Source kinds are `tool_audit`, `resource_audit`, `approval_session`, and `safety_annotation`. Replay kinds include `tool_requested`, `tool_approval_required`, `tool_executed`, `resource_read_succeeded`, `resource_read_denied`, `approval_session_pending`, `approval_session_approved`, and `safety_summary`.
+
 ## Error Shape
 
 JSON-RPC protocol errors return `error.code`, `error.message`, and `error.data`. Gateway data errors include `ok: false`, a stable `error.code`, and any audit intents collected before the stop.
@@ -131,10 +152,21 @@ Fixture replay stays local and deterministic:
 ```powershell
 python scripts\validate_mcp_gateway_fixtures.py
 node packages\cli\src\index.ts mcp api replay --fixture examples\mcp-gateway\api-requests.json
+node packages\cli\src\index.ts mcp api replay --fixture examples\mcp-gateway\api-requests.json --method POST --route /v1/mcp/tools/call
 node packages\cli\src\index.ts mcp demo tool --name create_task_proposal --args-json "{\"title\":\"Review untrusted partner note\",\"description\":\"Create a local review task from marked untrusted content.\"}"
 node packages\cli\src\index.ts mcp demo tool --name draft_document_patch --args-json "{\"targetPath\":\"docs/public-note-summary.md\",\"summary\":\"Draft patch from marked untrusted content\",\"patch\":\"Record the requested note summary as a reviewed draft.\"}" --policy-mode require-approval
 node --input-type=module -e "import { createMcpGatewayRuntime } from './services/mcp-gateway/src/index.ts'; const gateway = createMcpGatewayRuntime(); console.log(gateway.listTools().value.tools.map((tool) => tool.name));"
 ```
+
+Replay output uses `kind: "mcp-api-fixture-replay"`, `schemaVersion: "mcp-gateway-fixtures.v1"`, `fixture.path`, optional `filters`, `totalRequests`, `replayedRequests`, and replayed `requests` entries with `id`, `method`, `path`, `body`, and `expectedStatus`.
+
+## Runtime Router Fixtures
+
+Runtime router examples mount with `createApiRouter`, `mountMcpRoutes`, `createMcpRuntimeRouteDependencies`, `basePath: "/v1/mcp"`, and `pathStyle: "openapi"`. Public fixture filenames are `resources.json`, `tools.json`, `approval-sessions.json`, `api-requests.json`, `runtime-router.json`, and `safety-samples.json`.
+
+`runtime-router.json` uses schema `mcp-runtime-router-fixture.v1` and carries request ids `runtime_resource_list`, `runtime_resource_read`, `runtime_tool_call_safety`, `runtime_approval_create`, `runtime_approval_list_pending`, and `runtime_approval_decision`.
+
+`api-requests.json` carries the route fixture ids `api_resource_list`, `api_resource_read`, `api_tool_list`, `api_tool_call`, `api_approval_list`, and `api_approval_decision`. Together these cover `GET /v1/mcp/resources`, `POST /v1/mcp/resources/read`, `GET /v1/mcp/tools`, `POST /v1/mcp/tools/call`, `POST /v1/mcp/tools/execute`, `GET /v1/mcp/approval-sessions`, and `POST /v1/mcp/approval-sessions/:sessionId/decision`.
 
 ## CLI Commands
 

@@ -24,6 +24,8 @@ EXPECTED_SECTIONS = (
     "## Policy Gates",
     "## CLI Demo Workflow",
     "## Fixture Replay",
+    "## Audit Replay Output",
+    "## Runtime Router Examples",
     "## Audit And Redaction",
     "## Local Validation",
 )
@@ -39,6 +41,7 @@ EXPECTED_FILES = (
     "services/mcp-gateway/src/runtime.ts",
     "services/mcp-gateway/src/audit.ts",
     "services/mcp-gateway/src/auditEmitter.ts",
+    "services/mcp-gateway/src/auditReplay.ts",
 )
 
 EXPECTED_ROUTES = (
@@ -46,6 +49,7 @@ EXPECTED_ROUTES = (
     "`resources/list`",
     "`resources/read`",
     "`tools/list`",
+    "`tools/call`",
     "`gateway.list_resources`",
     "`gateway.read_resource`",
     "`resources.list`",
@@ -77,15 +81,28 @@ EXPECTED_SDK_NAMES = (
     "`createGatewayResourceAdapter`",
     "`createMcpProtocolAdapter`",
     "`handleMcpProtocolRequest`",
+    "`createGatewayProtocolAdapter`",
+    "`handleGatewayProtocolRequest`",
     "`createGatewayResourceRegistry`",
     "`createSafeLocalToolRegistry`",
     "`createSafeLocalToolAdapter`",
     "`createMcpSafeLocalToolAdapter`",
     "`createApprovalSessionStore`",
     "`createMcpGatewayRuntime`",
+    "`createLocalMcpRuntimeClient`",
+    "`createLocalMcpClient`",
+    "`createLocalMcpProtocolClient`",
+    "`createLocalMcpJsonRpcClient`",
+    "`createLocalMcpProtocolRuntimeClient`",
+    "`createMcpRuntimeRouteDependencies`",
+    "`previewRuntimeToolCall`",
     "`createAuditEmitter`",
     "`createToolAuditEmitter`",
     "`redactSensitiveArguments`",
+    "`createAuditReplayEntries`",
+    "`normalizeAuditReplay`",
+    "`createMcpAuditReplayEntries`",
+    "`normalizeMcpAuditReplayEntries`",
 )
 
 EXPECTED_COMMANDS = (
@@ -94,6 +111,7 @@ EXPECTED_COMMANDS = (
     "python scripts\\validate_mcp_gateway_fixtures.py",
     "node packages\\cli\\src\\index.ts mcp demo resources",
     "node packages\\cli\\src\\index.ts mcp demo resources --policy-mode allow",
+    "node packages\\cli\\src\\index.ts mcp api replay --fixture examples\\mcp-gateway\\api-requests.json --method POST --route /v1/mcp/tools/call",
     "node packages\\cli\\src\\index.ts mcp demo read --uri sovereignops://docs/operator-guide",
     "node packages\\cli\\src\\index.ts mcp demo read --uri sovereignops://audit/policy-trace --policy-mode deny-resource-read --deny-uri sovereignops://audit/policy-trace",
     "node packages\\cli\\src\\index.ts mcp demo tool --name create_task_proposal",
@@ -166,6 +184,13 @@ class McpGatewayDocsTests(unittest.TestCase):
             "`resourceAuditEntries`",
             "`toolAuditEntries`",
             "`auditEntries`",
+            "`listApprovalSessions`",
+            "`decideApprovalSession`",
+            "`request`",
+            "`dispatch`",
+            "`initialize`",
+            "`createApiRouter`",
+            "`mountMcpRoutes`",
         ):
             with self.subTest(method=method):
                 self.assertIn(method, self.text)
@@ -199,6 +224,86 @@ class McpGatewayDocsTests(unittest.TestCase):
 
         self.assertIn("`createMcpGatewayRuntime`", self.text)
         self.assertIn("one in-process object", self.text)
+        self.assertIn('`kind: "mcp-api-fixture-replay"`', self.text)
+        self.assertIn('`schemaVersion: "mcp-gateway-fixtures.v1"`', self.text)
+        for field in (
+            "`fixture.path`",
+            "`filters`",
+            "`totalRequests`",
+            "`replayedRequests`",
+            "`expectedStatus`",
+        ):
+            with self.subTest(field=field):
+                self.assertIn(field, self.text)
+
+    def test_documents_runtime_router_fixture_names(self) -> None:
+        for fixture_name in (
+            "`resources.json`",
+            "`tools.json`",
+            "`approval-sessions.json`",
+            "`api-requests.json`",
+            "`runtime-router.json`",
+            "`safety-samples.json`",
+        ):
+            with self.subTest(fixture_name=fixture_name):
+                self.assertIn(fixture_name, self.text)
+
+        for request_id in (
+            "`runtime_resource_list`",
+            "`runtime_resource_read`",
+            "`runtime_tool_call_safety`",
+            "`runtime_approval_create`",
+            "`runtime_approval_list_pending`",
+            "`runtime_approval_decision`",
+            "`api_resource_list`",
+            "`api_resource_read`",
+            "`api_tool_list`",
+            "`api_tool_call`",
+            "`api_approval_list`",
+            "`api_approval_decision`",
+        ):
+            with self.subTest(request_id=request_id):
+                self.assertIn(request_id, self.text)
+
+        for route in (
+            "`GET /v1/mcp/resources`",
+            "`POST /v1/mcp/resources/read`",
+            "`GET /v1/mcp/tools`",
+            "`POST /v1/mcp/tools/call`",
+            "`POST /v1/mcp/tools/execute`",
+            "`GET /v1/mcp/approval-sessions`",
+            "`POST /v1/mcp/approval-sessions/:sessionId/decision`",
+        ):
+            with self.subTest(route=route):
+                self.assertIn(route, self.text)
+
+        self.assertIn("`mcp-runtime-router-fixture.v1`", self.text)
+
+    def test_documents_audit_replay_output(self) -> None:
+        for value in (
+            "`AuditReplayEntry`",
+            "`id`",
+            "`timestamp`",
+            "`source`",
+            "`kind`",
+            "`status`",
+            "`title`",
+            "`subject`",
+            "`tool_audit`",
+            "`resource_audit`",
+            "`approval_session`",
+            "`safety_annotation`",
+            "`tool_requested`",
+            "`tool_approval_required`",
+            "`tool_executed`",
+            "`resource_read_succeeded`",
+            "`resource_read_denied`",
+            "`approval_session_pending`",
+            "`approval_session_approved`",
+            "`safety_summary`",
+        ):
+            with self.subTest(value=value):
+                self.assertIn(value, self.text)
 
     def test_documents_approval_audit_and_redaction_guarantees(self) -> None:
         for guarantee in EXPECTED_GUARANTEES:

@@ -14,6 +14,7 @@ from scripts.validate_mcp_gateway_fixtures import (
 
 
 SAFETY_SAMPLES_PATH = DEFAULT_FIXTURE_ROOT / "safety-samples.json"
+RUNTIME_ROUTER_PATH = DEFAULT_FIXTURE_ROOT / "runtime-router.json"
 
 
 class McpGatewayFixtureTests(unittest.TestCase):
@@ -54,6 +55,50 @@ class McpGatewayFixtureTests(unittest.TestCase):
                     sample["toolRequest"]["arguments"][markers["rawContentArgument"]],
                     sample["content"],
                 )
+
+    def test_runtime_router_fixture_defines_replayable_route_steps(self) -> None:
+        fixture = json.loads(RUNTIME_ROUTER_PATH.read_text(encoding="utf-8"))
+        requests = {example["id"]: example for example in fixture["requests"]}
+
+        self.assertEqual(fixture["schemaVersion"], "mcp-runtime-router-fixture.v1")
+        self.assertEqual(fixture["mount"], {"basePath": "/v1/mcp", "pathStyle": "openapi"})
+        self.assertEqual(
+            [example["id"] for example in fixture["requests"]],
+            [
+                "runtime_resource_list",
+                "runtime_resource_read",
+                "runtime_tool_call_safety",
+                "runtime_approval_create",
+                "runtime_approval_list_pending",
+                "runtime_approval_decision",
+            ],
+        )
+        self.assertIn(
+            "POST /v1/mcp/approval-sessions/:sessionId/decision",
+            {f"{route['method']} {route['path']}" for route in fixture["routes"]},
+        )
+
+        safety_body = requests["runtime_tool_call_safety"]["response"]["body"]
+        self.assertEqual(safety_body["safety"]["trustLevel"], "untrusted")
+        self.assertEqual(
+            safety_body["structuredContent"]["_safety"]["trustLevel"],
+            "untrusted",
+        )
+        self.assertGreaterEqual(len(safety_body["safety"]["findings"]), 1)
+
+        approval_id = requests["runtime_approval_create"]["response"]["body"]["error"][
+            "details"
+        ]["approvalId"]
+        self.assertEqual(
+            requests["runtime_approval_list_pending"]["response"]["body"]["sessions"][0][
+                "id"
+            ],
+            approval_id,
+        )
+        self.assertEqual(
+            requests["runtime_approval_decision"]["request"]["path"],
+            f"/v1/mcp/approval-sessions/{approval_id}/decision",
+        )
 
     def test_rejects_duplicate_resource_uri(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -266,6 +311,41 @@ class McpGatewayFixtureTests(unittest.TestCase):
 
         self.assertFalse(report.ok)
         self.assertIn("must include API fixture replay", "\n".join(report.issues))
+
+    def test_rejects_runtime_router_fixture_without_safety_annotation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "mcp-gateway"
+            shutil.copytree(DEFAULT_FIXTURE_ROOT, root)
+            runtime_path = root / "runtime-router.json"
+            fixture = json.loads(runtime_path.read_text(encoding="utf-8"))
+            del fixture["requests"][2]["response"]["body"]["safety"]
+            runtime_path.write_text(json.dumps(fixture, indent=2), encoding="utf-8")
+
+            report = validate_mcp_gateway_fixtures(root)
+
+        self.assertFalse(report.ok)
+        self.assertIn(
+            "runtime-router.json.requests[2].response.body.safety: must be an object",
+            "\n".join(report.issues),
+        )
+
+    def test_rejects_runtime_router_fixture_without_approval_creation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "mcp-gateway"
+            shutil.copytree(DEFAULT_FIXTURE_ROOT, root)
+            runtime_path = root / "runtime-router.json"
+            fixture = json.loads(runtime_path.read_text(encoding="utf-8"))
+            fixture["requests"] = [
+                example
+                for example in fixture["requests"]
+                if example["id"] != "runtime_approval_create"
+            ]
+            runtime_path.write_text(json.dumps(fixture, indent=2), encoding="utf-8")
+
+            report = validate_mcp_gateway_fixtures(root)
+
+        self.assertFalse(report.ok)
+        self.assertIn("missing runtime_approval_create example", "\n".join(report.issues))
 
 
 if __name__ == "__main__":

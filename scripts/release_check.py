@@ -63,6 +63,12 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
         ),
     ),
     CheckSpec(
+        name="public-boundary-guard",
+        description="Ensure private planning and runtime files stay out of the public project.",
+        command=(PYTHON, "scripts/public_boundary_guard.py", "--json"),
+        required_paths=("scripts/public_boundary_guard.py", ".gitignore"),
+    ),
+    CheckSpec(
         name="loc-integrity",
         description="Validate LOC floors and generated-file limits.",
         command=(PYTHON, "scripts/loc_integrity.py"),
@@ -97,6 +103,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "examples/mcp-gateway/approval-sessions.json",
             "examples/mcp-gateway/api-requests.json",
             "examples/mcp-gateway/safety-samples.json",
+            "examples/mcp-gateway/runtime-router.json",
         ),
     ),
     CheckSpec(

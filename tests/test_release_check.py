@@ -8,10 +8,15 @@ from io import StringIO
 from pathlib import Path
 
 from scripts import release_check
+from scripts.public_boundary_guard import REQUIRED_GITIGNORE_ENTRIES
 
 
 def make_release_root(root: Path) -> None:
     (root / ".git").mkdir()
+    (root / ".gitignore").write_text(
+        "\n".join(REQUIRED_GITIGNORE_ENTRIES) + "\n",
+        encoding="utf-8",
+    )
     (root / "scripts").mkdir()
     (root / "docs").mkdir()
     (root / "examples" / "mcp-gateway").mkdir(parents=True)
@@ -19,6 +24,7 @@ def make_release_root(root: Path) -> None:
     for path in (
         "scripts/loc_budget.py",
         "scripts/repo_health.py",
+        "scripts/public_boundary_guard.py",
         "scripts/env_guard.py",
         "scripts/rust_guard.py",
         "scripts/validate_openapi.py",
@@ -37,6 +43,7 @@ def make_release_root(root: Path) -> None:
         "examples/mcp-gateway/approval-sessions.json",
         "examples/mcp-gateway/api-requests.json",
         "examples/mcp-gateway/safety-samples.json",
+        "examples/mcp-gateway/runtime-router.json",
         "package.json",
         "pnpm-workspace.yaml",
         "Cargo.toml",

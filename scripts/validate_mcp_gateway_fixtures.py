@@ -18,9 +18,11 @@ FIXTURE_FILE_NAMES = (
     "approval-sessions.json",
     "api-requests.json",
     "safety-samples.json",
+    "runtime-router.json",
 )
 DEFAULT_FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "examples" / "mcp-gateway"
 SCHEMA_VERSION = "mcp-gateway-fixtures.v1"
+RUNTIME_ROUTER_SCHEMA_VERSION = "mcp-runtime-router-fixture.v1"
 
 TIMESTAMP_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")
 RESOURCE_ID_PATTERN = re.compile(r"^res_[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
@@ -30,9 +32,13 @@ SESSION_ID_PATTERN = re.compile(r"^aps_[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 DECISION_ID_PATTERN = re.compile(r"^apd_[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 EVENT_ID_PATTERN = re.compile(r"^ape_[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 USER_ID_PATTERN = re.compile(r"^user_[A-Za-z0-9_-]{1,64}$")
+ACTOR_ID_PATTERN = re.compile(r"^act_[A-Za-z0-9_-]{1,64}$")
 SAFETY_SAMPLE_ID_PATTERN = re.compile(r"^safety_[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 API_REQUEST_ID_PATTERN = re.compile(
     r"^api_(?:resource_list|resource_read|tool_list|tool_call|approval_list|approval_decision)$"
+)
+RUNTIME_ROUTER_REQUEST_ID_PATTERN = re.compile(
+    r"^runtime_(?:resource_list|resource_read|tool_call_safety|approval_create|approval_list_pending|approval_decision)$"
 )
 
 ALLOWED_LOCAL_SCHEMES = {"fixture", "local", "memory", "workspace"}
@@ -61,6 +67,23 @@ API_ROUTE_KINDS = {
 }
 EXPECTED_API_ROUTE_KINDS = set(API_ROUTE_KINDS.values())
 HTTP_METHODS = {"GET", "POST"}
+RUNTIME_ROUTER_ROUTE_KEYS = (
+    "GET /v1/mcp/approval-sessions",
+    "GET /v1/mcp/resources",
+    "GET /v1/mcp/tools",
+    "POST /v1/mcp/approval-sessions/:sessionId/decision",
+    "POST /v1/mcp/resources/read",
+    "POST /v1/mcp/tools/call",
+    "POST /v1/mcp/tools/execute",
+)
+RUNTIME_ROUTER_REQUEST_IDS = (
+    "runtime_resource_list",
+    "runtime_resource_read",
+    "runtime_tool_call_safety",
+    "runtime_approval_create",
+    "runtime_approval_list_pending",
+    "runtime_approval_decision",
+)
 
 SENSITIVE_FIELD_PATTERN = re.compile(
     r"(?i)(?:authorization|password|passwd|secret|token|api[_-]?key|private[_-]?key|client[_-]?secret)"
@@ -134,6 +157,12 @@ def validate_mcp_gateway_fixtures(root: Optional[Path] = None) -> ValidationRepo
         _validate_safety_samples(
             data["safety-samples.json"],
             "safety-samples.json",
+            issues,
+        )
+    if "runtime-router.json" in data:
+        _validate_runtime_router(
+            data["runtime-router.json"],
+            "runtime-router.json",
             issues,
         )
 
@@ -914,6 +943,661 @@ def _validate_api_decision_snapshot(
         _require_json_compatible(value["metadata"], f"{path}.metadata", issues)
     if isinstance(status, str) and status != expected_status:
         issues.append(f"{path}.status: must match session status")
+
+
+def _validate_runtime_router(value: Any, path: str, issues: list[str]) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+
+    _reject_unknown_fields(
+        value,
+        {"schemaVersion", "generatedAt", "mount", "runtime", "routes", "requests"},
+        path,
+        issues,
+    )
+    _require_exact_string(value, "schemaVersion", RUNTIME_ROUTER_SCHEMA_VERSION, path, issues)
+    _require_timestamp(value, "generatedAt", path, issues)
+    _validate_runtime_mount(value.get("mount"), f"{path}.mount", issues)
+    _validate_runtime_config(value.get("runtime"), f"{path}.runtime", issues)
+    _validate_runtime_routes(value.get("routes"), f"{path}.routes", issues)
+    _validate_runtime_requests(value.get("requests"), f"{path}.requests", issues)
+
+
+def _validate_runtime_mount(value: Any, path: str, issues: list[str]) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+
+    _reject_unknown_fields(value, {"basePath", "pathStyle"}, path, issues)
+    _require_exact_string(value, "basePath", "/v1/mcp", path, issues)
+    _require_exact_string(value, "pathStyle", "openapi", path, issues)
+
+
+def _validate_runtime_config(value: Any, path: str, issues: list[str]) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+
+    _reject_unknown_fields(
+        value,
+        {"clock", "approvalIdPrefix", "toolDefaultDecision", "toolPolicyRules"},
+        path,
+        issues,
+    )
+    clock = value.get("clock")
+    if not _is_record(clock):
+        issues.append(f"{path}.clock: must be an object")
+    else:
+        _reject_unknown_fields(clock, {"startAt", "incrementMs"}, f"{path}.clock", issues)
+        _require_timestamp(clock, "startAt", f"{path}.clock", issues)
+        _require_integer(clock, "incrementMs", f"{path}.clock", issues, minimum=1, maximum=1000)
+
+    _require_exact_string(value, "approvalIdPrefix", "runtime_fixture_approval_", path, issues)
+    _require_exact_string(value, "toolDefaultDecision", "deny", path, issues)
+    _validate_runtime_tool_policy_rules(
+        value.get("toolPolicyRules"),
+        f"{path}.toolPolicyRules",
+        issues,
+    )
+
+
+def _validate_runtime_tool_policy_rules(value: Any, path: str, issues: list[str]) -> None:
+    rules = _require_array({"toolPolicyRules": value}, "toolPolicyRules", path.rsplit(".", 1)[0], issues, min_length=2)
+    rules_by_tool: dict[str, str] = {}
+    seen_ids: set[str] = set()
+
+    for index, rule in enumerate(rules):
+        item_path = f"{path}[{index}]"
+        if not _is_record(rule):
+            issues.append(f"{item_path}: must be an object")
+            continue
+        _reject_unknown_fields(
+            rule,
+            {"id", "toolName", "decision", "reason", "match", "approvalId"},
+            item_path,
+            issues,
+        )
+        rule_id = _require_string(rule, "id", item_path, issues, min_length=1, max_length=100)
+        tool_name = _require_string(
+            rule,
+            "toolName",
+            item_path,
+            issues,
+            TOOL_NAME_PATTERN,
+            allowed=SAFE_LOCAL_TOOL_NAMES,
+        )
+        decision = _require_string(rule, "decision", item_path, issues, allowed=SAFETY_POLICY_DECISIONS)
+        if "reason" in rule:
+            _require_string(rule, "reason", item_path, issues, min_length=1, max_length=180)
+        if "match" in rule:
+            _require_string(rule, "match", item_path, issues, allowed={"exact", "prefix"})
+        if "approvalId" in rule:
+            _require_string(rule, "approvalId", item_path, issues, min_length=1, max_length=100)
+        _track_unique(rule_id, seen_ids, f"{item_path}.id", "runtime policy rule id", issues)
+        if isinstance(tool_name, str) and isinstance(decision, str):
+            rules_by_tool[tool_name] = decision
+
+    if rules_by_tool.get("create_task_proposal") != "allow":
+        issues.append(f"{path}: must allow create_task_proposal for the safety annotation call")
+    if rules_by_tool.get("draft_document_patch") != "require_approval":
+        issues.append(f"{path}: must require approval for draft_document_patch")
+
+
+def _validate_runtime_routes(value: Any, path: str, issues: list[str]) -> None:
+    routes = _require_array({"routes": value}, "routes", path.rsplit(".", 1)[0], issues, min_length=len(RUNTIME_ROUTER_ROUTE_KEYS))
+    route_keys: list[str] = []
+    seen_keys: set[str] = set()
+
+    for index, route in enumerate(routes):
+        item_path = f"{path}[{index}]"
+        if not _is_record(route):
+            issues.append(f"{item_path}: must be an object")
+            continue
+        _reject_unknown_fields(route, {"method", "path", "description"}, item_path, issues)
+        method = _require_string(route, "method", item_path, issues, allowed=HTTP_METHODS)
+        route_path = _require_string(route, "path", item_path, issues, min_length=1, max_length=120)
+        _require_string(route, "description", item_path, issues, min_length=1, max_length=180)
+        if isinstance(method, str) and isinstance(route_path, str):
+            route_key = f"{method} {route_path}"
+            route_keys.append(route_key)
+            _track_unique(route_key, seen_keys, item_path, "runtime route", issues)
+
+    if route_keys and route_keys != list(RUNTIME_ROUTER_ROUTE_KEYS):
+        issues.append(f"{path}: must match the mounted OpenAPI MCP route list")
+
+
+def _validate_runtime_requests(value: Any, path: str, issues: list[str]) -> None:
+    requests = _require_array({"requests": value}, "requests", path.rsplit(".", 1)[0], issues, min_length=len(RUNTIME_ROUTER_REQUEST_IDS))
+    examples_by_id: dict[str, dict[str, Any]] = {}
+    ordered_ids: list[str] = []
+    seen_ids: set[str] = set()
+
+    for index, example in enumerate(requests):
+        item_path = f"{path}[{index}]"
+        if not _is_record(example):
+            issues.append(f"{item_path}: must be an object")
+            continue
+        _reject_unknown_fields(example, {"id", "title", "request", "response"}, item_path, issues)
+        example_id = _require_string(example, "id", item_path, issues, RUNTIME_ROUTER_REQUEST_ID_PATTERN)
+        _require_string(example, "title", item_path, issues, min_length=1, max_length=120)
+        request = _validate_runtime_dispatch_request(example.get("request"), f"{item_path}.request", issues)
+        response = _validate_runtime_dispatch_response(example.get("response"), f"{item_path}.response", issues)
+        _track_unique(example_id, seen_ids, f"{item_path}.id", "runtime router request id", issues)
+
+        if isinstance(example_id, str):
+            if example_id not in RUNTIME_ROUTER_REQUEST_IDS:
+                issues.append(f"{item_path}.id: is not a supported runtime router request id")
+            examples_by_id[example_id] = example
+            ordered_ids.append(example_id)
+            _validate_runtime_step(example_id, request, response, item_path, issues)
+
+    if ordered_ids and ordered_ids != list(RUNTIME_ROUTER_REQUEST_IDS):
+        issues.append(f"{path}: must order examples as {', '.join(RUNTIME_ROUTER_REQUEST_IDS)}")
+    for expected_id in RUNTIME_ROUTER_REQUEST_IDS:
+        if expected_id not in examples_by_id:
+            issues.append(f"{path}: missing {expected_id} example")
+    _validate_runtime_approval_links(examples_by_id, path, issues)
+
+
+def _validate_runtime_dispatch_request(
+    value: Any,
+    path: str,
+    issues: list[str],
+) -> Optional[dict[str, Any]]:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return None
+    _reject_unknown_fields(value, {"method", "path", "headers", "body", "actorId"}, path, issues)
+    method = _require_string(value, "method", path, issues, allowed=HTTP_METHODS)
+    route_path = _require_string(value, "path", path, issues, min_length=1, max_length=160)
+    if "headers" in value:
+        _validate_string_map(value["headers"], f"{path}.headers", issues)
+    if "actorId" in value:
+        _require_string(value, "actorId", path, issues, ACTOR_ID_PATTERN)
+    if "body" in value and value["body"] is not None:
+        if not _is_record(value["body"]):
+            issues.append(f"{path}.body: must be an object when provided")
+        else:
+            _require_json_compatible(value["body"], f"{path}.body", issues)
+    if isinstance(method, str) and isinstance(route_path, str) and not _runtime_route_kind(method, route_path):
+        issues.append(f"{path}: route is not a mounted runtime MCP API route")
+    return value
+
+
+def _validate_runtime_dispatch_response(
+    value: Any,
+    path: str,
+    issues: list[str],
+) -> Optional[dict[str, Any]]:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return None
+    _reject_unknown_fields(value, {"status", "headers", "body"}, path, issues)
+    _require_integer(value, "status", path, issues, minimum=100, maximum=599)
+    if "headers" in value:
+        _validate_string_map(value["headers"], f"{path}.headers", issues)
+        if _is_record(value["headers"]) and value["headers"].get("content-type") != "application/json; charset=utf-8":
+            issues.append(f"{path}.headers.content-type: must be application/json; charset=utf-8")
+    if not _is_record(value.get("body")):
+        issues.append(f"{path}.body: must be an object")
+    else:
+        _require_json_compatible(value["body"], f"{path}.body", issues)
+    return value
+
+
+def _validate_runtime_step(
+    example_id: str,
+    request: Optional[dict[str, Any]],
+    response: Optional[dict[str, Any]],
+    path: str,
+    issues: list[str],
+) -> None:
+    if example_id == "runtime_resource_list":
+        _require_runtime_route(request, "GET", "/v1/mcp/resources", f"{path}.request", issues)
+        _require_runtime_status(response, 200, f"{path}.response", issues)
+        _validate_runtime_resource_list(_runtime_body(response), f"{path}.response.body", issues)
+    elif example_id == "runtime_resource_read":
+        _require_runtime_route(request, "POST", "/v1/mcp/resources/read", f"{path}.request", issues)
+        _require_runtime_status(response, 200, f"{path}.response", issues)
+        _validate_runtime_resource_read(_runtime_body(request), _runtime_body(response), path, issues)
+    elif example_id == "runtime_tool_call_safety":
+        _require_runtime_route(request, "POST", "/v1/mcp/tools/call", f"{path}.request", issues)
+        _require_runtime_status(response, 200, f"{path}.response", issues)
+        _validate_runtime_safety_tool_call(_runtime_body(request), _runtime_body(response), path, issues)
+    elif example_id == "runtime_approval_create":
+        _require_runtime_route(request, "POST", "/v1/mcp/tools/call", f"{path}.request", issues)
+        _require_runtime_status(response, 409, f"{path}.response", issues)
+        _validate_runtime_approval_required(_runtime_body(request), _runtime_body(response), path, issues)
+    elif example_id == "runtime_approval_list_pending":
+        _require_runtime_route(request, "GET", "/v1/mcp/approval-sessions", f"{path}.request", issues)
+        _require_runtime_status(response, 200, f"{path}.response", issues)
+        _validate_runtime_approval_list(_runtime_body(response), f"{path}.response.body", issues)
+    elif example_id == "runtime_approval_decision":
+        if request and isinstance(request.get("path"), str) and not re.fullmatch(
+            r"/v1/mcp/approval-sessions/[^/]+/decision",
+            request["path"],
+        ):
+            issues.append(f"{path}.request.path: must target an approval session decision route")
+        _require_runtime_status(response, 200, f"{path}.response", issues)
+        _validate_runtime_approval_decision(_runtime_body(request), _runtime_body(response), path, issues)
+
+
+def _validate_runtime_resource_list(body: Any, path: str, issues: list[str]) -> None:
+    if not _is_record(body):
+        issues.append(f"{path}: must be an object")
+        return
+    _reject_unknown_fields(body, {"resources"}, path, issues)
+    resources = _require_array(body, "resources", path, issues, min_length=1)
+    for index, resource in enumerate(resources):
+        _validate_runtime_resource_summary(resource, f"{path}.resources[{index}]", issues)
+
+
+def _validate_runtime_resource_summary(value: Any, path: str, issues: list[str]) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+    _reject_unknown_fields(value, {"uri", "name", "description", "mimeType"}, path, issues)
+    uri = _require_string(value, "uri", path, issues, min_length=1)
+    _require_string(value, "name", path, issues, min_length=1, max_length=80)
+    if "description" in value:
+        _require_string(value, "description", path, issues, min_length=1, max_length=240)
+    if "mimeType" in value:
+        _require_string(value, "mimeType", path, issues, allowed=RESOURCE_MIME_TYPES)
+    if isinstance(uri, str) and not uri.startswith("sovereignops://"):
+        issues.append(f"{path}.uri: must use the default runtime sovereignops scheme")
+
+
+def _validate_runtime_resource_read(
+    request_body: Any,
+    response_body: Any,
+    path: str,
+    issues: list[str],
+) -> None:
+    if not _is_record(request_body):
+        issues.append(f"{path}.request.body: must be an object")
+        return
+    _reject_unknown_fields(request_body, {"uri", "actor", "metadata"}, f"{path}.request.body", issues)
+    requested_uri = _require_string(request_body, "uri", f"{path}.request.body", issues, min_length=1)
+    if isinstance(requested_uri, str) and not requested_uri.startswith("sovereignops://"):
+        issues.append(f"{path}.request.body.uri: must use the default runtime sovereignops scheme")
+
+    if not _is_record(response_body):
+        issues.append(f"{path}.response.body: must be an object")
+        return
+    _reject_unknown_fields(response_body, {"contents"}, f"{path}.response.body", issues)
+    contents = _require_array(response_body, "contents", f"{path}.response.body", issues, min_length=1)
+    for index, content in enumerate(contents):
+        item_path = f"{path}.response.body.contents[{index}]"
+        if not _is_record(content):
+            issues.append(f"{item_path}: must be an object")
+            continue
+        _reject_unknown_fields(content, {"uri", "mimeType", "text", "blob", "trust", "safety"}, item_path, issues)
+        content_uri = _require_string(content, "uri", item_path, issues, min_length=1)
+        _require_string(content, "mimeType", item_path, issues, allowed=RESOURCE_MIME_TYPES)
+        if isinstance(requested_uri, str) and isinstance(content_uri, str) and content_uri != requested_uri:
+            issues.append(f"{item_path}.uri: must match request body uri")
+        if "text" in content and not isinstance(content["text"], str):
+            issues.append(f"{item_path}.text: must be a string")
+        if "blob" in content and not isinstance(content["blob"], str):
+            issues.append(f"{item_path}.blob: must be a string")
+        if "trust" in content:
+            _require_string(content, "trust", item_path, issues, allowed={"trusted", "review", "untrusted"})
+        if "safety" in content:
+            _validate_runtime_safety_annotation(content["safety"], f"{item_path}.safety", issues, require_findings=False)
+
+
+def _validate_runtime_safety_tool_call(
+    request_body: Any,
+    response_body: Any,
+    path: str,
+    issues: list[str],
+) -> None:
+    if not _is_record(request_body):
+        issues.append(f"{path}.request.body: must be an object")
+        return
+    _reject_unknown_fields(request_body, {"name", "toolName", "arguments", "actor", "metadata"}, f"{path}.request.body", issues)
+    tool_name = request_body.get("toolName", request_body.get("name"))
+    if not isinstance(tool_name, str) or tool_name != "create_task_proposal":
+        issues.append(f"{path}.request.body.name: must call create_task_proposal")
+    arguments = request_body.get("arguments")
+    if not _is_record(arguments):
+        issues.append(f"{path}.request.body.arguments: must be an object")
+    elif not isinstance(arguments.get("title"), str) or SAFETY_MARKER_BEGIN not in arguments["title"]:
+        issues.append(f"{path}.request.body.arguments.title: must include marked untrusted content")
+    if "metadata" in request_body and not _is_record(request_body["metadata"]):
+        issues.append(f"{path}.request.body.metadata: must be an object")
+
+    if not _is_record(response_body):
+        issues.append(f"{path}.response.body: must be an object")
+        return
+    _reject_unknown_fields(response_body, {"content", "structuredContent", "safety"}, f"{path}.response.body", issues)
+    _validate_runtime_safety_annotation(
+        response_body.get("safety"),
+        f"{path}.response.body.safety",
+        issues,
+        require_findings=True,
+    )
+    structured = response_body.get("structuredContent")
+    if not _is_record(structured):
+        issues.append(f"{path}.response.body.structuredContent: must be an object")
+    else:
+        _validate_runtime_safety_annotation(
+            structured.get("_safety"),
+            f"{path}.response.body.structuredContent._safety",
+            issues,
+            require_findings=True,
+        )
+    content = _require_array(response_body, "content", f"{path}.response.body", issues, min_length=1)
+    if content:
+        first = content[0]
+        if not _is_record(first):
+            issues.append(f"{path}.response.body.content[0]: must be an object")
+        else:
+            _reject_unknown_fields(first, {"type", "text", "safety"}, f"{path}.response.body.content[0]", issues)
+            _require_exact_string(first, "type", "text", f"{path}.response.body.content[0]", issues)
+            _require_string(first, "text", f"{path}.response.body.content[0]", issues, min_length=1)
+            _validate_runtime_safety_annotation(
+                first.get("safety"),
+                f"{path}.response.body.content[0].safety",
+                issues,
+                require_findings=True,
+            )
+
+
+def _validate_runtime_approval_required(
+    request_body: Any,
+    response_body: Any,
+    path: str,
+    issues: list[str],
+) -> None:
+    if not _is_record(request_body):
+        issues.append(f"{path}.request.body: must be an object")
+        return
+    tool_name = request_body.get("toolName", request_body.get("name"))
+    if tool_name != "draft_document_patch":
+        issues.append(f"{path}.request.body.name: must call draft_document_patch")
+
+    if not _is_record(response_body):
+        issues.append(f"{path}.response.body: must be an object")
+        return
+    _reject_unknown_fields(response_body, {"error"}, f"{path}.response.body", issues)
+    error = response_body.get("error")
+    if not _is_record(error):
+        issues.append(f"{path}.response.body.error: must be an object")
+        return
+    _reject_unknown_fields(error, {"code", "message", "details"}, f"{path}.response.body.error", issues)
+    _require_exact_string(error, "code", "approval_required", f"{path}.response.body.error", issues)
+    _require_string(error, "message", f"{path}.response.body.error", issues, min_length=1, max_length=180)
+    details = error.get("details")
+    if not _is_record(details):
+        issues.append(f"{path}.response.body.error.details: must be an object")
+        return
+    _reject_unknown_fields(
+        details,
+        {"toolName", "decision", "reason", "ruleId", "approvalId", "policy"},
+        f"{path}.response.body.error.details",
+        issues,
+    )
+    _require_exact_string(details, "toolName", "draft_document_patch", f"{path}.response.body.error.details", issues)
+    _require_exact_string(details, "decision", "require_approval", f"{path}.response.body.error.details", issues)
+    _require_string(details, "reason", f"{path}.response.body.error.details", issues, min_length=1, max_length=180)
+    _require_string(details, "ruleId", f"{path}.response.body.error.details", issues, min_length=1, max_length=100)
+    _require_string(details, "approvalId", f"{path}.response.body.error.details", issues, min_length=1, max_length=100)
+    policy = details.get("policy")
+    if not _is_record(policy):
+        issues.append(f"{path}.response.body.error.details.policy: must be an object")
+    else:
+        _reject_unknown_fields(policy, {"decision", "toolName", "reason", "ruleId", "approvalId"}, f"{path}.response.body.error.details.policy", issues)
+        _require_exact_string(policy, "decision", "require_approval", f"{path}.response.body.error.details.policy", issues)
+        _require_exact_string(policy, "toolName", "draft_document_patch", f"{path}.response.body.error.details.policy", issues)
+
+
+def _validate_runtime_approval_list(body: Any, path: str, issues: list[str]) -> None:
+    if not _is_record(body):
+        issues.append(f"{path}: must be an object")
+        return
+    _reject_unknown_fields(body, {"sessions"}, path, issues)
+    sessions = _require_array(body, "sessions", path, issues, min_length=1)
+    for index, session in enumerate(sessions):
+        _validate_runtime_session_snapshot(session, f"{path}.sessions[{index}]", issues)
+
+
+def _validate_runtime_approval_decision(
+    request_body: Any,
+    response_body: Any,
+    path: str,
+    issues: list[str],
+) -> None:
+    if not _is_record(request_body):
+        issues.append(f"{path}.request.body: must be an object")
+    else:
+        _reject_unknown_fields(request_body, {"sessionId", "decision", "actor", "reason", "metadata"}, f"{path}.request.body", issues)
+        _require_string(request_body, "decision", f"{path}.request.body", issues, allowed={"approve", "reject"})
+        if "reason" in request_body:
+            _require_string(request_body, "reason", f"{path}.request.body", issues, min_length=1, max_length=180)
+
+    if not _is_record(response_body):
+        issues.append(f"{path}.response.body: must be an object")
+        return
+    _reject_unknown_fields(response_body, {"session"}, f"{path}.response.body", issues)
+    _validate_runtime_session_snapshot(response_body.get("session"), f"{path}.response.body.session", issues)
+
+
+def _validate_runtime_session_snapshot(value: Any, path: str, issues: list[str]) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+    _reject_unknown_fields(
+        value,
+        {
+            "id",
+            "status",
+            "createdAt",
+            "updatedAt",
+            "expiresAt",
+            "request",
+            "actor",
+            "reason",
+            "ruleId",
+            "metadata",
+            "decision",
+            "approvedAt",
+            "approvedBy",
+            "rejectedAt",
+            "rejectedBy",
+            "expiredAt",
+            "expiredBy",
+        },
+        path,
+        issues,
+    )
+    _require_string(value, "id", path, issues, min_length=1, max_length=100)
+    status = _require_string(value, "status", path, issues, allowed={"pending", "approved", "rejected", "expired"})
+    _require_timestamp(value, "createdAt", path, issues)
+    _require_timestamp(value, "updatedAt", path, issues)
+    if "expiresAt" in value:
+        _require_timestamp(value, "expiresAt", path, issues)
+    if not _is_record(value.get("request")):
+        issues.append(f"{path}.request: must be an object")
+    else:
+        _require_json_compatible(value["request"], f"{path}.request", issues)
+    if "actor" in value:
+        _validate_runtime_actor(value["actor"], f"{path}.actor", issues)
+    if "approvedBy" in value:
+        _validate_runtime_actor(value["approvedBy"], f"{path}.approvedBy", issues)
+    if "rejectedBy" in value:
+        _validate_runtime_actor(value["rejectedBy"], f"{path}.rejectedBy", issues)
+    if "expiredBy" in value:
+        _validate_runtime_actor(value["expiredBy"], f"{path}.expiredBy", issues)
+    if "reason" in value:
+        _require_string(value, "reason", path, issues, min_length=1, max_length=180)
+    if "ruleId" in value:
+        _require_string(value, "ruleId", path, issues, min_length=1, max_length=100)
+    if "metadata" in value:
+        _require_json_compatible(value["metadata"], f"{path}.metadata", issues)
+    if status in {"approved", "rejected", "expired"}:
+        _validate_runtime_decision_snapshot(value.get("decision"), f"{path}.decision", status or "", issues)
+
+
+def _validate_runtime_decision_snapshot(
+    value: Any,
+    path: str,
+    expected_status: str,
+    issues: list[str],
+) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+    _reject_unknown_fields(value, {"status", "at", "actor", "reason", "metadata"}, path, issues)
+    status = _require_string(value, "status", path, issues, allowed={"approved", "rejected", "expired"})
+    _require_timestamp(value, "at", path, issues)
+    if "actor" in value:
+        _validate_runtime_actor(value["actor"], f"{path}.actor", issues)
+    if "reason" in value:
+        _require_string(value, "reason", path, issues, min_length=1, max_length=180)
+    if "metadata" in value:
+        _require_json_compatible(value["metadata"], f"{path}.metadata", issues)
+    if isinstance(status, str) and status != expected_status:
+        issues.append(f"{path}.status: must match session status")
+
+
+def _validate_runtime_safety_annotation(
+    value: Any,
+    path: str,
+    issues: list[str],
+    *,
+    require_findings: bool,
+) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+    _reject_unknown_fields(value, {"schemaVersion", "scope", "trustLevel", "action", "reasons", "findings"}, path, issues)
+    _require_integer(value, "schemaVersion", path, issues, minimum=1, maximum=1)
+    _require_exact_string(value, "scope", "mcp_tool_output", path, issues)
+    trust_level = _require_string(value, "trustLevel", path, issues, allowed={"trusted", "review", "untrusted"})
+    _require_exact_string(value, "action", "mark_only", path, issues)
+    _validate_string_array(value.get("reasons"), f"{path}.reasons", issues, min_length=1)
+    findings = _require_array(value, "findings", path, issues, min_length=1 if require_findings else 0)
+    if require_findings and trust_level == "trusted":
+        issues.append(f"{path}.trustLevel: must mark reviewed or untrusted output when findings are present")
+    for index, finding in enumerate(findings):
+        item_path = f"{path}.findings[{index}]"
+        if not _is_record(finding):
+            issues.append(f"{item_path}: must be an object")
+            continue
+        _reject_unknown_fields(finding, {"id", "severity", "path", "reason", "excerpt"}, item_path, issues)
+        _require_string(finding, "id", item_path, issues, min_length=1, max_length=100)
+        _require_string(finding, "severity", item_path, issues, allowed={"medium", "high"})
+        _require_string(finding, "path", item_path, issues, min_length=1, max_length=120)
+        _require_string(finding, "reason", item_path, issues, min_length=1, max_length=180)
+        _require_string(finding, "excerpt", item_path, issues, min_length=1, max_length=180)
+
+
+def _validate_runtime_actor(value: Any, path: str, issues: list[str]) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+    _reject_unknown_fields(value, {"id", "roles", "metadata"}, path, issues)
+    _require_string(value, "id", path, issues, ACTOR_ID_PATTERN)
+    if "roles" in value:
+        _validate_string_array(value["roles"], f"{path}.roles", issues)
+    if "metadata" in value:
+        _require_json_compatible(value["metadata"], f"{path}.metadata", issues)
+
+
+def _validate_runtime_approval_links(
+    examples_by_id: dict[str, dict[str, Any]],
+    path: str,
+    issues: list[str],
+) -> None:
+    create = examples_by_id.get("runtime_approval_create")
+    approval_id = _runtime_approval_id(create)
+    if not approval_id:
+        return
+
+    pending = examples_by_id.get("runtime_approval_list_pending")
+    pending_sessions = _runtime_body(pending.get("response") if pending else None)
+    if _is_record(pending_sessions):
+        sessions = pending_sessions.get("sessions")
+        if isinstance(sessions, list):
+            if not any(_is_record(session) and session.get("id") == approval_id and session.get("status") == "pending" for session in sessions):
+                issues.append(f"{path}: pending approval list must include the created approval session")
+
+    decision = examples_by_id.get("runtime_approval_decision")
+    if decision:
+        request = decision.get("request")
+        response = decision.get("response")
+        expected_path = f"/v1/mcp/approval-sessions/{approval_id}/decision"
+        if _is_record(request) and request.get("path") != expected_path:
+            issues.append(f"{path}: approval decision path must use the created approval id")
+        body = _runtime_body(response)
+        session = body.get("session") if _is_record(body) else None
+        if _is_record(session) and session.get("id") != approval_id:
+            issues.append(f"{path}: approval decision response must return the created approval id")
+
+
+def _runtime_approval_id(example: Optional[dict[str, Any]]) -> Optional[str]:
+    if not example:
+        return None
+    body = _runtime_body(example.get("response"))
+    if not _is_record(body):
+        return None
+    error = body.get("error")
+    if not _is_record(error):
+        return None
+    details = error.get("details")
+    if not _is_record(details):
+        return None
+    approval_id = details.get("approvalId")
+    return approval_id if isinstance(approval_id, str) else None
+
+
+def _runtime_body(value: Optional[dict[str, Any]]) -> Any:
+    return value.get("body") if _is_record(value) else None
+
+
+def _require_runtime_route(
+    request: Optional[dict[str, Any]],
+    method: str,
+    route_path: str,
+    path: str,
+    issues: list[str],
+) -> None:
+    if not _is_record(request):
+        return
+    if request.get("method") != method:
+        issues.append(f"{path}.method: must be {method}")
+    if request.get("path") != route_path:
+        issues.append(f"{path}.path: must be {route_path}")
+
+
+def _require_runtime_status(
+    response: Optional[dict[str, Any]],
+    status: int,
+    path: str,
+    issues: list[str],
+) -> None:
+    if _is_record(response) and response.get("status") != status:
+        issues.append(f"{path}.status: must be {status}")
+
+
+def _runtime_route_kind(method: str, route_path: str) -> Optional[str]:
+    if method == "GET" and route_path == "/v1/mcp/resources":
+        return "resource_list"
+    if method == "POST" and route_path == "/v1/mcp/resources/read":
+        return "resource_read"
+    if method == "GET" and route_path == "/v1/mcp/tools":
+        return "tool_list"
+    if method == "POST" and route_path == "/v1/mcp/tools/call":
+        return "tool_call"
+    if method == "POST" and route_path == "/v1/mcp/tools/execute":
+        return "tool_execute"
+    if method == "GET" and route_path == "/v1/mcp/approval-sessions":
+        return "approval_list"
+    if method == "POST" and re.fullmatch(r"/v1/mcp/approval-sessions/[^/]+/decision", route_path):
+        return "approval_decision"
+    return None
 
 
 def _validate_request(value: Any, path: str, issues: list[str]) -> None:

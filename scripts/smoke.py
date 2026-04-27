@@ -43,6 +43,7 @@ def main() -> int:
 
     run([sys.executable, "scripts/loc_budget.py", "--summary"], cwd=root)
     run([sys.executable, "scripts/repo_health.py", "--json"], cwd=root)
+    run([sys.executable, "scripts/public_boundary_guard.py", "--json"], cwd=root)
     run([sys.executable, "scripts/env_guard.py"], cwd=root)
     run([sys.executable, "scripts/rust_guard.py"], cwd=root)
     run([sys.executable, "scripts/validate_openapi.py"], cwd=root)

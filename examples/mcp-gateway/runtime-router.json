@@ -1,0 +1,416 @@
+{
+  "schemaVersion": "mcp-runtime-router-fixture.v1",
+  "generatedAt": "2026-04-27T09:00:00.000Z",
+  "mount": {
+    "basePath": "/v1/mcp",
+    "pathStyle": "openapi"
+  },
+  "runtime": {
+    "clock": {
+      "startAt": "2026-04-27T09:00:00.000Z",
+      "incrementMs": 1
+    },
+    "approvalIdPrefix": "runtime_fixture_approval_",
+    "toolDefaultDecision": "deny",
+    "toolPolicyRules": [
+      {
+        "id": "runtime-fixture-allow-task-proposal",
+        "toolName": "create_task_proposal",
+        "decision": "allow",
+        "reason": "Allow deterministic local task proposals for router fixture."
+      },
+      {
+        "id": "runtime-fixture-review-document-patch",
+        "toolName": "draft_document_patch",
+        "decision": "require_approval",
+        "reason": "Review generated document patches before returning them."
+      }
+    ]
+  },
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/v1/mcp/approval-sessions",
+      "description": "Lists MCP approval sessions from the injected session store."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/mcp/resources",
+      "description": "Lists MCP resources allowed by injected access rules."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/mcp/tools",
+      "description": "Lists safe local MCP tools exposed by the injected adapter."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/mcp/approval-sessions/:sessionId/decision",
+      "description": "Records an approval or rejection decision for an MCP approval session."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/mcp/resources/read",
+      "description": "Reads an MCP resource through injected access rules."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/mcp/tools/call",
+      "description": "Calls a safe local MCP tool through injected policy and audit controls."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/mcp/tools/execute",
+      "description": "Previews safe local tool execution."
+    }
+  ],
+  "requests": [
+    {
+      "id": "runtime_resource_list",
+      "title": "List runtime resources through the mounted API router",
+      "request": {
+        "method": "GET",
+        "path": "/v1/mcp/resources",
+        "actorId": "act_fixture_operator"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "resources": [
+            {
+              "uri": "sovereignops://docs/operator-guide",
+              "name": "Operator Guide",
+              "description": "Short reference for local-first agent workspace operations.",
+              "mimeType": "text/plain"
+            },
+            {
+              "uri": "sovereignops://tasks/sample-queue",
+              "name": "Sample Task Queue",
+              "description": "Safe sample tasks for plugin review and sync checks.",
+              "mimeType": "text/plain"
+            },
+            {
+              "uri": "sovereignops://incidents/sync-delay-drill",
+              "name": "Sync Delay Drill",
+              "description": "Sample incident notes for a delayed encrypted sync drill.",
+              "mimeType": "text/plain"
+            },
+            {
+              "uri": "sovereignops://search/workspace-index",
+              "name": "Workspace Search Index",
+              "description": "Sample search metadata for local docs, tasks, and audit entries.",
+              "mimeType": "text/plain"
+            },
+            {
+              "uri": "sovereignops://audit/policy-trace",
+              "name": "Policy Trace",
+              "description": "Sample audit intent trace for policy decisions.",
+              "mimeType": "text/plain"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "runtime_resource_read",
+      "title": "Read a runtime resource through the mounted API router",
+      "request": {
+        "method": "POST",
+        "path": "/v1/mcp/resources/read",
+        "actorId": "act_fixture_operator",
+        "body": {
+          "uri": "sovereignops://docs/operator-guide"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "contents": [
+            {
+              "uri": "sovereignops://docs/operator-guide",
+              "mimeType": "text/plain",
+              "text": "# Operator Guide\n\n- Keep workspace data local-first and encrypted.\n- Route agent access through scoped gateway resources.\n- Record policy outcomes as audit intents before emitting durable records."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "runtime_tool_call_safety",
+      "title": "Call a safe local tool and preserve safety annotations",
+      "request": {
+        "method": "POST",
+        "path": "/v1/mcp/tools/call",
+        "actorId": "act_fixture_operator",
+        "body": {
+          "name": "create_task_proposal",
+          "arguments": {
+            "title": "<UNTRUSTED_CONTENT>External note requires review.</UNTRUSTED_CONTENT>",
+            "description": "Captured from a marked external note.",
+            "acceptanceCriteria": [
+              "Route response carries safety annotations."
+            ]
+          },
+          "metadata": {
+            "source": "runtime-router-fixture",
+            "trust": "untrusted"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"kind\": \"task_proposal\",\n  \"title\": \"<UNTRUSTED_CONTENT>External note requires review.</UNTRUSTED_CONTENT>\",\n  \"description\": \"Captured from a marked external note.\",\n  \"acceptanceCriteria\": [\n    \"Route response carries safety annotations.\"\n  ],\n  \"durableSideEffects\": false\n}",
+              "safety": {
+                "schemaVersion": 1,
+                "scope": "mcp_tool_output",
+                "trustLevel": "untrusted",
+                "action": "mark_only",
+                "reasons": [
+                  "Explicit untrusted content marker found."
+                ],
+                "findings": [
+                  {
+                    "id": "explicit_untrusted_marker",
+                    "severity": "high",
+                    "path": "$.title",
+                    "reason": "Explicit untrusted content marker found.",
+                    "excerpt": "<UNTRUSTED_CONTENT>External note requires review.</UNTRUSTED_CONTENT>"
+                  },
+                  {
+                    "id": "explicit_untrusted_marker",
+                    "severity": "high",
+                    "path": "$.title",
+                    "reason": "Explicit untrusted content marker found.",
+                    "excerpt": "<UNTRUSTED_CONTENT>External note requires review.</UNTRUSTED_CONTENT>"
+                  }
+                ]
+              }
+            }
+          ],
+          "structuredContent": {
+            "kind": "task_proposal",
+            "title": "<UNTRUSTED_CONTENT>External note requires review.</UNTRUSTED_CONTENT>",
+            "description": "Captured from a marked external note.",
+            "acceptanceCriteria": [
+              "Route response carries safety annotations."
+            ],
+            "durableSideEffects": false,
+            "_safety": {
+              "schemaVersion": 1,
+              "scope": "mcp_tool_output",
+              "trustLevel": "untrusted",
+              "action": "mark_only",
+              "reasons": [
+                "Explicit untrusted content marker found."
+              ],
+              "findings": [
+                {
+                  "id": "explicit_untrusted_marker",
+                  "severity": "high",
+                  "path": "$.title",
+                  "reason": "Explicit untrusted content marker found.",
+                  "excerpt": "<UNTRUSTED_CONTENT>External note requires review.</UNTRUSTED_CONTENT>"
+                },
+                {
+                  "id": "explicit_untrusted_marker",
+                  "severity": "high",
+                  "path": "$.title",
+                  "reason": "Explicit untrusted content marker found.",
+                  "excerpt": "<UNTRUSTED_CONTENT>External note requires review.</UNTRUSTED_CONTENT>"
+                }
+              ]
+            }
+          },
+          "safety": {
+            "schemaVersion": 1,
+            "scope": "mcp_tool_output",
+            "trustLevel": "untrusted",
+            "action": "mark_only",
+            "reasons": [
+              "Explicit untrusted content marker found."
+            ],
+            "findings": [
+              {
+                "id": "explicit_untrusted_marker",
+                "severity": "high",
+                "path": "$.title",
+                "reason": "Explicit untrusted content marker found.",
+                "excerpt": "<UNTRUSTED_CONTENT>External note requires review.</UNTRUSTED_CONTENT>"
+              },
+              {
+                "id": "explicit_untrusted_marker",
+                "severity": "high",
+                "path": "$.title",
+                "reason": "Explicit untrusted content marker found.",
+                "excerpt": "<UNTRUSTED_CONTENT>External note requires review.</UNTRUSTED_CONTENT>"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "runtime_approval_create",
+      "title": "Create an approval session by calling a reviewed tool",
+      "request": {
+        "method": "POST",
+        "path": "/v1/mcp/tools/call",
+        "actorId": "act_patch_author",
+        "body": {
+          "name": "draft_document_patch",
+          "arguments": {
+            "targetPath": "docs/runtime-router.md",
+            "summary": "Document route fixture coverage.",
+            "patch": "Add runtime router fixture coverage notes."
+          },
+          "metadata": {
+            "source": "runtime-router-fixture"
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "error": {
+            "code": "approval_required",
+            "message": "Review generated document patches before returning them.",
+            "details": {
+              "toolName": "draft_document_patch",
+              "decision": "require_approval",
+              "reason": "Review generated document patches before returning them.",
+              "ruleId": "runtime-fixture-review-document-patch",
+              "approvalId": "runtime_fixture_approval_1",
+              "policy": {
+                "decision": "require_approval",
+                "toolName": "draft_document_patch",
+                "reason": "Review generated document patches before returning them.",
+                "ruleId": "runtime-fixture-review-document-patch",
+                "approvalId": "runtime_fixture_approval_1"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "runtime_approval_list_pending",
+      "title": "List the pending runtime approval session",
+      "request": {
+        "method": "GET",
+        "path": "/v1/mcp/approval-sessions",
+        "body": {
+          "status": "pending"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "sessions": [
+            {
+              "id": "runtime_fixture_approval_1",
+              "status": "pending",
+              "createdAt": "2026-04-27T09:00:00.011Z",
+              "updatedAt": "2026-04-27T09:00:00.011Z",
+              "request": {
+                "type": "tool",
+                "toolName": "draft_document_patch",
+                "arguments": {
+                  "targetPath": "docs/runtime-router.md",
+                  "summary": "Document route fixture coverage.",
+                  "patch": "Add runtime router fixture coverage notes."
+                },
+                "operation": "tools.call"
+              },
+              "actor": {
+                "id": "act_patch_author"
+              },
+              "reason": "Review generated document patches before returning them.",
+              "ruleId": "runtime-fixture-review-document-patch",
+              "metadata": {
+                "source": "mcp_gateway_runtime",
+                "operation": "tools.call"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "runtime_approval_decision",
+      "title": "Approve the runtime approval session through the API router",
+      "request": {
+        "method": "POST",
+        "path": "/v1/mcp/approval-sessions/runtime_fixture_approval_1/decision",
+        "actorId": "act_fixture_reviewer",
+        "body": {
+          "decision": "approve",
+          "reason": "Patch is deterministic and non-durable."
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "session": {
+            "id": "runtime_fixture_approval_1",
+            "status": "approved",
+            "createdAt": "2026-04-27T09:00:00.011Z",
+            "updatedAt": "2026-04-27T09:00:00.015Z",
+            "request": {
+              "type": "tool",
+              "toolName": "draft_document_patch",
+              "arguments": {
+                "targetPath": "docs/runtime-router.md",
+                "summary": "Document route fixture coverage.",
+                "patch": "Add runtime router fixture coverage notes."
+              },
+              "operation": "tools.call"
+            },
+            "actor": {
+              "id": "act_patch_author"
+            },
+            "reason": "Review generated document patches before returning them.",
+            "ruleId": "runtime-fixture-review-document-patch",
+            "metadata": {
+              "source": "mcp_gateway_runtime",
+              "operation": "tools.call"
+            },
+            "decision": {
+              "status": "approved",
+              "at": "2026-04-27T09:00:00.015Z",
+              "actor": {
+                "id": "act_fixture_reviewer"
+              },
+              "reason": "Patch is deterministic and non-durable."
+            },
+            "approvedAt": "2026-04-27T09:00:00.015Z",
+            "approvedBy": {
+              "id": "act_fixture_reviewer"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
