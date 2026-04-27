@@ -35,6 +35,7 @@ def make_release_root(root: Path) -> None:
         "examples/mcp-gateway/resources.json",
         "examples/mcp-gateway/tools.json",
         "examples/mcp-gateway/approval-sessions.json",
+        "examples/mcp-gateway/api-requests.json",
         "package.json",
         "pnpm-workspace.yaml",
         "Cargo.toml",

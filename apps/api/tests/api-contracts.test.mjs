@@ -22,7 +22,9 @@ import {
 } from "../../../services/sync/src/cursors.ts";
 import { createSyncHttpHandlers } from "../../../services/sync/src/http.ts";
 import { createGatewayResourceAdapter } from "../../../services/mcp-gateway/src/adapter.ts";
+import { createApprovalSessionStore } from "../../../services/mcp-gateway/src/approvalSessions.ts";
 import { GatewayResourceRegistry } from "../../../services/mcp-gateway/src/resources.ts";
+import { createSafeLocalToolAdapter } from "../../../services/mcp-gateway/src/toolAdapter.ts";
 import { executeToolCall } from "../../../services/mcp-gateway/src/tools.ts";
 
 const fixedNow = Date.parse("2026-04-27T00:00:00.000Z");
@@ -48,7 +50,11 @@ test("documented OpenAPI sync and MCP operations are mounted by public routes", 
     ["getSyncCursorStatus", "POST /v1/sync/cursor-status"],
     ["listMcpResources", "GET /v1/mcp/resources"],
     ["readMcpResource", "POST /v1/mcp/resources/read"],
+    ["listMcpTools", "GET /v1/mcp/tools"],
     ["executeMcpToolPreview", "POST /v1/mcp/tools/execute"],
+    ["callMcpTool", "POST /v1/mcp/tools/call"],
+    ["listMcpApprovalSessions", "GET /v1/mcp/approval-sessions"],
+    ["decideMcpApprovalSession", "POST /v1/mcp/approval-sessions/:sessionId/decision"],
   ]);
 
   for (const [operationId, expectedRouteKey] of expectedOperations) {
@@ -210,6 +216,51 @@ test("MCP public routes preserve resource and safe tool preview contracts", asyn
       durableSideEffects: false,
     },
   });
+
+  const toolsResponse = await router.dispatch({
+    method: "GET",
+    path: "/v1/mcp/tools",
+  });
+  assertJsonResponse(toolsResponse, 200);
+  assert.ok(
+    toolsResponse.body.tools.some((tool) => tool.name === "create_task_proposal"),
+  );
+
+  const callResponse = await router.dispatch({
+    method: "POST",
+    path: "/v1/mcp/tools/call",
+    actorId: "act_local",
+    body: {
+      name: "create_task_proposal",
+      arguments: { title: "Review local notes" },
+    },
+  });
+  assertJsonResponse(callResponse, 200);
+  assert.equal(callResponse.body.structuredContent.kind, "task_proposal");
+  assert.equal(callResponse.body.structuredContent.durableSideEffects, false);
+
+  const sessionsResponse = await router.dispatch({
+    method: "GET",
+    path: "/v1/mcp/approval-sessions",
+  });
+  assertJsonResponse(sessionsResponse, 200);
+  assert.deepEqual(
+    sessionsResponse.body.sessions.map((session) => [session.id, session.status]),
+    [["approval-contract-1", "pending"]],
+  );
+
+  const decisionResponse = await router.dispatch({
+    method: "POST",
+    path: "/v1/mcp/approval-sessions/approval-contract-1/decision",
+    actorId: "act_reviewer",
+    body: {
+      decision: "approve",
+      reason: "checked",
+    },
+  });
+  assertJsonResponse(decisionResponse, 200);
+  assert.equal(decisionResponse.body.session.status, "approved");
+  assert.equal(decisionResponse.body.session.decision.reason, "checked");
 });
 
 test("router dispatch normalizes requests deterministically without mutating callers", async () => {
@@ -308,6 +359,7 @@ function createPublicContractRouter(options = {}) {
 }
 
 function createMcpDependencies(overrides = {}) {
+  const approvalSessionStore = overrides.approvalSessionStore ?? createApprovalStore();
   return {
     adapter: overrides.adapter ?? createGatewayResourceAdapter({
       resources: new GatewayResourceRegistry([
@@ -337,7 +389,27 @@ function createMcpDependencies(overrides = {}) {
         },
         policy: () => ({ decision: "allow", ruleId: "allow-preview" }),
       })),
+    safeToolAdapter: overrides.safeToolAdapter ?? createSafeLocalToolAdapter({
+      policy: () => ({ decision: "allow", ruleId: "allow-call" }),
+    }),
+    approvalSessionStore,
   };
+}
+
+function createApprovalStore() {
+  const store = createApprovalSessionStore({
+    now: () => "2026-04-27T00:00:00.000Z",
+    idPrefix: "approval-contract-",
+  });
+  store.create({
+    request: {
+      type: "tool",
+      toolName: "create_task_proposal",
+    },
+    actor: { id: "act_local" },
+    reason: "contract review",
+  });
+  return store;
 }
 
 function createFakeSyncRepository() {

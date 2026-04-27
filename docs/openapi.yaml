@@ -130,6 +130,21 @@ paths:
                 $ref: "#/components/schemas/McpReadResourceResponse"
         default:
           $ref: "#/components/responses/Error"
+  /v1/mcp/tools:
+    get:
+      tags:
+        - mcp
+      summary: List safe local MCP tools exposed by the local gateway.
+      operationId: listMcpTools
+      responses:
+        "200":
+          description: Safe local tool descriptors.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpToolListResponse"
+        default:
+          $ref: "#/components/responses/Error"
   /v1/mcp/tools/execute:
     post:
       tags:
@@ -149,6 +164,77 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/McpToolExecuteResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/mcp/tools/call:
+    post:
+      tags:
+        - mcp
+      summary: Call a safe local MCP tool through policy and audit controls.
+      operationId: callMcpTool
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/McpToolCallRequest"
+      responses:
+        "200":
+          description: Safe local tool call result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpToolCallResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/mcp/approval-sessions:
+    get:
+      tags:
+        - mcp
+      summary: List MCP approval sessions.
+      operationId: listMcpApprovalSessions
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/McpApprovalSessionStatus"
+        - name: actorId
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Approval session snapshots.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpApprovalSessionListResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/mcp/approval-sessions/{sessionId}/decision:
+    post:
+      tags:
+        - mcp
+      summary: Record an approval or rejection decision for an MCP approval session.
+      operationId: decideMcpApprovalSession
+      parameters:
+        - $ref: "#/components/parameters/McpApprovalSessionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/McpApprovalSessionDecisionRequest"
+      responses:
+        "200":
+          description: Updated approval session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpApprovalSessionDecisionResponse"
         default:
           $ref: "#/components/responses/Error"
   /v1/workspaces/{workspaceId}/records:
@@ -526,6 +612,13 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/SovereignRecordId"
+    McpApprovalSessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
   responses:
     Error:
       description: Error response.
@@ -1407,6 +1500,49 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/McpResourceContent"
+    McpToolInputSchema:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - object
+        properties:
+          type: object
+          additionalProperties: true
+        required:
+          type: array
+          items:
+            type: string
+        additionalProperties:
+          type: boolean
+      additionalProperties: true
+    McpToolDescriptor:
+      type: object
+      required:
+        - name
+        - description
+        - inputSchema
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        inputSchema:
+          $ref: "#/components/schemas/McpToolInputSchema"
+    McpToolListResponse:
+      type: object
+      required:
+        - tools
+      properties:
+        tools:
+          type: array
+          items:
+            $ref: "#/components/schemas/McpToolDescriptor"
     McpToolExecuteRequest:
       type: object
       required:
@@ -1439,6 +1575,183 @@ components:
         output:
           type: object
           additionalProperties: true
+    McpToolCallRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        toolName:
+          type: string
+          minLength: 1
+        arguments:
+          type: object
+          additionalProperties: true
+        actor:
+          oneOf:
+            - type: string
+              minLength: 1
+            - $ref: "#/components/schemas/McpActor"
+        metadata:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+    McpToolContentItem:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          minLength: 1
+      additionalProperties: true
+    McpToolCallResponse:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/McpToolContentItem"
+        structuredContent: {}
+        isError:
+          type: boolean
+    McpActor:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          minLength: 1
+        roles:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          additionalProperties: true
+    McpApprovalSessionStatus:
+      type: string
+      enum:
+        - pending
+        - approved
+        - rejected
+        - expired
+    McpApprovalSessionDecisionAction:
+      type: string
+      enum:
+        - approve
+        - reject
+    McpApprovalSessionDecision:
+      type: object
+      required:
+        - status
+        - at
+      properties:
+        status:
+          type: string
+          enum:
+            - approved
+            - rejected
+            - expired
+        at:
+          type: string
+          format: date-time
+        actor:
+          $ref: "#/components/schemas/McpActor"
+        reason:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+    McpApprovalSession:
+      type: object
+      required:
+        - id
+        - status
+        - createdAt
+        - updatedAt
+        - request
+      properties:
+        id:
+          type: string
+          minLength: 1
+        status:
+          $ref: "#/components/schemas/McpApprovalSessionStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        request:
+          type: object
+          additionalProperties: true
+        actor:
+          $ref: "#/components/schemas/McpActor"
+        reason:
+          type: string
+        ruleId:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        decision:
+          $ref: "#/components/schemas/McpApprovalSessionDecision"
+        approvedAt:
+          type: string
+          format: date-time
+        approvedBy:
+          $ref: "#/components/schemas/McpActor"
+        rejectedAt:
+          type: string
+          format: date-time
+        rejectedBy:
+          $ref: "#/components/schemas/McpActor"
+        expiredAt:
+          type: string
+          format: date-time
+        expiredBy:
+          $ref: "#/components/schemas/McpActor"
+    McpApprovalSessionListResponse:
+      type: object
+      required:
+        - sessions
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/McpApprovalSession"
+    McpApprovalSessionDecisionRequest:
+      type: object
+      required:
+        - decision
+      properties:
+        sessionId:
+          type: string
+          minLength: 1
+        decision:
+          $ref: "#/components/schemas/McpApprovalSessionDecisionAction"
+        actor:
+          $ref: "#/components/schemas/McpActor"
+        reason:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+    McpApprovalSessionDecisionResponse:
+      type: object
+      required:
+        - session
+      properties:
+        session:
+          $ref: "#/components/schemas/McpApprovalSession"
     MigrationPlanRequest:
       type: object
       required:

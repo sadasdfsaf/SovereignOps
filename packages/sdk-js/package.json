@@ -5,7 +5,7 @@
   "private": true,
   "main": "src/index.ts",
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package && node tests/storage.test.mjs && node tests/storage-path-security.test.mjs && node tests/workspace.test.mjs && node tests/client.test.mjs && node tests/client-audit-export.test.mjs && node tests/client-lifecycle.test.mjs && node tests/local-lifecycle.test.mjs",
-    "test": "node tests/storage.test.mjs && node tests/storage-path-security.test.mjs && node tests/workspace.test.mjs && node tests/client.test.mjs && node tests/client-audit-export.test.mjs && node tests/client-lifecycle.test.mjs && node tests/local-lifecycle.test.mjs"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/storage.test.mjs && node tests/storage-path-security.test.mjs && node tests/workspace.test.mjs && node tests/client.test.mjs && node tests/client-mcp.test.mjs && node tests/client-audit-export.test.mjs && node tests/client-lifecycle.test.mjs && node tests/local-lifecycle.test.mjs",
+    "test": "node tests/storage.test.mjs && node tests/storage-path-security.test.mjs && node tests/workspace.test.mjs && node tests/client.test.mjs && node tests/client-mcp.test.mjs && node tests/client-audit-export.test.mjs && node tests/client-lifecycle.test.mjs && node tests/local-lifecycle.test.mjs"
   }
 }

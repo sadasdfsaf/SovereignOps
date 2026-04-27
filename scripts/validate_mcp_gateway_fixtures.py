@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -11,7 +12,12 @@ from typing import Any, Optional
 from urllib.parse import urlparse
 
 
-FIXTURE_FILE_NAMES = ("resources.json", "tools.json", "approval-sessions.json")
+FIXTURE_FILE_NAMES = (
+    "resources.json",
+    "tools.json",
+    "approval-sessions.json",
+    "api-requests.json",
+)
 DEFAULT_FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "examples" / "mcp-gateway"
 SCHEMA_VERSION = "mcp-gateway-fixtures.v1"
 
@@ -23,6 +29,9 @@ SESSION_ID_PATTERN = re.compile(r"^aps_[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 DECISION_ID_PATTERN = re.compile(r"^apd_[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 EVENT_ID_PATTERN = re.compile(r"^ape_[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 USER_ID_PATTERN = re.compile(r"^user_[A-Za-z0-9_-]{1,64}$")
+API_REQUEST_ID_PATTERN = re.compile(
+    r"^api_(?:resource_list|resource_read|tool_list|tool_call|approval_list|approval_decision)$"
+)
 
 ALLOWED_LOCAL_SCHEMES = {"fixture", "local", "memory", "workspace"}
 RESOURCE_MIME_TYPES = {"application/json", "text/plain", "text/markdown"}
@@ -30,15 +39,26 @@ SESSION_STATUSES = {"pending", "approved", "rejected", "expired", "canceled"}
 TERMINAL_STATUSES = {"approved", "rejected", "expired", "canceled"}
 DECISION_STATUSES = {"approved", "rejected", "canceled"}
 EVENT_TYPES = {"requested", "approved", "rejected", "expired", "canceled", "noted"}
+API_ROUTE_KINDS = {
+    ("GET", "/v1/mcp/resources"): "resource_list",
+    ("POST", "/v1/mcp/resources/read"): "resource_read",
+    ("GET", "/v1/mcp/tools"): "tool_list",
+    ("POST", "/v1/mcp/tools/call"): "tool_call",
+    ("GET", "/v1/mcp/approval-sessions"): "approval_list",
+    ("POST", "/v1/mcp/approval-sessions/{sessionId}/decision"): "approval_decision",
+}
+EXPECTED_API_ROUTE_KINDS = set(API_ROUTE_KINDS.values())
+HTTP_METHODS = {"GET", "POST"}
 
 SENSITIVE_FIELD_PATTERN = re.compile(
-    r"(?i)(?:password|passwd|secret|token|api[_-]?key|private[_-]?key|client[_-]?secret)"
+    r"(?i)(?:authorization|password|passwd|secret|token|api[_-]?key|private[_-]?key|client[_-]?secret)"
 )
 SECRET_VALUE_PATTERNS = (
     re.compile(r"sk-[A-Za-z0-9]{20,}"),
     re.compile(r"gh[pousr]_[A-Za-z0-9_]{20,}"),
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
+    re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~-]{12,}"),
     re.compile(r"(?i)(?:password|passwd|secret|token|api[_-]?key)\s*[:=]\s*\S{4,}"),
 )
 
@@ -68,20 +88,34 @@ def validate_mcp_gateway_fixtures(root: Optional[Path] = None) -> ValidationRepo
         if loaded is not None:
             data[name] = loaded
             _scan_secret_shapes(loaded, name, issues)
+            _require_json_compatible(loaded, name, issues)
 
     resources_by_uri: dict[str, dict[str, Any]] = {}
+    resources_by_id: dict[str, dict[str, Any]] = {}
     tools_by_name: dict[str, dict[str, Any]] = {}
+    sessions_by_id: dict[str, dict[str, Any]] = {}
 
     if "resources.json" in data:
         resources_by_uri = _validate_resources(data["resources.json"], "resources.json", issues)
+        resources_by_id = _records_by_string_field(resources_by_uri.values(), "id")
     if "tools.json" in data:
         tools_by_name = _validate_tools(data["tools.json"], "tools.json", issues)
     if "approval-sessions.json" in data:
-        _validate_sessions(
+        sessions_by_id = _validate_sessions(
             data["approval-sessions.json"],
             "approval-sessions.json",
             resources_by_uri,
             tools_by_name,
+            issues,
+        )
+    if "api-requests.json" in data:
+        _validate_api_requests(
+            data["api-requests.json"],
+            "api-requests.json",
+            resources_by_id,
+            resources_by_uri,
+            tools_by_name,
+            sessions_by_id,
             issues,
         )
 
@@ -209,10 +243,11 @@ def _validate_sessions(
     resources_by_uri: dict[str, dict[str, Any]],
     tools_by_name: dict[str, dict[str, Any]],
     issues: list[str],
-) -> None:
+) -> dict[str, dict[str, Any]]:
+    sessions_by_id: dict[str, dict[str, Any]] = {}
     if not _is_record(value):
         issues.append(f"{path}: must be an object")
-        return
+        return sessions_by_id
 
     _reject_unknown_fields(value, {"schemaVersion", "generatedAt", "sessions"}, path, issues)
     _require_exact_string(value, "schemaVersion", SCHEMA_VERSION, path, issues)
@@ -227,7 +262,11 @@ def _validate_sessions(
             continue
         _validate_session(session, item_path, resources_by_uri, tools_by_name, issues)
         session_id = session.get("id")
+        if isinstance(session_id, str):
+            sessions_by_id[session_id] = session
         _track_unique(session_id, seen_ids, f"{item_path}.id", "session id", issues)
+
+    return sessions_by_id
 
 
 def _validate_session(
@@ -282,6 +321,381 @@ def _validate_session(
     _validate_request(session.get("request"), f"{path}.request", issues)
     _validate_events(session.get("events"), f"{path}.events", status, requested_at, updated_at, issues)
     _validate_terminal_status(session, path, status, requested_at, updated_at, expires_at, resolved_at, issues)
+
+
+def _validate_api_requests(
+    value: Any,
+    path: str,
+    resources_by_id: dict[str, dict[str, Any]],
+    resources_by_uri: dict[str, dict[str, Any]],
+    tools_by_name: dict[str, dict[str, Any]],
+    sessions_by_id: dict[str, dict[str, Any]],
+    issues: list[str],
+) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+
+    _reject_unknown_fields(value, {"schemaVersion", "generatedAt", "requests"}, path, issues)
+    _require_exact_string(value, "schemaVersion", SCHEMA_VERSION, path, issues)
+    _require_timestamp(value, "generatedAt", path, issues)
+    requests = _require_array(value, "requests", path, issues, min_length=len(API_ROUTE_KINDS))
+
+    seen_ids: set[str] = set()
+    seen_route_kinds: set[str] = set()
+    for index, example in enumerate(requests):
+        item_path = f"{path}.requests[{index}]"
+        if not _is_record(example):
+            issues.append(f"{item_path}: must be an object")
+            continue
+
+        _reject_unknown_fields(example, {"id", "title", "route", "request", "response"}, item_path, issues)
+        example_id = _require_string(example, "id", item_path, issues, API_REQUEST_ID_PATTERN)
+        _require_string(example, "title", item_path, issues, min_length=1, max_length=100)
+        route = _validate_api_route(example.get("route"), f"{item_path}.route", issues)
+        request = _validate_api_request_envelope(example.get("request"), f"{item_path}.request", route, issues)
+        response = _validate_api_response_envelope(example.get("response"), f"{item_path}.response", issues)
+        _track_unique(example_id, seen_ids, f"{item_path}.id", "api request id", issues)
+
+        if not route:
+            continue
+        route_kind = route["kind"]
+        expected_id = f"api_{route_kind}"
+        if isinstance(example_id, str) and example_id != expected_id:
+            issues.append(f"{item_path}.id: must be {expected_id} for route {route['path']}")
+        seen_route_kinds.add(route_kind)
+
+        request_body = request.get("body") if request else None
+        response_body = response.get("body") if response else None
+        if route_kind == "resource_list":
+            _validate_api_resource_list(response_body, f"{item_path}.response.body", resources_by_id, resources_by_uri, issues)
+        elif route_kind == "resource_read":
+            _validate_api_resource_read(
+                request_body,
+                response_body,
+                f"{item_path}",
+                resources_by_id,
+                resources_by_uri,
+                issues,
+            )
+        elif route_kind == "tool_list":
+            _validate_api_tool_list(response_body, f"{item_path}.response.body", tools_by_name, issues)
+        elif route_kind == "tool_call":
+            _validate_api_tool_call(request_body, response_body, f"{item_path}", tools_by_name, issues)
+        elif route_kind == "approval_list":
+            _validate_api_approval_list(response_body, f"{item_path}.response.body", sessions_by_id, issues)
+        elif route_kind == "approval_decision":
+            _validate_api_approval_decision(request_body, response_body, f"{item_path}", sessions_by_id, issues)
+
+    for route_kind in sorted(EXPECTED_API_ROUTE_KINDS - seen_route_kinds):
+        issues.append(f"{path}.requests: missing {route_kind} example")
+
+
+def _validate_api_route(value: Any, path: str, issues: list[str]) -> Optional[dict[str, str]]:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return None
+    _reject_unknown_fields(value, {"method", "path"}, path, issues)
+    method = _require_string(value, "method", path, issues, allowed=HTTP_METHODS)
+    route_path = _require_string(value, "path", path, issues, min_length=1, max_length=120)
+    if not isinstance(method, str) or not isinstance(route_path, str):
+        return None
+
+    route_kind = API_ROUTE_KINDS.get((method, route_path))
+    decision_match = re.fullmatch(
+        r"/v1/mcp/approval-sessions/(aps_[a-z][a-z0-9]*(?:_[a-z0-9]+)*)/decision",
+        route_path,
+    )
+    if not route_kind and method == "POST" and decision_match:
+        return {
+            "method": method,
+            "path": route_path,
+            "kind": "approval_decision",
+            "sessionId": decision_match.group(1),
+        }
+    if not route_kind:
+        allowed = ", ".join(f"{allowed_method} {allowed_path}" for allowed_method, allowed_path in sorted(API_ROUTE_KINDS))
+        issues.append(f"{path}: route must be one of {allowed}")
+        return None
+    return {"method": method, "path": route_path, "kind": route_kind}
+
+
+def _validate_api_request_envelope(
+    value: Any,
+    path: str,
+    route: Optional[dict[str, str]],
+    issues: list[str],
+) -> Optional[dict[str, Any]]:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return None
+    _reject_unknown_fields(value, {"headers", "query", "body"}, path, issues)
+    if "headers" in value:
+        _validate_string_map(value["headers"], f"{path}.headers", issues)
+    if "query" in value:
+        _validate_string_map(value["query"], f"{path}.query", issues)
+
+    body = value.get("body")
+    if route and route["method"] == "GET" and body is not None:
+        issues.append(f"{path}.body: GET examples must use null body")
+    if route and route["method"] == "POST" and not _is_record(body):
+        issues.append(f"{path}.body: POST examples must use an object body")
+    return value
+
+
+def _validate_api_response_envelope(
+    value: Any, path: str, issues: list[str]
+) -> Optional[dict[str, Any]]:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return None
+    _reject_unknown_fields(value, {"status", "body"}, path, issues)
+    _require_integer(value, "status", path, issues, minimum=100, maximum=599)
+    if not _is_record(value.get("body")):
+        issues.append(f"{path}.body: must be an object")
+    return value
+
+
+def _validate_api_resource_list(
+    body: Any,
+    path: str,
+    resources_by_id: dict[str, dict[str, Any]],
+    resources_by_uri: dict[str, dict[str, Any]],
+    issues: list[str],
+) -> None:
+    if not _is_record(body):
+        issues.append(f"{path}: must be an object")
+        return
+    _reject_unknown_fields(body, {"resources"}, path, issues)
+    resources = _require_array(body, "resources", path, issues, min_length=1)
+    for index, resource in enumerate(resources):
+        _validate_resource_reference(
+            resource,
+            f"{path}.resources[{index}]",
+            resources_by_id,
+            resources_by_uri,
+            issues,
+        )
+
+
+def _validate_api_resource_read(
+    request_body: Any,
+    response_body: Any,
+    path: str,
+    resources_by_id: dict[str, dict[str, Any]],
+    resources_by_uri: dict[str, dict[str, Any]],
+    issues: list[str],
+) -> None:
+    if not _is_record(request_body):
+        issues.append(f"{path}.request.body: must be an object")
+        return
+    _reject_unknown_fields(request_body, {"resourceUri"}, f"{path}.request.body", issues)
+    requested_uri = _require_string(request_body, "resourceUri", f"{path}.request.body", issues)
+    if isinstance(requested_uri, str):
+        _require_local_uri(requested_uri, f"{path}.request.body.resourceUri", issues)
+        if resources_by_uri and requested_uri not in resources_by_uri:
+            issues.append(f"{path}.request.body.resourceUri: does not match a resource uri")
+
+    if not _is_record(response_body):
+        issues.append(f"{path}.response.body: must be an object")
+        return
+    _reject_unknown_fields(response_body, {"resource", "content"}, f"{path}.response.body", issues)
+    resource = _validate_resource_reference(
+        response_body.get("resource"),
+        f"{path}.response.body.resource",
+        resources_by_id,
+        resources_by_uri,
+        issues,
+    )
+    if resource and isinstance(requested_uri, str) and resource.get("uri") != requested_uri:
+        issues.append(f"{path}.response.body.resource.uri: must match requested resourceUri")
+
+    content = response_body.get("content")
+    if not _is_record(content):
+        issues.append(f"{path}.response.body.content: must be an object")
+        return
+    _reject_unknown_fields(content, {"uri", "mimeType", "json", "text", "blob"}, f"{path}.response.body.content", issues)
+    content_uri = _require_string(content, "uri", f"{path}.response.body.content", issues)
+    content_mime = _require_string(content, "mimeType", f"{path}.response.body.content", issues, allowed=RESOURCE_MIME_TYPES)
+    if isinstance(content_uri, str) and isinstance(requested_uri, str) and content_uri != requested_uri:
+        issues.append(f"{path}.response.body.content.uri: must match requested resourceUri")
+    if resource and isinstance(content_mime, str) and content_mime != resource.get("mimeType"):
+        issues.append(f"{path}.response.body.content.mimeType: must match resource mimeType")
+    if "json" not in content and "text" not in content and "blob" not in content:
+        issues.append(f"{path}.response.body.content: must include json, text, or blob")
+    if "text" in content and not isinstance(content["text"], str):
+        issues.append(f"{path}.response.body.content.text: must be a string")
+    if "blob" in content and not isinstance(content["blob"], str):
+        issues.append(f"{path}.response.body.content.blob: must be a string")
+
+
+def _validate_api_tool_list(
+    body: Any,
+    path: str,
+    tools_by_name: dict[str, dict[str, Any]],
+    issues: list[str],
+) -> None:
+    if not _is_record(body):
+        issues.append(f"{path}: must be an object")
+        return
+    _reject_unknown_fields(body, {"tools"}, path, issues)
+    tools = _require_array(body, "tools", path, issues, min_length=1)
+    for index, tool in enumerate(tools):
+        _validate_tool_reference(tool, f"{path}.tools[{index}]", tools_by_name, issues)
+
+
+def _validate_api_tool_call(
+    request_body: Any,
+    response_body: Any,
+    path: str,
+    tools_by_name: dict[str, dict[str, Any]],
+    issues: list[str],
+) -> None:
+    if not _is_record(request_body):
+        issues.append(f"{path}.request.body: must be an object")
+        return
+    _reject_unknown_fields(request_body, {"toolName", "arguments"}, f"{path}.request.body", issues)
+    tool_name = _require_string(request_body, "toolName", f"{path}.request.body", issues, TOOL_NAME_PATTERN)
+    arguments = request_body.get("arguments")
+    if not _is_record(arguments):
+        issues.append(f"{path}.request.body.arguments: must be an object")
+    tool = tools_by_name.get(tool_name) if isinstance(tool_name, str) else None
+    if isinstance(tool_name, str) and tools_by_name and not tool:
+        issues.append(f"{path}.request.body.toolName: does not match a tool name")
+    if tool and _is_record(arguments):
+        _validate_payload_against_object_schema(arguments, tool.get("inputSchema"), f"{path}.request.body.arguments", issues)
+
+    if not _is_record(response_body):
+        issues.append(f"{path}.response.body: must be an object")
+        return
+    _reject_unknown_fields(response_body, {"toolName", "result"}, f"{path}.response.body", issues)
+    response_tool_name = _require_string(response_body, "toolName", f"{path}.response.body", issues, TOOL_NAME_PATTERN)
+    if isinstance(tool_name, str) and isinstance(response_tool_name, str) and response_tool_name != tool_name:
+        issues.append(f"{path}.response.body.toolName: must match request toolName")
+    result = response_body.get("result")
+    if not _is_record(result):
+        issues.append(f"{path}.response.body.result: must be an object")
+    elif tool:
+        _validate_payload_against_object_schema(result, tool.get("outputSchema"), f"{path}.response.body.result", issues)
+
+
+def _validate_api_approval_list(
+    body: Any,
+    path: str,
+    sessions_by_id: dict[str, dict[str, Any]],
+    issues: list[str],
+) -> None:
+    if not _is_record(body):
+        issues.append(f"{path}: must be an object")
+        return
+    _reject_unknown_fields(body, {"sessions"}, path, issues)
+    sessions = _require_array(body, "sessions", path, issues, min_length=1)
+    for index, session in enumerate(sessions):
+        _validate_session_reference(
+            session,
+            f"{path}.sessions[{index}]",
+            sessions_by_id,
+            issues,
+            compare_status=True,
+        )
+
+
+def _validate_api_approval_decision(
+    request_body: Any,
+    response_body: Any,
+    path: str,
+    sessions_by_id: dict[str, dict[str, Any]],
+    issues: list[str],
+) -> None:
+    if not _is_record(request_body):
+        issues.append(f"{path}.request.body: must be an object")
+        return
+    _reject_unknown_fields(request_body, {"sessionId", "decision", "actor", "reason", "metadata"}, f"{path}.request.body", issues)
+    session_id = _require_string(request_body, "sessionId", f"{path}.request.body", issues, SESSION_ID_PATTERN)
+    action = _require_string(request_body, "decision", f"{path}.request.body", issues, allowed={"approve", "reject"})
+    outcome = {"approve": "approved", "reject": "rejected"}.get(action or "")
+    actor = request_body.get("actor")
+    if not _is_record(actor):
+        issues.append(f"{path}.request.body.actor: must be an object")
+        decided_by = None
+    else:
+        _reject_unknown_fields(actor, {"id", "roles", "metadata"}, f"{path}.request.body.actor", issues)
+        decided_by = _require_string(actor, "id", f"{path}.request.body.actor", issues, USER_ID_PATTERN)
+        if "roles" in actor:
+            _validate_string_array(actor["roles"], f"{path}.request.body.actor.roles", issues)
+        if "metadata" in actor:
+            _require_json_compatible(actor["metadata"], f"{path}.request.body.actor.metadata", issues)
+    if "reason" in request_body:
+        _require_string(request_body, "reason", f"{path}.request.body", issues, min_length=1, max_length=180)
+    if "metadata" in request_body:
+        _require_json_compatible(request_body["metadata"], f"{path}.request.body.metadata", issues)
+    session = sessions_by_id.get(session_id) if isinstance(session_id, str) else None
+    if isinstance(session_id, str) and sessions_by_id and not session:
+        issues.append(f"{path}.request.body.sessionId: does not match an approval session id")
+    if session and session.get("status") != "pending":
+        issues.append(f"{path}.request.body.sessionId: approval decision examples must reference a pending session")
+
+    if not _is_record(response_body):
+        issues.append(f"{path}.response.body: must be an object")
+        return
+    _reject_unknown_fields(response_body, {"session"}, f"{path}.response.body", issues)
+    response_session = _validate_session_reference(
+        response_body.get("session"),
+        f"{path}.response.body.session",
+        sessions_by_id,
+        issues,
+        compare_status=False,
+    )
+    if response_session and isinstance(session_id, str) and response_session.get("id") != session_id:
+        issues.append(f"{path}.response.body.session.id: must match request sessionId")
+    if _is_record(response_body.get("session")):
+        status = _require_string(
+            response_body["session"],
+            "status",
+            f"{path}.response.body.session",
+            issues,
+            allowed=SESSION_STATUSES,
+        )
+        if isinstance(status, str) and isinstance(outcome, str) and status != outcome:
+            issues.append(f"{path}.response.body.session.status: must match request outcome")
+
+    if _is_record(response_body.get("session")):
+        decision = response_body["session"].get("decision")
+        _validate_api_decision_snapshot(decision, f"{path}.response.body.session.decision", outcome or "", issues)
+        if _is_record(decision):
+            actor_value = decision.get("actor")
+            if _is_record(actor_value) and isinstance(decided_by, str) and actor_value.get("id") != decided_by:
+                issues.append(f"{path}.response.body.session.decision.actor.id: must match request actor.id")
+
+
+def _validate_api_decision_snapshot(
+    value: Any,
+    path: str,
+    expected_status: str,
+    issues: list[str],
+) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+    _reject_unknown_fields(value, {"status", "at", "actor", "reason", "metadata"}, path, issues)
+    status = _require_string(value, "status", path, issues, allowed=DECISION_STATUSES)
+    _require_timestamp(value, "at", path, issues)
+    actor = value.get("actor")
+    if not _is_record(actor):
+        issues.append(f"{path}.actor: must be an object")
+    else:
+        _reject_unknown_fields(actor, {"id", "roles", "metadata"}, f"{path}.actor", issues)
+        _require_string(actor, "id", f"{path}.actor", issues, USER_ID_PATTERN)
+        if "roles" in actor:
+            _validate_string_array(actor["roles"], f"{path}.actor.roles", issues)
+        if "metadata" in actor:
+            _require_json_compatible(actor["metadata"], f"{path}.actor.metadata", issues)
+    if "reason" in value:
+        _require_string(value, "reason", path, issues, min_length=1, max_length=180)
+    if "metadata" in value:
+        _require_json_compatible(value["metadata"], f"{path}.metadata", issues)
+    if isinstance(status, str) and status != expected_status:
+        issues.append(f"{path}.status: must match session status")
 
 
 def _validate_request(value: Any, path: str, issues: list[str]) -> None:
@@ -406,6 +820,190 @@ def _validate_decision(
         issues.append(f"{path}.outcome: must match session status")
     if decision_at and resolved_at and decision_at != resolved_at:
         issues.append(f"{path}.at: must match resolvedAt")
+
+
+def _validate_resource_reference(
+    value: Any,
+    path: str,
+    resources_by_id: dict[str, dict[str, Any]],
+    resources_by_uri: dict[str, dict[str, Any]],
+    issues: list[str],
+) -> Optional[dict[str, Any]]:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return None
+    _reject_unknown_fields(
+        value,
+        {"id", "uri", "name", "description", "mimeType", "sizeBytes", "updatedAt", "tags"},
+        path,
+        issues,
+    )
+    resource_id = _require_string(value, "id", path, issues, RESOURCE_ID_PATTERN)
+    uri = _require_string(value, "uri", path, issues)
+    resource = resources_by_id.get(resource_id) if isinstance(resource_id, str) else None
+    if isinstance(resource_id, str) and resources_by_id and not resource:
+        issues.append(f"{path}.id: does not match a resource id")
+    if isinstance(uri, str):
+        _require_local_uri(uri, f"{path}.uri", issues)
+        if resources_by_uri and uri not in resources_by_uri:
+            issues.append(f"{path}.uri: does not match a resource uri")
+    if resource and isinstance(uri, str) and resource.get("uri") != uri:
+        issues.append(f"{path}.uri: must match resource id")
+
+    for field in ("name", "description", "mimeType"):
+        if field in value:
+            actual = _require_string(value, field, path, issues, min_length=1)
+            if resource and isinstance(actual, str) and actual != resource.get(field):
+                issues.append(f"{path}.{field}: must match resource fixture")
+    if "sizeBytes" in value:
+        actual_size = _require_integer(value, "sizeBytes", path, issues, minimum=0)
+        if resource and isinstance(actual_size, int) and actual_size != resource.get("sizeBytes"):
+            issues.append(f"{path}.sizeBytes: must match resource fixture")
+    if "updatedAt" in value:
+        _require_timestamp(value, "updatedAt", path, issues)
+        if resource and value.get("updatedAt") != resource.get("updatedAt"):
+            issues.append(f"{path}.updatedAt: must match resource fixture")
+    if "tags" in value:
+        _validate_string_array(value["tags"], f"{path}.tags", issues, min_length=1)
+        if resource and value.get("tags") != resource.get("tags"):
+            issues.append(f"{path}.tags: must match resource fixture")
+    return resource
+
+
+def _validate_tool_reference(
+    value: Any,
+    path: str,
+    tools_by_name: dict[str, dict[str, Any]],
+    issues: list[str],
+) -> Optional[dict[str, Any]]:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return None
+    _reject_unknown_fields(
+        value,
+        {"id", "name", "title", "description", "readOnly", "requiresApproval", "localOnly"},
+        path,
+        issues,
+    )
+    tool_id = _require_string(value, "id", path, issues, TOOL_ID_PATTERN)
+    name = _require_string(value, "name", path, issues, TOOL_NAME_PATTERN)
+    tool = tools_by_name.get(name) if isinstance(name, str) else None
+    if isinstance(name, str) and tools_by_name and not tool:
+        issues.append(f"{path}.name: does not match a tool name")
+    if tool and isinstance(tool_id, str) and tool.get("id") != tool_id:
+        issues.append(f"{path}.id: must match tool name")
+
+    for field in ("title", "description"):
+        if field in value:
+            actual = _require_string(value, field, path, issues, min_length=1)
+            if tool and isinstance(actual, str) and actual != tool.get(field):
+                issues.append(f"{path}.{field}: must match tool fixture")
+    for field in ("readOnly", "requiresApproval", "localOnly"):
+        if field in value:
+            actual = _require_bool(value, field, path, issues)
+            if tool and isinstance(actual, bool) and actual != tool.get(field):
+                issues.append(f"{path}.{field}: must match tool fixture")
+    return tool
+
+
+def _validate_session_reference(
+    value: Any,
+    path: str,
+    sessions_by_id: dict[str, dict[str, Any]],
+    issues: list[str],
+    *,
+    compare_status: bool,
+) -> Optional[dict[str, Any]]:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return None
+    _reject_unknown_fields(value, {"id", "toolName", "resourceUri", "status", "decision"}, path, issues)
+    session_id = _require_string(value, "id", path, issues, SESSION_ID_PATTERN)
+    session = sessions_by_id.get(session_id) if isinstance(session_id, str) else None
+    if isinstance(session_id, str) and sessions_by_id and not session:
+        issues.append(f"{path}.id: does not match an approval session id")
+
+    if "toolName" in value:
+        tool_name = _require_string(value, "toolName", path, issues, TOOL_NAME_PATTERN)
+        if session and isinstance(tool_name, str) and tool_name != session.get("toolName"):
+            issues.append(f"{path}.toolName: must match approval session fixture")
+    if "resourceUri" in value:
+        resource_uri = _require_string(value, "resourceUri", path, issues)
+        if isinstance(resource_uri, str):
+            _require_local_uri(resource_uri, f"{path}.resourceUri", issues)
+        if session and isinstance(resource_uri, str) and resource_uri != session.get("resourceUri"):
+            issues.append(f"{path}.resourceUri: must match approval session fixture")
+    if "status" in value:
+        status = _require_string(value, "status", path, issues, allowed=SESSION_STATUSES)
+        if compare_status and session and isinstance(status, str) and status != session.get("status"):
+            issues.append(f"{path}.status: must match approval session fixture")
+    return session
+
+
+def _validate_payload_against_object_schema(
+    value: dict[str, Any],
+    schema: Any,
+    path: str,
+    issues: list[str],
+) -> None:
+    if not _is_record(schema):
+        return
+    if schema.get("type") != "object":
+        issues.append(f"{path}: schema must describe an object")
+        return
+    properties = schema.get("properties")
+    if not _is_record(properties):
+        properties = {}
+    required = schema.get("required") if isinstance(schema.get("required"), list) else []
+    for field in required:
+        if isinstance(field, str) and field not in value:
+            issues.append(f"{path}.{field}: required by tool schema")
+    if schema.get("additionalProperties") is False:
+        for field in sorted(set(value) - set(properties)):
+            issues.append(f"{path}.{field}: not allowed by tool schema")
+    for field, item in value.items():
+        property_schema = properties.get(field)
+        if _is_record(property_schema):
+            _validate_json_schema_value(item, property_schema, f"{path}.{field}", issues)
+
+
+def _validate_json_schema_value(
+    value: Any, schema: dict[str, Any], path: str, issues: list[str]
+) -> None:
+    schema_type = schema.get("type")
+    if schema_type == "string":
+        if not isinstance(value, str):
+            issues.append(f"{path}: must be a string")
+            return
+        pattern = schema.get("pattern")
+        if isinstance(pattern, str) and not re.match(pattern, value):
+            issues.append(f"{path}: does not match tool schema pattern")
+    elif schema_type == "integer":
+        if not isinstance(value, int) or isinstance(value, bool):
+            issues.append(f"{path}: must be an integer")
+            return
+        minimum = schema.get("minimum")
+        maximum = schema.get("maximum")
+        if isinstance(minimum, int) and value < minimum:
+            issues.append(f"{path}: must be at least {minimum}")
+        if isinstance(maximum, int) and value > maximum:
+            issues.append(f"{path}: must be at most {maximum}")
+    elif schema_type == "number":
+        if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
+            issues.append(f"{path}: must be a finite number")
+    elif schema_type == "boolean":
+        if not isinstance(value, bool):
+            issues.append(f"{path}: must be a boolean")
+    elif schema_type == "array":
+        if not isinstance(value, list):
+            issues.append(f"{path}: must be an array")
+            return
+        item_schema = schema.get("items")
+        if _is_record(item_schema):
+            for index, item in enumerate(value):
+                _validate_json_schema_value(item, item_schema, f"{path}[{index}]", issues)
+    elif schema_type == "object" and not _is_record(value):
+        issues.append(f"{path}: must be an object")
 
 
 def _require_schema_object(value: Any, path: str, issues: list[str]) -> None:
@@ -547,6 +1145,7 @@ def _require_integer(
     issues: list[str],
     *,
     minimum: Optional[int] = None,
+    maximum: Optional[int] = None,
 ) -> Optional[int]:
     actual = value.get(field)
     if not isinstance(actual, int) or isinstance(actual, bool):
@@ -554,6 +1153,8 @@ def _require_integer(
         return None
     if minimum is not None and actual < minimum:
         issues.append(f"{path}.{field}: must be at least {minimum}")
+    if maximum is not None and actual > maximum:
+        issues.append(f"{path}.{field}: must be at most {maximum}")
     return actual
 
 
@@ -589,6 +1190,48 @@ def _validate_string_array(
             issues.append(f"{item_path}: must be a non-empty string")
             continue
         _track_unique(item, seen, item_path, "string array value", issues)
+
+
+def _validate_string_map(value: Any, path: str, issues: list[str]) -> None:
+    if not _is_record(value):
+        issues.append(f"{path}: must be an object")
+        return
+    for key, item in value.items():
+        if not isinstance(key, str) or not key:
+            issues.append(f"{path}: keys must be non-empty strings")
+        if not isinstance(item, str):
+            issues.append(f"{path}.{key}: must be a string")
+
+
+def _require_json_compatible(value: Any, path: str, issues: list[str]) -> None:
+    if value is None or isinstance(value, (str, bool, int)):
+        return
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            issues.append(f"{path}: must be JSON-compatible")
+        return
+    if isinstance(value, list):
+        for index, item in enumerate(value):
+            _require_json_compatible(item, f"{path}[{index}]", issues)
+        return
+    if _is_record(value):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                issues.append(f"{path}: object keys must be strings")
+                continue
+            _require_json_compatible(item, f"{path}.{key}", issues)
+        return
+    issues.append(f"{path}: must be JSON-compatible")
+
+
+def _records_by_string_field(
+    records: Any, field: str
+) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    for record in records:
+        if _is_record(record) and isinstance(record.get(field), str):
+            result[record[field]] = record
+    return result
 
 
 def _track_unique(

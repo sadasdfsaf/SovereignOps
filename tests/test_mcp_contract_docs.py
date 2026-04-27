@@ -8,36 +8,25 @@ from scripts.repo_health import RESTRICTED_PUBLIC_TERM_PARTS
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DOC_PATH = ROOT / "docs" / "mcp-gateway.md"
+DOC_PATH = ROOT / "docs" / "mcp-contract.md"
 
 EXPECTED_SECTIONS = (
-    "# MCP Gateway",
-    "## Local-Only Architecture",
-    "## Protocol API",
-    "## Resource Surface",
+    "# MCP Contract",
+    "## Protocol Methods",
+    "## Adapter Tool Names",
+    "## Default Resources",
     "## Safe Local Tools",
-    "## SDK Workflow",
-    "## Approval Sessions",
+    "## SDK Entry Points",
     "## Policy Gates",
-    "## CLI Demo Workflow",
-    "## Audit And Redaction",
-    "## Local Validation",
+    "## Approval Sessions",
+    "## Audit Outputs",
+    "## Error Shape",
+    "## CLI Commands",
 )
 
-EXPECTED_FILES = (
-    "services/mcp-gateway/src/registry.ts",
-    "services/mcp-gateway/src/adapter.ts",
-    "services/mcp-gateway/src/protocol.ts",
-    "services/mcp-gateway/src/resources.ts",
-    "services/mcp-gateway/src/tools.ts",
-    "services/mcp-gateway/src/toolAdapter.ts",
-    "services/mcp-gateway/src/approvalSessions.ts",
-    "services/mcp-gateway/src/runtime.ts",
-    "services/mcp-gateway/src/audit.ts",
-    "services/mcp-gateway/src/auditEmitter.ts",
-)
-
-EXPECTED_ROUTES = (
+EXPECTED_PROTOCOL_NAMES = (
+    "`MCP_PROTOCOL_JSONRPC_VERSION`",
+    "`MCP_GATEWAY_PROTOCOL_VERSION`",
     "`initialize`",
     "`resources/list`",
     "`resources/read`",
@@ -47,13 +36,9 @@ EXPECTED_ROUTES = (
     "`resources.list`",
     "`resources.read`",
     "`tools.call`",
-    "`/tools/local-write`",
-    "`/tools/batch-update`",
-    "`/tools/summarize`",
-    "`/records/catalog`",
 )
 
-EXPECTED_RESOURCE_URIS = (
+EXPECTED_RESOURCES = (
     "`sovereignops://docs/operator-guide`",
     "`sovereignops://tasks/sample-queue`",
     "`sovereignops://incidents/sync-delay-drill`",
@@ -61,7 +46,7 @@ EXPECTED_RESOURCE_URIS = (
     "`sovereignops://audit/policy-trace`",
 )
 
-EXPECTED_TOOLS = (
+EXPECTED_SAFE_TOOLS = (
     "`create_task_proposal`",
     "`draft_document_patch`",
     "`link_evidence`",
@@ -69,26 +54,34 @@ EXPECTED_TOOLS = (
 )
 
 EXPECTED_SDK_NAMES = (
+    "`createGatewayResourceRegistry`",
     "`createDefaultGatewayResourceRegistry`",
     "`createGatewayResourceAdapter`",
+    "`listResources`",
+    "`readResource`",
+    "`listTools`",
     "`createMcpProtocolAdapter`",
+    "`handle`",
+    "`handleRequest`",
     "`handleMcpProtocolRequest`",
-    "`createGatewayResourceRegistry`",
     "`createSafeLocalToolRegistry`",
     "`createSafeLocalToolAdapter`",
+    "`callTool`",
     "`createMcpSafeLocalToolAdapter`",
     "`createApprovalSessionStore`",
     "`createMcpGatewayRuntime`",
     "`createAuditEmitter`",
     "`createToolAuditEmitter`",
     "`redactSensitiveArguments`",
+    "`listMcpResources`",
+    "`readMcpResource`",
+    "`listMcpTools`",
+    "`callMcpTool`",
+    "`listMcpApprovalSessions`",
+    "`decideMcpApprovalSession`",
 )
 
 EXPECTED_COMMANDS = (
-    "python -m unittest tests.test_mcp_gateway_docs",
-    "npm.cmd --workspace @sovereignops/mcp-gateway run check",
-    "python scripts\\validate_mcp_gateway_fixtures.py",
-    "node packages\\cli\\src\\index.ts mcp demo resources",
     "node packages\\cli\\src\\index.ts mcp demo resources --policy-mode allow",
     "node packages\\cli\\src\\index.ts mcp demo read --uri sovereignops://docs/operator-guide",
     "node packages\\cli\\src\\index.ts mcp demo read --uri sovereignops://audit/policy-trace --policy-mode deny-resource-read --deny-uri sovereignops://audit/policy-trace",
@@ -100,26 +93,20 @@ EXPECTED_COMMANDS = (
     "node packages\\cli\\src\\index.ts mcp api call --base-url http://127.0.0.1:3000 --tool-name create_task_proposal",
     "node packages\\cli\\src\\index.ts mcp api approvals --base-url http://127.0.0.1:3000",
     "node packages\\cli\\src\\index.ts mcp api approval-decide --base-url http://127.0.0.1:3000 --session-id approval-route-1 --decision approve",
-    "node --input-type=module -e",
-    "python scripts\\smoke.py",
-    "python -m unittest discover -s tests",
-    "python scripts\\repo_health.py --json",
 )
 
-EXPECTED_GUARANTEES = (
-    "No gateway path needs remote credentials.",
+EXPECTED_SECURITY_GUARANTEES = (
     "Unknown URIs return `resource_not_found` before policy or handlers run.",
     "Traversal-like URI strings are not normalized into existing resources.",
     "Denied and approval-required calls return terminal status without invoking the handler.",
-    "Default outputs set `durableSideEffects: false`",
-    "Every resource read and tool call evaluates policy before user code runs.",
-    "A reviewed caller can repeat the same call with updated context; policy must return `allow` before the handler runs.",
+    "Every resource read and tool call is wrapped by a policy gate before user code runs.",
+    "`require_approval` and `deny` stop before handler execution.",
     "Tool arguments are redacted recursively for sensitive names and credential-shaped values.",
     "Redaction replaces matching values with `[REDACTED]` while preserving non-sensitive fields.",
 )
 
 
-class McpGatewayDocsTests(unittest.TestCase):
+class McpContractDocsTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.text = DOC_PATH.read_text(encoding="utf-8")
@@ -131,56 +118,31 @@ class McpGatewayDocsTests(unittest.TestCase):
             with self.subTest(section=section):
                 self.assertIn(section, self.text)
 
-    def test_documents_files_routes_resources_and_tools(self) -> None:
-        for relative_path in EXPECTED_FILES:
-            with self.subTest(path=relative_path):
-                self.assertTrue((ROOT / relative_path).exists(), relative_path)
-                self.assertIn(f"`{relative_path}`", self.text)
-
-        for value in EXPECTED_ROUTES + EXPECTED_RESOURCE_URIS + EXPECTED_TOOLS:
+    def test_documents_protocol_resources_tools_and_sdk_names(self) -> None:
+        for value in (
+            EXPECTED_PROTOCOL_NAMES
+            + EXPECTED_RESOURCES
+            + EXPECTED_SAFE_TOOLS
+            + EXPECTED_SDK_NAMES
+        ):
             with self.subTest(value=value):
                 self.assertIn(value, self.text)
 
-    def test_documents_sdk_entry_points(self) -> None:
-        for name in EXPECTED_SDK_NAMES:
-            with self.subTest(name=name):
-                self.assertIn(name, self.text)
-
-        for method in (
-            "`listResources`",
-            "`readResource`",
-            "`listTools`",
-            "`handle`",
-            "`handleRequest`",
-            "`listMcpResources`",
-            "`readMcpResource`",
-            "`listMcpTools`",
-            "`callMcpTool`",
-            "`listMcpApprovalSessions`",
-            "`decideMcpApprovalSession`",
-        ):
-            with self.subTest(method=method):
-                self.assertIn(method, self.text)
-
-    def test_documents_commands_and_local_demo(self) -> None:
+    def test_documents_commands_and_policy_modes(self) -> None:
         for command in EXPECTED_COMMANDS:
             with self.subTest(command=command):
                 self.assertIn(command, self.text)
 
-        self.assertIn("createGatewayResourceAdapter", self.text)
-        self.assertIn("createDefaultGatewayResourceRegistry", self.text)
-        self.assertIn("policy: () => 'allow'", self.text)
-        self.assertNotIn("curl ", self.lower_text)
-        self.assertNotIn("https://", self.lower_text)
-        self.assertNotIn("npm install -g", self.lower_text)
-        self.assertNotIn("npx ", self.lower_text)
+        for mode in ("`allow`", "`require_approval`", "`deny`", "`pending`", "`approved`", "`rejected`", "`expired`"):
+            with self.subTest(mode=mode):
+                self.assertIn(mode, self.text)
 
-    def test_documents_approval_audit_and_redaction_guarantees(self) -> None:
-        for guarantee in EXPECTED_GUARANTEES:
+    def test_documents_audit_errors_and_security_guarantees(self) -> None:
+        for guarantee in EXPECTED_SECURITY_GUARANTEES:
             with self.subTest(guarantee=guarantee):
                 self.assertIn(guarantee, self.text)
 
-        for event_type in (
+        for value in (
             "`policy_decision`",
             "`operation_succeeded`",
             "`operation_failed`",
@@ -190,9 +152,17 @@ class McpGatewayDocsTests(unittest.TestCase):
             "`tool_call_denied`",
             "`tool_call_executed`",
             "`tool_call_failed`",
+            "`resource_not_found`",
+            "`policy_denied`",
+            "`approval_required`",
+            "`handler_failed`",
+            "`invalid_request`",
+            "`invalid_params`",
+            "`method_not_found`",
+            "`internal_error`",
         ):
-            with self.subTest(event_type=event_type):
-                self.assertIn(event_type, self.text)
+            with self.subTest(value=value):
+                self.assertIn(value, self.text)
 
     def test_avoids_restricted_terms(self) -> None:
         restricted_terms = sorted({"".join(parts) for parts in RESTRICTED_PUBLIC_TERM_PARTS})

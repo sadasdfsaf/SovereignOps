@@ -80,6 +80,96 @@ class McpGatewayFixtureTests(unittest.TestCase):
         self.assertFalse(report.ok)
         self.assertIn("secret-shaped value", "\n".join(report.issues))
 
+    def test_rejects_unknown_api_route_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "mcp-gateway"
+            shutil.copytree(DEFAULT_FIXTURE_ROOT, root)
+            api_path = root / "api-requests.json"
+            api_requests = json.loads(api_path.read_text(encoding="utf-8"))
+            api_requests["requests"][0]["route"]["path"] = "/v1/mcp/remote/resources"
+            api_path.write_text(json.dumps(api_requests, indent=2), encoding="utf-8")
+
+            report = validate_mcp_gateway_fixtures(root)
+
+        self.assertFalse(report.ok)
+        self.assertIn("route must be one of", "\n".join(report.issues))
+
+    def test_rejects_api_id_that_does_not_match_route(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "mcp-gateway"
+            shutil.copytree(DEFAULT_FIXTURE_ROOT, root)
+            api_path = root / "api-requests.json"
+            api_requests = json.loads(api_path.read_text(encoding="utf-8"))
+            api_requests["requests"][0]["id"] = "api_tool_list"
+            api_path.write_text(json.dumps(api_requests, indent=2), encoding="utf-8")
+
+            report = validate_mcp_gateway_fixtures(root)
+
+        self.assertFalse(report.ok)
+        self.assertIn("must be api_resource_list", "\n".join(report.issues))
+
+    def test_rejects_tool_call_arguments_that_do_not_match_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "mcp-gateway"
+            shutil.copytree(DEFAULT_FIXTURE_ROOT, root)
+            api_path = root / "api-requests.json"
+            api_requests = json.loads(api_path.read_text(encoding="utf-8"))
+            del api_requests["requests"][3]["request"]["body"]["arguments"]["workspaceId"]
+            api_path.write_text(json.dumps(api_requests, indent=2), encoding="utf-8")
+
+            report = validate_mcp_gateway_fixtures(root)
+
+        self.assertFalse(report.ok)
+        self.assertIn("required by tool schema", "\n".join(report.issues))
+
+    def test_rejects_approval_decision_for_terminal_session(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "mcp-gateway"
+            shutil.copytree(DEFAULT_FIXTURE_ROOT, root)
+            api_path = root / "api-requests.json"
+            api_requests = json.loads(api_path.read_text(encoding="utf-8"))
+            decision = api_requests["requests"][5]
+            decision["request"]["body"]["sessionId"] = "aps_sync_preview_approved"
+            decision["response"]["body"]["session"]["id"] = "aps_sync_preview_approved"
+            decision["response"]["body"]["session"]["toolName"] = "preview_sync_batch"
+            decision["response"]["body"]["session"]["resourceUri"] = "fixture://sync/demo-alpha/preview"
+            api_path.write_text(json.dumps(api_requests, indent=2), encoding="utf-8")
+
+            report = validate_mcp_gateway_fixtures(root)
+
+        self.assertFalse(report.ok)
+        self.assertIn("must reference a pending session", "\n".join(report.issues))
+
+    def test_rejects_non_json_compatible_api_payloads(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "mcp-gateway"
+            shutil.copytree(DEFAULT_FIXTURE_ROOT, root)
+            api_path = root / "api-requests.json"
+            api_requests = json.loads(api_path.read_text(encoding="utf-8"))
+            api_requests["requests"][3]["response"]["body"]["result"]["itemCount"] = float("nan")
+            api_path.write_text(json.dumps(api_requests, indent=2), encoding="utf-8")
+
+            report = validate_mcp_gateway_fixtures(root)
+
+        self.assertFalse(report.ok)
+        self.assertIn("must be JSON-compatible", "\n".join(report.issues))
+
+    def test_rejects_secret_shaped_api_request_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "mcp-gateway"
+            shutil.copytree(DEFAULT_FIXTURE_ROOT, root)
+            api_path = root / "api-requests.json"
+            api_requests = json.loads(api_path.read_text(encoding="utf-8"))
+            api_requests["requests"][3]["request"]["body"]["authorization"] = (
+                "Bearer abcdefghijklmnop"
+            )
+            api_path.write_text(json.dumps(api_requests, indent=2), encoding="utf-8")
+
+            report = validate_mcp_gateway_fixtures(root)
+
+        self.assertFalse(report.ok)
+        self.assertIn("secret-shaped", "\n".join(report.issues))
+
 
 if __name__ == "__main__":
     unittest.main()

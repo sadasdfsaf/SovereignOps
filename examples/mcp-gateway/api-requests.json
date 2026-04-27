@@ -1,0 +1,210 @@
+{
+  "schemaVersion": "mcp-gateway-fixtures.v1",
+  "generatedAt": "2026-04-27T07:00:00.000Z",
+  "requests": [
+    {
+      "id": "api_resource_list",
+      "title": "List MCP gateway resources",
+      "route": {
+        "method": "GET",
+        "path": "/v1/mcp/resources"
+      },
+      "request": {
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "resources": [
+            {
+              "id": "res_workspace_summary",
+              "uri": "workspace://demo-alpha/summaries/current",
+              "name": "Demo Alpha Summary",
+              "mimeType": "application/json"
+            },
+            {
+              "id": "res_snapshot_inventory",
+              "uri": "local://snapshots/demo-alpha/inventory",
+              "name": "Snapshot Inventory",
+              "mimeType": "application/json"
+            },
+            {
+              "id": "res_sync_preview",
+              "uri": "fixture://sync/demo-alpha/preview",
+              "name": "Sync Preview",
+              "mimeType": "application/json"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "api_resource_read",
+      "title": "Read a resource",
+      "route": {
+        "method": "POST",
+        "path": "/v1/mcp/resources/read"
+      },
+      "request": {
+        "body": {
+          "resourceUri": "workspace://demo-alpha/summaries/current"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "resource": {
+            "id": "res_workspace_summary",
+            "uri": "workspace://demo-alpha/summaries/current",
+            "mimeType": "application/json"
+          },
+          "content": {
+            "uri": "workspace://demo-alpha/summaries/current",
+            "mimeType": "application/json",
+            "json": {
+              "workspaceId": "wsp_demo_alpha",
+              "summaryState": "current",
+              "itemCount": 3
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "api_tool_list",
+      "title": "List MCP gateway tools",
+      "route": {
+        "method": "GET",
+        "path": "/v1/mcp/tools"
+      },
+      "request": {
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "tools": [
+            {
+              "id": "tool_read_resource_summary",
+              "name": "read_resource_summary",
+              "title": "Read Resource Summary",
+              "requiresApproval": false
+            },
+            {
+              "id": "tool_preview_sync_batch",
+              "name": "preview_sync_batch",
+              "title": "Preview Sync Batch",
+              "requiresApproval": false
+            },
+            {
+              "id": "tool_export_snapshot_bundle",
+              "name": "export_snapshot_bundle",
+              "title": "Export Snapshot Bundle",
+              "requiresApproval": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "api_tool_call",
+      "title": "Call a safe local tool",
+      "route": {
+        "method": "POST",
+        "path": "/v1/mcp/tools/call"
+      },
+      "request": {
+        "body": {
+          "toolName": "preview_sync_batch",
+          "arguments": {
+            "workspaceId": "wsp_demo_alpha",
+            "limit": 25
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "toolName": "preview_sync_batch",
+          "result": {
+            "workspaceId": "wsp_demo_alpha",
+            "itemCount": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "api_approval_list",
+      "title": "List approval sessions",
+      "route": {
+        "method": "GET",
+        "path": "/v1/mcp/approval-sessions"
+      },
+      "request": {
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "sessions": [
+            {
+              "id": "aps_snapshot_export_pending",
+              "toolName": "export_snapshot_bundle",
+              "resourceUri": "local://snapshots/demo-alpha/inventory",
+              "status": "pending"
+            },
+            {
+              "id": "aps_sync_preview_approved",
+              "toolName": "preview_sync_batch",
+              "resourceUri": "fixture://sync/demo-alpha/preview",
+              "status": "approved"
+            },
+            {
+              "id": "aps_summary_read_expired",
+              "toolName": "read_resource_summary",
+              "resourceUri": "workspace://demo-alpha/summaries/current",
+              "status": "expired"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "api_approval_decision",
+      "title": "Record an approval decision",
+      "route": {
+        "method": "POST",
+        "path": "/v1/mcp/approval-sessions/aps_snapshot_export_pending/decision"
+      },
+      "request": {
+        "body": {
+          "sessionId": "aps_snapshot_export_pending",
+          "decision": "approve",
+          "actor": {
+            "id": "user_demo_reviewer"
+          },
+          "reason": "Approve the local snapshot export example."
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "session": {
+            "id": "aps_snapshot_export_pending",
+            "toolName": "export_snapshot_bundle",
+            "resourceUri": "local://snapshots/demo-alpha/inventory",
+            "status": "approved",
+            "decision": {
+              "status": "approved",
+              "at": "2026-04-27T07:30:00.000Z",
+              "actor": {
+                "id": "user_demo_reviewer"
+              },
+              "reason": "Approved for the local fixture response example."
+            }
+          }
+        }
+      }
+    }
+  ]
+}

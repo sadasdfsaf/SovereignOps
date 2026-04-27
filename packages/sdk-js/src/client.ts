@@ -449,6 +449,137 @@ export interface CompactionPlanResponse {
   readonly fingerprint: string;
 }
 
+export interface McpActor {
+  readonly id: string;
+  readonly roles?: readonly string[];
+  readonly metadata?: JsonObject;
+}
+
+export type McpActorInput = string | McpActor;
+
+export interface McpRequestContext {
+  readonly actor?: McpActorInput;
+  readonly metadata?: JsonObject;
+}
+
+export interface McpResourceSummary {
+  readonly uri: string;
+  readonly name: string;
+  readonly description?: string;
+  readonly mimeType?: string;
+}
+
+export interface McpListResourcesResponse {
+  readonly resources: readonly McpResourceSummary[];
+}
+
+export interface McpReadResourceRequest extends McpRequestContext {
+  readonly uri: string;
+}
+
+export interface McpResourceContent {
+  readonly uri: string;
+  readonly mimeType?: string;
+  readonly text?: string;
+  readonly blob?: string;
+}
+
+export interface McpReadResourceResponse {
+  readonly contents: readonly McpResourceContent[];
+}
+
+export interface McpToolInputSchema {
+  readonly type: "object";
+  readonly properties?: JsonObject;
+  readonly required?: readonly string[];
+  readonly additionalProperties?: boolean;
+}
+
+export interface McpToolDescriptor {
+  readonly name: string;
+  readonly description: string;
+  readonly inputSchema: McpToolInputSchema;
+}
+
+export interface McpListToolsResponse {
+  readonly tools: readonly McpToolDescriptor[];
+}
+
+export interface McpCallToolRequest extends McpRequestContext {
+  readonly name: string;
+  readonly toolName?: string;
+  readonly arguments?: JsonObject;
+}
+
+export interface McpContentItem {
+  readonly type: string;
+  readonly [key: string]: JsonValue;
+}
+
+export interface McpCallToolResponse {
+  readonly content: readonly McpContentItem[];
+  readonly structuredContent?: JsonValue;
+  readonly isError?: boolean;
+}
+
+export type McpApprovalSessionStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "expired";
+export type McpApprovalSessionDecisionStatus =
+  Exclude<McpApprovalSessionStatus, "pending">;
+export type McpApprovalSessionDecisionAction = "approve" | "reject";
+
+export interface McpApprovalSessionDecision {
+  readonly status: McpApprovalSessionDecisionStatus;
+  readonly at: string;
+  readonly actor?: McpActor;
+  readonly reason?: string;
+  readonly metadata?: JsonObject;
+}
+
+export interface McpApprovalSession {
+  readonly id: string;
+  readonly status: McpApprovalSessionStatus;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly expiresAt?: string;
+  readonly request: JsonObject;
+  readonly actor?: McpActor;
+  readonly reason?: string;
+  readonly ruleId?: string;
+  readonly metadata?: JsonObject;
+  readonly decision?: McpApprovalSessionDecision;
+  readonly approvedAt?: string;
+  readonly approvedBy?: McpActor;
+  readonly rejectedAt?: string;
+  readonly rejectedBy?: McpActor;
+  readonly expiredAt?: string;
+  readonly expiredBy?: McpActor;
+}
+
+export interface ListMcpApprovalSessionsQuery {
+  readonly status?: McpApprovalSessionStatus;
+  readonly actorId?: string;
+}
+
+export interface ListMcpApprovalSessionsResponse {
+  readonly sessions: readonly McpApprovalSession[];
+}
+
+export interface DecideMcpApprovalSessionRequest {
+  readonly sessionId: string;
+  readonly decision: McpApprovalSessionDecisionAction;
+  readonly actor?: McpActor;
+  readonly reason?: string;
+  readonly metadata?: JsonObject;
+}
+
+export interface DecideMcpApprovalSessionResponse {
+  readonly session: McpApprovalSession;
+}
+
 export interface ValidationIssue {
   readonly path: string;
   readonly message: string;
@@ -814,6 +945,88 @@ export class SovereignOpsClient {
         body: JSON.stringify(body),
       },
       parseCompactionPlanResponse,
+    );
+  }
+
+  async listMcpResources(): Promise<McpListResourcesResponse> {
+    return this.#request(
+      "mcp/resources",
+      { method: "GET" },
+      parseMcpListResourcesResponse,
+    );
+  }
+
+  async readMcpResource(
+    input: McpReadResourceRequest,
+  ): Promise<McpReadResourceResponse> {
+    validateMcpReadResourceRequest(input);
+    const { uri, actor, metadata } = input;
+    return this.#request(
+      "mcp/resources/read",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          uri,
+          ...(actor === undefined ? {} : { actor }),
+          ...(metadata === undefined ? {} : { metadata }),
+        }),
+      },
+      parseMcpReadResourceResponse,
+    );
+  }
+
+  async listMcpTools(): Promise<McpListToolsResponse> {
+    return this.#request(
+      "mcp/tools",
+      { method: "GET" },
+      parseMcpListToolsResponse,
+    );
+  }
+
+  async callMcpTool(input: McpCallToolRequest): Promise<McpCallToolResponse> {
+    validateMcpCallToolRequest(input);
+    const { arguments: args, actor, metadata } = input;
+    const name = input.name ?? input.toolName;
+    return this.#request(
+      "mcp/tools/call",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          ...(args === undefined ? {} : { arguments: args }),
+          ...(actor === undefined ? {} : { actor }),
+          ...(metadata === undefined ? {} : { metadata }),
+        }),
+      },
+      parseMcpCallToolResponse,
+    );
+  }
+
+  async listMcpApprovalSessions(
+    query: ListMcpApprovalSessionsQuery = {},
+  ): Promise<ListMcpApprovalSessionsResponse> {
+    validateListMcpApprovalSessionsQuery(query);
+    const url = this.#url("mcp/approval-sessions", query);
+    return this.#requestUrl(url, { method: "GET" }, parseListMcpApprovalSessionsResponse);
+  }
+
+  async decideMcpApprovalSession(
+    input: DecideMcpApprovalSessionRequest,
+  ): Promise<DecideMcpApprovalSessionResponse> {
+    validateDecideMcpApprovalSessionRequest(input);
+    const { sessionId, decision, actor, reason, metadata } = input;
+    return this.#request(
+      `mcp/approval-sessions/${encodePathPart(sessionId)}/decision`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          decision,
+          ...(actor === undefined ? {} : { actor }),
+          ...(reason === undefined ? {} : { reason }),
+          ...(metadata === undefined ? {} : { metadata }),
+        }),
+      },
+      parseDecideMcpApprovalSessionResponse,
     );
   }
 
@@ -1553,15 +1766,512 @@ function parseCompactionPlanResponse(value: unknown): CompactionPlanResponse {
   return deepFreezeClone(value) as CompactionPlanResponse;
 }
 
+function validateMcpReadResourceRequest(input: McpReadResourceRequest): void {
+  if (!isRecord(input)) {
+    throw new ApiRequestValidationError("MCP resource read request is invalid", [
+      { path: "", message: "request must be an object" },
+    ]);
+  }
+
+  const issues: ValidationIssue[] = [];
+  requireNonEmptyString(input, "uri", "uri", issues);
+  collectMcpRequestContextIssues(input, issues);
+
+  if (issues.length > 0) {
+    throw new ApiRequestValidationError("MCP resource read request is invalid", issues);
+  }
+}
+
+function parseMcpListResourcesResponse(value: unknown): McpListResourcesResponse {
+  const issues: ValidationIssue[] = [];
+  if (!isRecord(value)) {
+    throw new ApiResponseValidationError([
+      { path: "", message: "response must be an object" },
+    ], value);
+  }
+
+  if (!Array.isArray(value.resources)) {
+    issues.push({ path: "resources", message: "resources must be an array" });
+  } else {
+    value.resources.forEach((resource, index) => {
+      collectMcpResourceSummaryIssues(resource, `resources.${index}`, issues);
+    });
+  }
+
+  if (issues.length > 0) {
+    throw new ApiResponseValidationError(issues, value);
+  }
+
+  return deepFreezeClone(value) as McpListResourcesResponse;
+}
+
+function parseMcpReadResourceResponse(value: unknown): McpReadResourceResponse {
+  const issues: ValidationIssue[] = [];
+  if (!isRecord(value)) {
+    throw new ApiResponseValidationError([
+      { path: "", message: "response must be an object" },
+    ], value);
+  }
+
+  if (!Array.isArray(value.contents)) {
+    issues.push({ path: "contents", message: "contents must be an array" });
+  } else {
+    value.contents.forEach((content, index) => {
+      collectMcpResourceContentIssues(content, `contents.${index}`, issues);
+    });
+  }
+
+  if (issues.length > 0) {
+    throw new ApiResponseValidationError(issues, value);
+  }
+
+  return deepFreezeClone(value) as McpReadResourceResponse;
+}
+
+function validateMcpCallToolRequest(input: McpCallToolRequest): void {
+  if (!isRecord(input)) {
+    throw new ApiRequestValidationError("MCP tool call request is invalid", [
+      { path: "", message: "request must be an object" },
+    ]);
+  }
+
+  const issues: ValidationIssue[] = [];
+  const name = input.name;
+  const toolName = input.toolName;
+  if (name !== undefined && (typeof name !== "string" || name.trim().length === 0)) {
+    issues.push({ path: "name", message: "name must be a non-empty string" });
+  }
+  if (
+    toolName !== undefined &&
+    (typeof toolName !== "string" || toolName.trim().length === 0)
+  ) {
+    issues.push({ path: "toolName", message: "toolName must be a non-empty string" });
+  }
+  if (name === undefined && toolName === undefined) {
+    issues.push({ path: "name", message: "name must be a non-empty string" });
+  }
+  if (
+    typeof name === "string" &&
+    typeof toolName === "string" &&
+    name !== toolName
+  ) {
+    issues.push({ path: "toolName", message: "toolName must match name when both are provided" });
+  }
+  if (input.arguments !== undefined) {
+    collectJsonObjectIssues(input.arguments, "arguments", issues);
+  }
+  collectMcpRequestContextIssues(input, issues);
+
+  if (issues.length > 0) {
+    throw new ApiRequestValidationError("MCP tool call request is invalid", issues);
+  }
+}
+
+function parseMcpListToolsResponse(value: unknown): McpListToolsResponse {
+  const issues: ValidationIssue[] = [];
+  if (!isRecord(value)) {
+    throw new ApiResponseValidationError([
+      { path: "", message: "response must be an object" },
+    ], value);
+  }
+
+  if (!Array.isArray(value.tools)) {
+    issues.push({ path: "tools", message: "tools must be an array" });
+  } else {
+    value.tools.forEach((tool, index) => {
+      collectMcpToolDescriptorIssues(tool, `tools.${index}`, issues);
+    });
+  }
+
+  if (issues.length > 0) {
+    throw new ApiResponseValidationError(issues, value);
+  }
+
+  return deepFreezeClone(value) as McpListToolsResponse;
+}
+
+function parseMcpCallToolResponse(value: unknown): McpCallToolResponse {
+  const issues: ValidationIssue[] = [];
+  if (!isRecord(value)) {
+    throw new ApiResponseValidationError([
+      { path: "", message: "response must be an object" },
+    ], value);
+  }
+
+  if (!Array.isArray(value.content)) {
+    issues.push({ path: "content", message: "content must be an array" });
+  } else {
+    value.content.forEach((content, index) => {
+      collectMcpContentItemIssues(content, `content.${index}`, issues);
+    });
+  }
+
+  if (value.structuredContent !== undefined) {
+    collectJsonIssues(value.structuredContent, "structuredContent", issues);
+  }
+  if (value.isError !== undefined) {
+    requireBoolean(value, "isError", "isError", issues);
+  }
+
+  if (issues.length > 0) {
+    throw new ApiResponseValidationError(issues, value);
+  }
+
+  return deepFreezeClone(value) as McpCallToolResponse;
+}
+
+function validateListMcpApprovalSessionsQuery(
+  query: ListMcpApprovalSessionsQuery,
+): void {
+  if (!isRecord(query)) {
+    throw new ApiRequestValidationError("MCP approval session query is invalid", [
+      { path: "query", message: "query must be an object" },
+    ]);
+  }
+
+  const issues: ValidationIssue[] = [];
+  requireOptionalOneOf(
+    query,
+    "status",
+    "query.status",
+    MCP_APPROVAL_SESSION_STATUSES,
+    issues,
+  );
+  requireOptionalNonEmptyString(query, "actorId", "query.actorId", issues);
+
+  if (issues.length > 0) {
+    throw new ApiRequestValidationError("MCP approval session query is invalid", issues);
+  }
+}
+
+function parseListMcpApprovalSessionsResponse(
+  value: unknown,
+): ListMcpApprovalSessionsResponse {
+  const issues: ValidationIssue[] = [];
+  if (!isRecord(value)) {
+    throw new ApiResponseValidationError([
+      { path: "", message: "response must be an object" },
+    ], value);
+  }
+
+  if (!Array.isArray(value.sessions)) {
+    issues.push({ path: "sessions", message: "sessions must be an array" });
+  } else {
+    value.sessions.forEach((session, index) => {
+      collectMcpApprovalSessionIssues(session, `sessions.${index}`, issues);
+    });
+  }
+
+  if (issues.length > 0) {
+    throw new ApiResponseValidationError(issues, value);
+  }
+
+  return deepFreezeClone(value) as ListMcpApprovalSessionsResponse;
+}
+
+function validateDecideMcpApprovalSessionRequest(
+  input: DecideMcpApprovalSessionRequest,
+): void {
+  if (!isRecord(input)) {
+    throw new ApiRequestValidationError("MCP approval session decision is invalid", [
+      { path: "", message: "request must be an object" },
+    ]);
+  }
+
+  const issues: ValidationIssue[] = [];
+  requireNonEmptyString(input, "sessionId", "sessionId", issues);
+  requireOneOf(input, "decision", "decision", MCP_APPROVAL_SESSION_DECISION_ACTIONS, issues);
+  if (input.actor !== undefined) {
+    collectMcpActorIssues(input.actor, "actor", issues);
+  }
+  if (input.reason !== undefined) {
+    requireString(input, "reason", "reason", issues);
+  }
+  if (input.metadata !== undefined) {
+    collectJsonObjectIssues(input.metadata, "metadata", issues);
+  }
+
+  if (issues.length > 0) {
+    throw new ApiRequestValidationError("MCP approval session decision is invalid", issues);
+  }
+}
+
+function parseMcpApprovalSession(value: unknown): McpApprovalSession {
+  const issues: ValidationIssue[] = [];
+  collectMcpApprovalSessionIssues(value, "", issues);
+  if (issues.length > 0) {
+    throw new ApiResponseValidationError(issues, value);
+  }
+
+  return deepFreezeClone(value) as McpApprovalSession;
+}
+
+function parseDecideMcpApprovalSessionResponse(
+  value: unknown,
+): DecideMcpApprovalSessionResponse {
+  const issues: ValidationIssue[] = [];
+  if (!isRecord(value)) {
+    throw new ApiResponseValidationError([
+      { path: "", message: "response must be an object" },
+    ], value);
+  }
+
+  collectMcpApprovalSessionIssues(value.session, "session", issues);
+  if (issues.length > 0) {
+    throw new ApiResponseValidationError(issues, value);
+  }
+
+  return deepFreezeClone(value) as DecideMcpApprovalSessionResponse;
+}
+
 const MIGRATION_APPLIED_STEP_STATUSES = ["applied", "skipped"] as const;
 const BACKUP_PAYLOAD_KINDS = ["workspace_state", "record", "asset", "settings"] as const;
 const RESTORE_MODES = ["preview", "merge", "replace"] as const;
 const RESTORE_ACTION_TYPES = ["restore", "skip", "conflict", "blocked"] as const;
 const OBSERVATION_LEVELS = ["debug", "info", "warn", "error"] as const;
 const OBSERVABILITY_METRIC_KINDS = ["counter", "gauge", "histogram"] as const;
+const MCP_APPROVAL_SESSION_STATUSES = [
+  "pending",
+  "approved",
+  "rejected",
+  "expired",
+] as const;
+const MCP_APPROVAL_SESSION_DECISION_STATUSES = [
+  "approved",
+  "rejected",
+  "expired",
+] as const;
+const MCP_APPROVAL_SESSION_DECISION_ACTIONS = [
+  "approve",
+  "reject",
+] as const;
 const AUDIT_EXPORT_MANIFEST_KIND = "audit-export.manifest";
 const AUDIT_EXPORT_PACKAGE_KIND = "audit-export.package";
 const AUDIT_EXPORT_CONTENT_KIND = "audit-export.content";
+
+function collectMcpRequestContextIssues(
+  value: Record<string, unknown>,
+  issues: ValidationIssue[],
+): void {
+  if (value.actor !== undefined) {
+    collectMcpActorInputIssues(value.actor, "actor", issues);
+  }
+  if (value.metadata !== undefined) {
+    collectJsonObjectIssues(value.metadata, "metadata", issues);
+  }
+}
+
+function collectMcpActorInputIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (typeof value === "string") {
+    if (value.trim().length === 0) {
+      issues.push({ path, message: "actor must be a non-empty string or object" });
+    }
+    return;
+  }
+
+  collectMcpActorIssues(value, path, issues);
+}
+
+function collectMcpActorIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "actor must be an object" });
+    return;
+  }
+
+  requireNonEmptyString(value, "id", joinPath(path, "id"), issues);
+  collectOptionalStringArrayIssues(value, "roles", joinPath(path, "roles"), issues);
+  if (value.metadata !== undefined) {
+    collectJsonObjectIssues(value.metadata, joinPath(path, "metadata"), issues);
+  }
+}
+
+function collectMcpResourceSummaryIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "resource must be an object" });
+    return;
+  }
+
+  requireNonEmptyString(value, "uri", joinPath(path, "uri"), issues);
+  requireNonEmptyString(value, "name", joinPath(path, "name"), issues);
+  requireOptionalNonEmptyString(value, "description", joinPath(path, "description"), issues);
+  requireOptionalNonEmptyString(value, "mimeType", joinPath(path, "mimeType"), issues);
+}
+
+function collectMcpResourceContentIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "resource content must be an object" });
+    return;
+  }
+
+  requireNonEmptyString(value, "uri", joinPath(path, "uri"), issues);
+  requireOptionalNonEmptyString(value, "mimeType", joinPath(path, "mimeType"), issues);
+  if (value.text !== undefined) {
+    requireString(value, "text", joinPath(path, "text"), issues);
+  }
+  if (value.blob !== undefined) {
+    requireString(value, "blob", joinPath(path, "blob"), issues);
+  }
+}
+
+function collectMcpToolDescriptorIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "tool must be an object" });
+    return;
+  }
+
+  requireNonEmptyString(value, "name", joinPath(path, "name"), issues);
+  requireNonEmptyString(value, "description", joinPath(path, "description"), issues);
+  collectMcpToolInputSchemaIssues(value.inputSchema, joinPath(path, "inputSchema"), issues);
+}
+
+function collectMcpToolInputSchemaIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "inputSchema must be an object" });
+    return;
+  }
+
+  requireLiteralString(value, "type", joinPath(path, "type"), "object", issues);
+  if (value.properties !== undefined) {
+    collectJsonObjectIssues(value.properties, joinPath(path, "properties"), issues);
+  }
+  if (value.required !== undefined) {
+    collectStringArrayIssues(value.required, joinPath(path, "required"), issues);
+  }
+  if (value.additionalProperties !== undefined) {
+    requireBoolean(
+      value,
+      "additionalProperties",
+      joinPath(path, "additionalProperties"),
+      issues,
+    );
+  }
+}
+
+function collectMcpContentItemIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "content item must be an object" });
+    return;
+  }
+
+  requireNonEmptyString(value, "type", joinPath(path, "type"), issues);
+  collectJsonObjectIssues(value, path, issues);
+}
+
+function collectMcpApprovalSessionIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "approval session must be an object" });
+    return;
+  }
+
+  requireNonEmptyString(value, "id", joinPath(path, "id"), issues);
+  requireOneOf(value, "status", joinPath(path, "status"), MCP_APPROVAL_SESSION_STATUSES, issues);
+  requireIsoTimestamp(value, "createdAt", joinPath(path, "createdAt"), issues);
+  requireIsoTimestamp(value, "updatedAt", joinPath(path, "updatedAt"), issues);
+  if (value.expiresAt !== undefined) {
+    requireIsoTimestamp(value, "expiresAt", joinPath(path, "expiresAt"), issues);
+  }
+  collectJsonObjectIssues(value.request, joinPath(path, "request"), issues);
+  if (value.actor !== undefined) {
+    collectMcpActorIssues(value.actor, joinPath(path, "actor"), issues);
+  }
+  if (value.reason !== undefined) {
+    requireString(value, "reason", joinPath(path, "reason"), issues);
+  }
+  if (value.ruleId !== undefined) {
+    requireString(value, "ruleId", joinPath(path, "ruleId"), issues);
+  }
+  if (value.metadata !== undefined) {
+    collectJsonObjectIssues(value.metadata, joinPath(path, "metadata"), issues);
+  }
+  if (value.decision !== undefined) {
+    collectMcpApprovalSessionDecisionIssues(
+      value.decision,
+      joinPath(path, "decision"),
+      issues,
+    );
+  }
+  collectOptionalMcpTerminalTransitionIssues(value, "approved", path, issues);
+  collectOptionalMcpTerminalTransitionIssues(value, "rejected", path, issues);
+  collectOptionalMcpTerminalTransitionIssues(value, "expired", path, issues);
+}
+
+function collectMcpApprovalSessionDecisionIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "approval session decision must be an object" });
+    return;
+  }
+
+  requireOneOf(
+    value,
+    "status",
+    joinPath(path, "status"),
+    MCP_APPROVAL_SESSION_DECISION_STATUSES,
+    issues,
+  );
+  requireIsoTimestamp(value, "at", joinPath(path, "at"), issues);
+  if (value.actor !== undefined) {
+    collectMcpActorIssues(value.actor, joinPath(path, "actor"), issues);
+  }
+  if (value.reason !== undefined) {
+    requireString(value, "reason", joinPath(path, "reason"), issues);
+  }
+  if (value.metadata !== undefined) {
+    collectJsonObjectIssues(value.metadata, joinPath(path, "metadata"), issues);
+  }
+}
+
+function collectOptionalMcpTerminalTransitionIssues(
+  value: Record<string, unknown>,
+  prefix: "approved" | "rejected" | "expired",
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  const atField = `${prefix}At`;
+  const byField = `${prefix}By`;
+
+  if (value[atField] !== undefined) {
+    requireIsoTimestamp(value, atField, joinPath(path, atField), issues);
+  }
+  if (value[byField] !== undefined) {
+    collectMcpActorIssues(value[byField], joinPath(path, byField), issues);
+  }
+}
 
 function collectWorkspaceMetadataIssues(
   value: unknown,
