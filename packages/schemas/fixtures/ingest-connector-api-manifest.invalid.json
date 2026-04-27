@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "ingest-connector-manifest/v0",
+  "localOnly": false,
+  "connectors": [
+    {
+      "id": "local.files",
+      "label": "Local Files",
+      "description": "Reads from C:\\Users\\operator\\private-plan\\notes.txt",
+      "transport": "http",
+      "capabilities": [
+        "ingest.normalize",
+        "network.fetch",
+        "ingest.normalize"
+      ],
+      "mediaTypes": [
+        "text/plain",
+        "application/octet-stream",
+        "text/plain"
+      ],
+      "auth": {
+        "mode": "api-key",
+        "required": true
+      },
+      "preview": {
+        "dryRun": false,
+        "maxItems": 0,
+        "maxTextBytes": 0
+      },
+      "safety": {
+        "localOnly": false,
+        "networkAccess": true,
+        "durableWrites": true,
+        "untrustedByDefault": true
+      }
+    },
+    {
+      "id": "local.files",
+      "label": "Remote Loader",
+      "description": "Forwards pasted content with Bearer sk-example-local-test-value",
+      "transport": "in-process",
+      "capabilities": [
+        "search.query"
+      ],
+      "mediaTypes": [
+        "application/json"
+      ],
+      "auth": {
+        "mode": "none",
+        "required": false
+      },
+      "preview": {
+        "dryRun": true,
+        "maxItems": 1,
+        "maxTextBytes": 1024
+      },
+      "safety": {
+        "localOnly": true,
+        "networkAccess": false,
+        "durableWrites": false,
+        "untrustedByDefault": true
+      }
+    }
+  ]
+}

@@ -95,6 +95,27 @@ OpenAPI ingest/search contract:
 - `POST /v1/search/query`
 - `POST /v1/quarantine/cases`
 - `POST /v1/quarantine/cases/{caseId}/decision`
+- `createIngestOpenApiRouteStateFromFixtures`
+- `createMemoryIngestOpenApiRouteState`
+- `createIngestOpenApiRoutes`
+- `mountIngestOpenApiRoutes`
+
+`apps/api/src/ingestFixtureServices.ts` adapts the public ingest/search fixture
+set into deterministic in-memory route state:
+
+- `DEFAULT_INGEST_SEARCH_FIXTURE_DIRECTORY`
+- `resolveIngestSearchFixturePaths`
+- `loadIngestSearchFixtureBundle`
+- `createIngestRouteStateSeedFromFixtures`
+- `createIngestRouteStateFromFixtures`
+- `createIngestRouteStateFromIngestSearchFixtures`
+- `validateIngestSearchFixtureBundle`
+- `IngestFixtureValidationError`
+
+The API fixture services join `repository.json`, `search-index.json`,
+`quarantine.json`, and `api-requests.json`; reject fixture paths that escape the
+workspace root; and replay the OpenAPI-shaped route responses without a live
+server.
 
 Replay the checked-in API fixture without opening a live network connection:
 
@@ -103,9 +124,50 @@ node packages\cli\src\index.ts ingest api replay --fixture examples\ingest-searc
 node packages\cli\src\index.ts ingest api verify --fixture examples\ingest-search\api-requests.json --openapi docs\openapi.yaml
 ```
 
+The CLI replay and verification code lives in
+`packages/cli/src/ingestApiReplay.ts` and
+`packages/cli/src/ingestApiVerify.ts`. It accepts local JSON and OpenAPI files,
+rejects URL fixtures and private paths, reports JSON-only errors, and records
+`network.liveRequests: 0` for verification.
+
+The connector manifest API has its own local replay fixture:
+`examples/ingest-search/connector-api-requests.json`. Replay it through the
+connector route without opening a network connection:
+
+```powershell
+node packages\cli\src\index.ts ingest connectors api replay --fixture examples\ingest-search\connector-api-requests.json
+node packages\cli\src\index.ts ingest-connector-api replay --fixture examples\ingest-search\connector-api-requests.json --id api_ingest_connectors_manifest
+```
+
+`packages/cli/src/ingestConnectorApiReplay.ts` dispatches those fixture
+requests directly through `createIngestConnectorRoutes`, rejects private or
+plan-pack paths, redacts raw local paths and secret-like values in output, and
+returns JSON-only success or error envelopes.
+The connector-specific replay surface is `runIngestConnectorApiReplayCli`,
+`isIngestConnectorApiReplayCommand`, and
+`createIngestConnectorApiDispatcher`.
+
 The route state accepts local source URIs, relative repository paths, and
 request JSON. It returns checksums, citations, quarantine items, and
 `untrusted: true` unless `options.trusted` is explicitly true.
+
+Focused API and CLI fixture checks:
+
+These commands cover `apps/api/tests/ingest-fixture-services.test.mjs`,
+`apps/api/tests/ingest-openapi-routes.test.mjs`,
+`packages/cli/tests/ingest-api-replay.test.mjs`, and
+`packages/cli/tests/ingest-api-verify.test.mjs`. Connector manifest API replay
+is covered by `apps/api/tests/ingest-connector-fixture-replay.test.mjs` and
+`packages/cli/tests/ingest-connector-api-replay.test.mjs`.
+
+```powershell
+node apps\api\tests\ingest-fixture-services.test.mjs
+node apps\api\tests\ingest-openapi-routes.test.mjs
+node apps\api\tests\ingest-connector-fixture-replay.test.mjs
+node packages\cli\tests\ingest-api-replay.test.mjs
+node packages\cli\tests\ingest-api-verify.test.mjs
+node packages\cli\tests\ingest-connector-api-replay.test.mjs
+```
 
 ## SDK Helper
 
@@ -113,11 +175,45 @@ Use `packages/sdk-js/src/ingestClient.ts` when a caller wants the route-shaped
 API preview through an injected `fetch` implementation:
 
 - `createIngestSearchClient`
+- `IngestSearchClient.normalize`
 - `IngestSearchClient.ingestStructured`
+- `IngestSearchClient.structuredIngest`
 - `IngestSearchClient.scanRepository`
+- `IngestSearchClient.repositoryScan`
 - `IngestSearchClient.search`
+- `IngestSearchClient.searchQuery`
 - `IngestSearchClient.createQuarantineCases`
 - `IngestSearchClient.decideQuarantineCase`
+
+Use `packages/sdk-js/src/ingestFixtureFetch.ts` when SDK tests or examples
+should drive the API client from the checked-in fixture bundle:
+
+- `DEFAULT_INGEST_FIXTURE_PATH`
+- `loadIngestFixtureBundle`
+- `createIngestFixtureFetch`
+- `createIngestFixtureClient`
+- `createIngestFixtureClientHarness`
+- `baseUrlFromIngestFixtureBundle`
+
+The fixture fetch matches method, path, and JSON body against
+`examples/ingest-search/api-requests.json`, returns typed fixture errors for
+drift, and records calls in memory. It does not open a socket or require a
+running API process.
+
+Use `packages/sdk-js/src/ingestConnectorClient.ts` when a caller wants only the
+connector manifest API route through an injected `fetch`:
+
+- `createIngestConnectorClient`
+- `IngestConnectorClient.getManifest`
+- `IngestConnectorClient.manifest`
+- `IngestConnectorClient.getReadiness`
+- `IngestConnectorClient.readiness`
+
+The connector API client requires an injected fetch, calls
+`GET /v1/ingest/connectors`, normalizes the API manifest through
+`normalizeLocalIngestConnectorManifest`, builds readiness with
+`buildLocalIngestConnectorReadinessSummary`, and redacts raw local paths or
+secret-like values from typed API errors.
 
 Use pure helpers from `packages/sdk-js/src/localIngest.ts` when the caller
 already has local JSON and does not need an API boundary:
@@ -145,8 +241,16 @@ trusted-by-default false.
 
 Focused SDK checks:
 
+These commands cover `packages/sdk-js/tests/client-ingest-search.test.mjs`,
+`packages/sdk-js/tests/ingest-fixture-fetch.test.mjs`,
+`packages/sdk-js/tests/local-ingest.test.mjs`, and
+`packages/sdk-js/tests/local-ingest-connector-manifest.test.mjs`. The connector
+API client is covered by `packages/sdk-js/tests/ingest-connector-client.test.mjs`.
+
 ```powershell
 node packages\sdk-js\tests\client-ingest-search.test.mjs
+node packages\sdk-js\tests\ingest-connector-client.test.mjs
+node packages\sdk-js\tests\ingest-fixture-fetch.test.mjs
 node packages\sdk-js\tests\local-ingest.test.mjs
 node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs
 ```
@@ -179,11 +283,52 @@ The Web connector state accepts Python CLI, API, and SDK manifest shapes. It
 redacts raw local paths and secret-like fields, marks malformed or unsafe input
 as blocked, and renders "Untrusted by default" without retaining unsafe values.
 
+`apps/web/src/ingestApiState.ts` turns API fixture bundles, single fixture
+entries, or route response bodies into the same UI-ready source, result,
+quarantine, and error states:
+
+- `buildIngestApiState`
+- `collectIngestApiSourceSummaries`
+- `buildIngestApiSourceCards`
+- `collectIngestApiSearchResults`
+- `buildIngestApiSearchRows`
+- `collectIngestApiQuarantineItems`
+- `buildIngestApiQuarantineQueueState`
+- `buildIngestApiErrorStates`
+
+The Web API-state helper consumes already captured API JSON. It does not fetch
+remote data and defensively clones returned state so fixture tests cannot mutate
+shared inputs.
+
+`apps/web/src/ingestConnectorApiState.ts` turns connector manifest API
+responses, replay fixtures, and replay output into connector cards, rows,
+request cards, summaries, empty states, and redacted error states:
+
+- `buildIngestConnectorApiState`
+- `buildIngestConnectorApiCards`
+- `buildIngestConnectorApiRows`
+- `buildIngestConnectorApiRequestCards`
+- `buildIngestConnectorApiErrorStates`
+- `buildIngestConnectorApiEmptyStates`
+- `buildIngestConnectorApiEmptyState`
+- `buildIngestConnectorApiErrorState`
+- `redactIngestConnectorApiText`
+
+The connector API-state helper uses already captured local JSON, redacts raw
+paths and secret-like strings before they reach labels, and does not fetch.
+
 Focused Web check:
+
+These commands cover `apps/web/tests/ingest-search.test.mjs`,
+`apps/web/tests/ingest-connector-state.test.mjs`, and
+`apps/web/tests/ingest-api-state.test.mjs`. Connector manifest API state is
+covered by `apps/web/tests/ingest-connector-api-state.test.mjs`.
 
 ```powershell
 node apps\web\tests\ingest-search.test.mjs
+node apps\web\tests\ingest-connector-api-state.test.mjs
 node apps\web\tests\ingest-connector-state.test.mjs
+node apps\web\tests\ingest-api-state.test.mjs
 ```
 
 ## Schema Contracts
@@ -202,10 +347,45 @@ The exported fixtures are:
 - `packages/schemas/fixtures/ingest-connector-manifest.schema.json`
 - `packages/schemas/fixtures/ingest-connector-profile.schema.json`
 
+`packages/schemas/src/ingestSearch.ts` defines the API fixture record contract
+used by the OpenAPI-shaped route examples. It exports
+`INGEST_SEARCH_SCHEMA_VERSION`, `ingestSearchKinds`, `ingestSearchSchemas`,
+`ingestSearchSchemaDefinitions`, `ingestSearchValidators`,
+`getIngestSearchSchema`, `validateIngestSearchObject`,
+`assertIngestSearchObject`, and `isIngestSearchKind`.
+
+The API fixture schema samples are:
+
+- `packages/schemas/fixtures/ingest-search.valid.json`
+- `packages/schemas/fixtures/ingest-search.invalid.json`
+
+`packages/schemas/src/ingestConnectorApiManifest.ts` defines the camelCase
+connector manifest API contract returned by `GET /v1/ingest/connectors`. It
+exports `INGEST_CONNECTOR_API_MANIFEST_SCHEMA_VERSION`,
+`ingestConnectorApiManifestSchema`, `ingestConnectorApiProfileSchema`,
+`ingestConnectorApiManifestSchemas`, `getIngestConnectorApiManifestSchema`,
+`validateIngestConnectorApiManifest`, `validateIngestConnectorApiProfile`,
+`assertIngestConnectorApiManifest`, `assertIngestConnectorApiProfile`,
+`isIngestConnectorApiCapability`, `isIngestConnectorApiMediaType`, and
+`isIngestConnectorApiProfileId`.
+
+The connector API manifest schema fixtures are:
+
+- `packages/schemas/fixtures/ingest-connector-api-manifest.valid.json`
+- `packages/schemas/fixtures/ingest-connector-api-manifest.invalid.json`
+- `packages/schemas/fixtures/ingest-connector-api-manifest.schema.json`
+
 Focused schema check:
 
+These commands cover `packages/schemas/tests/ingest-connector-manifest.test.mjs`
+and `packages/schemas/tests/ingest-search.test.mjs`. Connector API manifest
+schemas are covered by
+`packages/schemas/tests/ingest-connector-api-manifest.test.mjs`.
+
 ```powershell
+node packages\schemas\tests\ingest-connector-api-manifest.test.mjs
 node packages\schemas\tests\ingest-connector-manifest.test.mjs
+node packages\schemas\tests\ingest-search.test.mjs
 ```
 
 ## Fixtures
@@ -219,7 +399,20 @@ The local preview fixtures live under `examples/ingest-search`:
 - `examples/ingest-search/search-index.json`
 - `examples/ingest-search/quarantine.json`
 - `examples/ingest-search/api-requests.json`
+- `examples/ingest-search/connector-api-requests.json`
 - `examples/ingest-search/client-session.json`
+
+`examples/ingest-search/api-requests.json` is the canonical local API replay
+fixture for the SDK fixture fetch, CLI replay and verify commands, API fixture
+services, schema checks, and Web API-state helper. Keep route bodies JSON-only,
+source URIs local, response bodies deterministic, and `apiBase` limited to
+localhost.
+
+`examples/ingest-search/connector-api-requests.json` is the connector manifest
+API replay fixture for the CLI connector replay, API connector fixture replay
+test, SDK connector API client, schema API manifest fixtures, and Web connector
+API-state helper. It stays local-only and targets only
+`GET /v1/ingest/connectors`.
 
 Do not add private planning paths, machine-specific absolute paths, or remote
 URLs to connector docs or fixtures.
@@ -235,9 +428,22 @@ python -m unittest discover -s services\ingest\tests
 python -m unittest discover -s services\ingest\tests -p test_connector_manifest.py
 python -m unittest discover -s services\ingest\tests -p test_ingest_cli_connector_manifest.py
 node apps\api\tests\ingest-connector-routes.test.mjs
+node apps\api\tests\ingest-connector-fixture-replay.test.mjs
+node apps\api\tests\ingest-fixture-services.test.mjs
+node apps\api\tests\ingest-openapi-routes.test.mjs
+node packages\cli\tests\ingest-connector-api-replay.test.mjs
+node packages\cli\tests\ingest-api-replay.test.mjs
+node packages\cli\tests\ingest-api-verify.test.mjs
+node packages\sdk-js\tests\client-ingest-search.test.mjs
+node packages\sdk-js\tests\ingest-connector-client.test.mjs
+node packages\sdk-js\tests\ingest-fixture-fetch.test.mjs
 node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs
+node apps\web\tests\ingest-api-state.test.mjs
+node apps\web\tests\ingest-connector-api-state.test.mjs
 node apps\web\tests\ingest-connector-state.test.mjs
+node packages\schemas\tests\ingest-connector-api-manifest.test.mjs
 node packages\schemas\tests\ingest-connector-manifest.test.mjs
+node packages\schemas\tests\ingest-search.test.mjs
 python -m unittest tests.test_validate_openapi_ingest_search
 python scripts\release_check.py --dry-run
 ```

@@ -544,23 +544,55 @@ class ReleaseCheckTests(unittest.TestCase):
             "services/ingest/tests/test_ingest_cli_connector_manifest.py",
             "apps/api/src/index.ts",
             "apps/api/src/ingestConnectorRoutes.ts",
+            "apps/api/src/ingestFixtureServices.ts",
             "apps/api/src/ingestOpenApiRoutes.ts",
             "apps/api/tests/ingest-connector-routes.test.mjs",
+            "apps/api/tests/ingest-connector-fixture-replay.test.mjs",
+            "apps/api/tests/ingest-fixture-services.test.mjs",
+            "apps/api/tests/ingest-openapi-routes.test.mjs",
+            "packages/cli/src/index.ts",
+            "packages/cli/src/ingestApiReplay.ts",
+            "packages/cli/src/ingestApiVerify.ts",
+            "packages/cli/src/ingestConnectorApiReplay.ts",
+            "packages/cli/tests/ingest-api-replay.test.mjs",
+            "packages/cli/tests/ingest-api-verify.test.mjs",
+            "packages/cli/tests/ingest-connector-api-replay.test.mjs",
             "packages/sdk-js/src/index.ts",
             "packages/sdk-js/src/ingestClient.ts",
+            "packages/sdk-js/src/ingestConnectorClient.ts",
+            "packages/sdk-js/src/ingestFixtureFetch.ts",
             "packages/sdk-js/src/localIngest.ts",
             "packages/sdk-js/src/localIngestConnectorManifest.ts",
+            "packages/sdk-js/tests/client-ingest-search.test.mjs",
+            "packages/sdk-js/tests/ingest-connector-client.test.mjs",
+            "packages/sdk-js/tests/ingest-fixture-fetch.test.mjs",
+            "packages/sdk-js/tests/local-ingest.test.mjs",
             "packages/sdk-js/tests/local-ingest-connector-manifest.test.mjs",
+            "apps/web/src/ingestApiState.ts",
             "apps/web/src/ingestSearch.ts",
+            "apps/web/src/ingestConnectorApiState.ts",
             "apps/web/src/ingestConnectorState.ts",
+            "apps/web/tests/ingest-api-state.test.mjs",
+            "apps/web/tests/ingest-search.test.mjs",
+            "apps/web/tests/ingest-connector-api-state.test.mjs",
             "apps/web/tests/ingest-connector-state.test.mjs",
             "packages/schemas/src/index.ts",
+            "packages/schemas/src/ingestConnectorApiManifest.ts",
             "packages/schemas/src/ingestConnectorManifest.ts",
+            "packages/schemas/src/ingestSearch.ts",
+            "packages/schemas/tests/ingest-connector-api-manifest.test.mjs",
             "packages/schemas/tests/ingest-connector-manifest.test.mjs",
+            "packages/schemas/tests/ingest-search.test.mjs",
+            "packages/schemas/fixtures/ingest-connector-api-manifest.valid.json",
+            "packages/schemas/fixtures/ingest-connector-api-manifest.invalid.json",
+            "packages/schemas/fixtures/ingest-connector-api-manifest.schema.json",
             "packages/schemas/fixtures/ingest-connector-manifest.valid.json",
             "packages/schemas/fixtures/ingest-connector-manifest.invalid.json",
             "packages/schemas/fixtures/ingest-connector-manifest.schema.json",
             "packages/schemas/fixtures/ingest-connector-profile.schema.json",
+            "packages/schemas/fixtures/ingest-search.valid.json",
+            "packages/schemas/fixtures/ingest-search.invalid.json",
+            "examples/ingest-search/connector-api-requests.json",
             "docs/openapi.yaml",
             "tests/test_validate_openapi_ingest_search.py",
         }
@@ -574,7 +606,12 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("tests.test_ingest_integration_docs", docs_check.command)
         self.assertIn("tests.test_sdk_js_docs", docs_check.command)
         self.assertIn("tests.test_validate_openapi_ingest_search", docs_check.command)
-        self.assertIn("local preview wiring", docs_check.description)
+        self.assertIn("connector API client", docs_check.description)
+        self.assertIn("connector API manifest schema fixtures", docs_check.description)
+        self.assertIn("Web connector API-state", docs_check.description)
+        self.assertIn("connector API client and replay", docs_check.description)
+        self.assertIn("API fixture replay", docs_check.description)
+        self.assertIn("SDK fixture client", docs_check.description)
         self.assertLessEqual(expected, set(repo_health.required_paths))
 
     def test_missing_tools_are_skipped_when_running_available_checks(self) -> None:

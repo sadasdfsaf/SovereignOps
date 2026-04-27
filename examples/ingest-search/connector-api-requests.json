@@ -1,0 +1,200 @@
+{
+  "schemaVersion": "ingest-connector-api-requests.v1",
+  "generatedAt": "2026-04-27T20:30:00.000Z",
+  "apiBase": "local://ingest-connector-api",
+  "localOnly": true,
+  "network": {
+    "mode": "disabled",
+    "notes": "Replay these requests through createApiRouter(createIngestConnectorRoutes()) without starting a live server."
+  },
+  "durableWrites": false,
+  "auth": {
+    "mode": "none",
+    "required": false
+  },
+  "requests": [
+    {
+      "id": "api_ingest_connectors_manifest",
+      "title": "Replay local ingest connector manifest",
+      "route": {
+        "method": "GET",
+        "path": "/v1/ingest/connectors"
+      },
+      "request": {
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "schemaVersion": "ingest-connector-manifest/v1",
+        "localOnly": true,
+        "connectorCount": 3,
+        "connectorIds": [
+          "local.files",
+          "local.manual",
+          "local.workspace-index"
+        ],
+        "body": {
+          "schemaVersion": "ingest-connector-manifest/v1",
+          "localOnly": true,
+          "connectors": [
+            {
+              "id": "local.files",
+              "label": "Local Files",
+              "description": "Previews caller-provided local file content for normalization, indexing, and search.",
+              "transport": "in-process",
+              "capabilities": [
+                "ingest.normalize",
+                "ingest.structured",
+                "repository.scan",
+                "search.query",
+                "quarantine.preview"
+              ],
+              "mediaTypes": [
+                "text/plain",
+                "text/markdown",
+                "text/csv",
+                "application/json"
+              ],
+              "auth": {
+                "mode": "none",
+                "required": false
+              },
+              "preview": {
+                "dryRun": true,
+                "maxItems": 50,
+                "maxTextBytes": 65536
+              },
+              "safety": {
+                "localOnly": true,
+                "networkAccess": false,
+                "durableWrites": false,
+                "untrustedByDefault": true
+              }
+            },
+            {
+              "id": "local.manual",
+              "label": "Manual Text",
+              "description": "Accepts pasted or caller-supplied text for local normalization and preview search.",
+              "transport": "in-process",
+              "capabilities": [
+                "ingest.normalize",
+                "ingest.structured",
+                "search.query"
+              ],
+              "mediaTypes": [
+                "text/plain",
+                "text/markdown",
+                "application/json"
+              ],
+              "auth": {
+                "mode": "none",
+                "required": false
+              },
+              "preview": {
+                "dryRun": true,
+                "maxItems": 20,
+                "maxTextBytes": 32768
+              },
+              "safety": {
+                "localOnly": true,
+                "networkAccess": false,
+                "durableWrites": false,
+                "untrustedByDefault": true
+              }
+            },
+            {
+              "id": "local.workspace-index",
+              "label": "Workspace Index",
+              "description": "Queries the in-process local search index without contacting external services.",
+              "transport": "in-process",
+              "capabilities": [
+                "search.query",
+                "quarantine.preview"
+              ],
+              "mediaTypes": [
+                "text/plain",
+                "text/markdown",
+                "text/csv",
+                "application/json"
+              ],
+              "auth": {
+                "mode": "none",
+                "required": false
+              },
+              "preview": {
+                "dryRun": true,
+                "maxItems": 100,
+                "maxTextBytes": 16384
+              },
+              "safety": {
+                "localOnly": true,
+                "networkAccess": false,
+                "durableWrites": false,
+                "untrustedByDefault": false
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "api_ingest_connectors_bad_method",
+      "title": "Reject unsupported connector method",
+      "route": {
+        "method": "POST",
+        "path": "/v1/ingest/connectors"
+      },
+      "request": {
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {}
+      },
+      "expect": {
+        "status": 404,
+        "contentType": "application/json",
+        "error": {
+          "code": "API_ROUTE_NOT_FOUND",
+          "message": "No API route found for POST /v1/ingest/connectors"
+        },
+        "body": {
+          "error": {
+            "code": "API_ROUTE_NOT_FOUND",
+            "message": "No API route found for POST /v1/ingest/connectors"
+          }
+        }
+      }
+    },
+    {
+      "id": "api_ingest_connectors_bad_path",
+      "title": "Reject unsupported connector path",
+      "route": {
+        "method": "GET",
+        "path": "/v1/ingest/connectors/local.files?preview=1"
+      },
+      "request": {
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "expect": {
+        "status": 404,
+        "contentType": "application/json",
+        "error": {
+          "code": "API_ROUTE_NOT_FOUND",
+          "message": "No API route found for GET /v1/ingest/connectors/local.files"
+        },
+        "body": {
+          "error": {
+            "code": "API_ROUTE_NOT_FOUND",
+            "message": "No API route found for GET /v1/ingest/connectors/local.files"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sovereignops.local/ingest-connectors/api-manifest.schema.json",
+  "title": "Ingest connector API manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "localOnly",
+    "connectors"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "ingest-connector-manifest/v1",
+      "enum": [
+        "ingest-connector-manifest/v1"
+      ]
+    },
+    "localOnly": {
+      "type": "boolean",
+      "const": true,
+      "enum": [
+        true
+      ]
+    },
+    "connectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://schemas.sovereignops.local/ingest-connectors/api-profile.schema.json",
+        "title": "Ingest connector API profile",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "description",
+          "transport",
+          "capabilities",
+          "mediaTypes",
+          "auth",
+          "preview",
+          "safety"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!.*(?:(?:\\b[A-Za-z]:[\\\\/][^\\s\"',;)}\\]]+|\\\\\\\\[^\\\\\\s\"',;)}\\]]+[\\\\][^\\s\"',;)}\\]]+|/(?:Users|home|var|tmp|private|mnt|Volumes)/[^\\s\"',;)}\\]]+)|(?:^|[\\\\/])\\.codex-private(?:[\\\\/]|$)|[pP][rR][iI][vV][aA][tT][eE][- _]?[pP][lL][aA][nN](?:[- _]?[pP][aA][cC][kK])?|(?:[bB][eE][aA][rR][eE][rR]\\s+[A-Za-z0-9._~+/=-]{8,}|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,})|\\b(?:[aA][pP][iI][_-]?[kK][eE][yY]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[pP][aA][sS][sS][wW][oO][rR][dD]|[pP][aA][sS][sS][pP][hH][rR][aA][sS][eE]|[pP][rR][iI][vV][aA][tT][eE][_-]?[kK][eE][yY]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][_-]?[tT][oO][kK][eE][nN]|[tT][oO][kK][eE][nN])\\b))[a-z0-9][a-z0-9._:-]{0,96}$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!.*(?:(?:\\b[A-Za-z]:[\\\\/][^\\s\"',;)}\\]]+|\\\\\\\\[^\\\\\\s\"',;)}\\]]+[\\\\][^\\s\"',;)}\\]]+|/(?:Users|home|var|tmp|private|mnt|Volumes)/[^\\s\"',;)}\\]]+)|(?:^|[\\\\/])\\.codex-private(?:[\\\\/]|$)|[pP][rR][iI][vV][aA][tT][eE][- _]?[pP][lL][aA][nN](?:[- _]?[pP][aA][cC][kK])?|(?:[bB][eE][aA][rR][eE][rR]\\s+[A-Za-z0-9._~+/=-]{8,}|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,})|\\b(?:[aA][pP][iI][_-]?[kK][eE][yY]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[pP][aA][sS][sS][wW][oO][rR][dD]|[pP][aA][sS][sS][pP][hH][rR][aA][sS][eE]|[pP][rR][iI][vV][aA][tT][eE][_-]?[kK][eE][yY]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][_-]?[tT][oO][kK][eE][nN]|[tT][oO][kK][eE][nN])\\b)).*\\S.*$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!.*(?:(?:\\b[A-Za-z]:[\\\\/][^\\s\"',;)}\\]]+|\\\\\\\\[^\\\\\\s\"',;)}\\]]+[\\\\][^\\s\"',;)}\\]]+|/(?:Users|home|var|tmp|private|mnt|Volumes)/[^\\s\"',;)}\\]]+)|(?:^|[\\\\/])\\.codex-private(?:[\\\\/]|$)|[pP][rR][iI][vV][aA][tT][eE][- _]?[pP][lL][aA][nN](?:[- _]?[pP][aA][cC][kK])?|(?:[bB][eE][aA][rR][eE][rR]\\s+[A-Za-z0-9._~+/=-]{8,}|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,})|\\b(?:[aA][pP][iI][_-]?[kK][eE][yY]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[pP][aA][sS][sS][wW][oO][rR][dD]|[pP][aA][sS][sS][pP][hH][rR][aA][sS][eE]|[pP][rR][iI][vV][aA][tT][eE][_-]?[kK][eE][yY]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][_-]?[tT][oO][kK][eE][nN]|[tT][oO][kK][eE][nN])\\b)).*\\S.*$"
+          },
+          "transport": {
+            "type": "string",
+            "const": "in-process",
+            "enum": [
+              "in-process"
+            ]
+          },
+          "capabilities": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "ingest.normalize",
+                "ingest.structured",
+                "repository.scan",
+                "search.query",
+                "quarantine.preview"
+              ]
+            }
+          },
+          "mediaTypes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "text/plain",
+                "text/markdown",
+                "text/csv",
+                "application/json"
+              ]
+            }
+          },
+          "auth": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": "https://schemas.sovereignops.local/ingest-connectors/api-auth-profile.schema.json",
+            "title": "Ingest connector API auth profile",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "mode",
+              "required"
+            ],
+            "properties": {
+              "mode": {
+                "type": "string",
+                "const": "none",
+                "enum": [
+                  "none"
+                ]
+              },
+              "required": {
+                "type": "boolean",
+                "const": false,
+                "enum": [
+                  false
+                ]
+              }
+            }
+          },
+          "preview": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": "https://schemas.sovereignops.local/ingest-connectors/api-preview-profile.schema.json",
+            "title": "Ingest connector API preview profile",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "dryRun",
+              "maxItems",
+              "maxTextBytes"
+            ],
+            "properties": {
+              "dryRun": {
+                "type": "boolean",
+                "const": true,
+                "enum": [
+                  true
+                ]
+              },
+              "maxItems": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "maxTextBytes": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          },
+          "safety": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": "https://schemas.sovereignops.local/ingest-connectors/api-safety-profile.schema.json",
+            "title": "Ingest connector API safety profile",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "localOnly",
+              "networkAccess",
+              "durableWrites",
+              "untrustedByDefault"
+            ],
+            "properties": {
+              "localOnly": {
+                "type": "boolean",
+                "const": true,
+                "enum": [
+                  true
+                ]
+              },
+              "networkAccess": {
+                "type": "boolean",
+                "const": false,
+                "enum": [
+                  false
+                ]
+              },
+              "durableWrites": {
+                "type": "boolean",
+                "const": false,
+                "enum": [
+                  false
+                ]
+              },
+              "untrustedByDefault": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

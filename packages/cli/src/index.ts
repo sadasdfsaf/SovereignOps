@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 export * from "./commands.ts";
 export * from "./lifecycle.ts";
 export * from "./auditExport.ts";
+export * from "./ingestConnectorApiReplay.ts";
 export * from "./ingestEvidenceApiReplay.ts";
 export * from "./ingestEvidence.ts";
 export * from "./ingestApiReplay.ts";
@@ -30,6 +31,7 @@ export * from "./workspaceSessionSnapshotStore.ts";
 
 import { runAuditExportCli } from "./auditExport.ts";
 import { runCli as runCoreCli } from "./commands.ts";
+import { runIngestConnectorApiReplayCli } from "./ingestConnectorApiReplay.ts";
 import { runIngestEvidenceApiReplayCli } from "./ingestEvidenceApiReplay.ts";
 import { runIngestEvidenceCli } from "./ingestEvidence.ts";
 import { runIngestApiReplayCli } from "./ingestApiReplay.ts";
@@ -60,6 +62,7 @@ export async function runCli(
   options: Parameters<typeof runCoreCli>[1] &
     Parameters<typeof runLifecycleCli>[1] &
     Parameters<typeof runAuditExportCli>[1] &
+    Parameters<typeof runIngestConnectorApiReplayCli>[1] &
     Parameters<typeof runIngestEvidenceApiReplayCli>[1] &
     Parameters<typeof runIngestEvidenceCli>[1] &
     Parameters<typeof runIngestApiReplayCli>[1] &
@@ -96,6 +99,7 @@ export async function runCli(
     (await runPluginReviewArtifactRecordsReplayCli(argv, options)) ??
     (await runPluginReviewArtifactApiReplayCli(argv, options)) ??
     (await runPluginReviewArtifactCli(argv, options)) ??
+    (await runIngestConnectorApiReplayCli(argv, options)) ??
     (await runIngestEvidenceApiReplayCli(argv, options)) ??
     (await runIngestEvidenceCli(argv, options)) ??
     (await runIngestApiReplayCli(argv, options)) ??

@@ -48,16 +48,28 @@ console.log(workspace.describe(), plan.dryRun);
 - SDK exports: `packages/sdk-js/src/index.ts`
 - Shared client types and typed errors: `packages/sdk-js/src/client.ts`
 - Ingest/search route client: `packages/sdk-js/src/ingestClient.ts`
+- Ingest/search fixture fetch and client harness:
+  `packages/sdk-js/src/ingestFixtureFetch.ts`
 - Ingest/search pure helpers: `packages/sdk-js/src/localIngest.ts`
 - Ingest connector manifest helpers:
   `packages/sdk-js/src/localIngestConnectorManifest.ts`
+- Ingest connector API client:
+  `packages/sdk-js/src/ingestConnectorClient.ts`
 - Ingest connector guide: `docs/ingest-connectors.md`
+- Ingest API replay fixture:
+  `examples/ingest-search/api-requests.json`
+- Ingest connector API replay fixture:
+  `examples/ingest-search/connector-api-requests.json`
 - Focused ingest/search API client test:
   `packages/sdk-js/tests/client-ingest-search.test.mjs`
+- Focused ingest/search fixture fetch test:
+  `packages/sdk-js/tests/ingest-fixture-fetch.test.mjs`
 - Focused local ingest helper test:
   `packages/sdk-js/tests/local-ingest.test.mjs`
 - Focused connector manifest helper test:
   `packages/sdk-js/tests/local-ingest-connector-manifest.test.mjs`
+- Focused connector API client test:
+  `packages/sdk-js/tests/ingest-connector-client.test.mjs`
 - Workspace session retention cleanup API client:
   `packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupApiClient.ts`
 - Workspace session retention cleanup inventory API client:
@@ -102,7 +114,12 @@ Use `createIngestSearchClient` from `packages/sdk-js/src/ingestClient.ts` when
 callers want route-shaped local preview for ingest/search connector output.
 The client can run entirely against an injected `fetch`; examples require no network access.
 Route client methods include `IngestSearchClient.ingestStructured` and
-`IngestSearchClient.scanRepository`.
+`IngestSearchClient.scanRepository`. The full API client surface includes
+`IngestSearchClient.normalize`, `IngestSearchClient.structuredIngest`,
+`IngestSearchClient.repositoryScan`, `IngestSearchClient.search`,
+`IngestSearchClient.searchQuery`,
+`IngestSearchClient.createQuarantineCases`, and
+`IngestSearchClient.decideQuarantineCase`.
 
 ```ts
 import {
@@ -199,6 +216,85 @@ have a Python or API manifest. The helper surface includes
 `LocalIngestConnectorManifestError`. The normalizer rejects raw secrets, private
 paths, path traversal, and non-local references before returning frozen local
 profiles with `trustedByDefault: false`.
+
+## Ingest Connector API Client
+
+Use `createIngestConnectorClient` from
+`packages/sdk-js/src/ingestConnectorClient.ts` when callers only need the
+connector manifest API state from `GET /v1/ingest/connectors`. The client is
+local-only by construction: callers must pass an injected `fetch`, examples use
+`local://api/v1`, and tests replay
+`examples/ingest-search/connector-api-requests.json` without starting a server
+or opening a socket.
+
+The focused connector client exposes:
+
+- `IngestConnectorClient.getManifest`
+- `IngestConnectorClient.manifest`
+- `IngestConnectorClient.getReadiness`
+- `IngestConnectorClient.readiness`
+
+```ts
+import { createIngestConnectorClient } from "@sovereignops/sdk-js";
+
+const connectorClient = createIngestConnectorClient({
+  baseUrl: "local://api/v1",
+  apiKey: "[REDACTED]",
+  fetch: connectorFetch,
+});
+
+const manifest = await connectorClient.getManifest();
+const readiness = await connectorClient.getReadiness();
+
+console.log(manifest.localOnly, readiness.readyCount);
+```
+
+The connector client normalizes the manifest response with the local connector
+manifest helpers, redacts unsafe values in errors, and keeps connector profiles
+untrusted by default. It must not fall back to global fetch or perform live
+network requests.
+
+## Ingest API Fixture Client
+
+Use `packages/sdk-js/src/ingestFixtureFetch.ts` when tests need the SDK API
+client but must stay on checked-in local fixtures. The fixture fetch matches
+method, route path, and JSON request body against
+`examples/ingest-search/api-requests.json`; returned responses and recorded
+calls are defensive clones.
+
+Public helper names:
+
+- `DEFAULT_INGEST_FIXTURE_PATH`
+- `loadIngestFixtureBundle`
+- `createIngestFixtureFetch`
+- `createIngestFixtureClient`
+- `createIngestFixtureClientHarness`
+- `baseUrlFromIngestFixtureBundle`
+- `IngestFixtureFetch`
+- `IngestFixtureClientHarness`
+
+```ts
+import { createIngestFixtureClientHarness } from "@sovereignops/sdk-js";
+
+const harness = createIngestFixtureClientHarness();
+
+const search = await harness.client.search({
+  workspaceId: "wsp_ingest_demo",
+  query: "checksum",
+  filters: {
+    mediaTypes: ["application/json"],
+    sourceUris: ["fixture://ingest-search/records.json"],
+  },
+  limit: 5,
+});
+
+console.log(search.results[0].untrusted, harness.fetch.calls[0].matchedRequestId);
+```
+
+The derived base URL is `http://127.0.0.1:7317/v1/`, but the harness uses
+in-memory fixture responses only. It never starts an API server, never opens a socket,
+and returns typed fixture errors for unmatched paths, method mismatches, and
+request body drift.
 
 ## Workspace Session Snapshot Retention Cleanup API Preview
 
@@ -537,8 +633,10 @@ Run focused docs and SDK checks from the repository root:
 python -m unittest tests.test_sdk_js_docs
 python -m unittest tests.test_ingest_connectors_docs
 node packages\sdk-js\tests\client-ingest-search.test.mjs
+node packages\sdk-js\tests\ingest-fixture-fetch.test.mjs
 node packages\sdk-js\tests\local-ingest.test.mjs
 node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs
+node packages\sdk-js\tests\ingest-connector-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention.test.mjs

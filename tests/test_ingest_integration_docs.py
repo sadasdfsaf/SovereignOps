@@ -54,6 +54,33 @@ EXPECTED_SDK_CONNECTOR_ENTRY_POINTS = (
     "buildLocalIngestConnectorReadinessSummary",
 )
 
+EXPECTED_SDK_CONNECTOR_API_ENTRY_POINTS = (
+    "createIngestConnectorClient",
+    "IngestConnectorClient.getManifest",
+    "IngestConnectorClient.manifest",
+    "IngestConnectorClient.getReadiness",
+    "IngestConnectorClient.readiness",
+)
+
+EXPECTED_SDK_API_ENTRY_POINTS = (
+    "createIngestSearchClient",
+    "IngestSearchClient.normalize",
+    "IngestSearchClient.ingestStructured",
+    "IngestSearchClient.scanRepository",
+    "IngestSearchClient.search",
+    "IngestSearchClient.createQuarantineCases",
+    "IngestSearchClient.decideQuarantineCase",
+)
+
+EXPECTED_SDK_FIXTURE_ENTRY_POINTS = (
+    "DEFAULT_INGEST_FIXTURE_PATH",
+    "loadIngestFixtureBundle",
+    "createIngestFixtureFetch",
+    "createIngestFixtureClient",
+    "createIngestFixtureClientHarness",
+    "baseUrlFromIngestFixtureBundle",
+)
+
 EXPECTED_SCHEMA_KINDS = (
     "repositorySourceSnapshot",
     "logSourceSnapshot",
@@ -72,12 +99,27 @@ EXPECTED_CONNECTOR_SCHEMA_SYMBOLS = (
     "assertIngestConnectorManifest",
 )
 
+EXPECTED_CONNECTOR_API_SCHEMA_SYMBOLS = (
+    "ingestConnectorApiManifestSchema",
+    "ingestConnectorApiProfileSchema",
+    "ingestConnectorApiManifestSchemas",
+    "getIngestConnectorApiManifestSchema",
+    "validateIngestConnectorApiManifest",
+    "validateIngestConnectorApiProfile",
+    "assertIngestConnectorApiManifest",
+    "assertIngestConnectorApiProfile",
+    "isIngestConnectorApiCapability",
+    "isIngestConnectorApiMediaType",
+    "isIngestConnectorApiProfileId",
+)
+
 EXPECTED_FIXTURE_PATHS = (
     "examples/ingest-search/repository.json",
     "examples/ingest-search/ingest-log.json",
     "examples/ingest-search/search-index.json",
     "examples/ingest-search/quarantine.json",
     "examples/ingest-search/api-requests.json",
+    "examples/ingest-search/connector-api-requests.json",
     "examples/ingest-search/client-session.json",
 )
 
@@ -89,17 +131,37 @@ EXPECTED_CONNECTOR_PATHS = (
     "services/ingest/src/sovereignops_ingest/repository.py",
     "services/ingest/src/sovereignops_ingest/logs.py",
     "apps/api/src/ingestConnectorRoutes.ts",
+    "apps/api/src/ingestFixtureServices.ts",
     "apps/api/src/ingestOpenApiRoutes.ts",
+    "apps/api/tests/ingest-connector-fixture-replay.test.mjs",
+    "packages/cli/src/ingestConnectorApiReplay.ts",
+    "packages/cli/src/ingestApiReplay.ts",
+    "packages/cli/src/ingestApiVerify.ts",
+    "packages/cli/tests/ingest-connector-api-replay.test.mjs",
+    "packages/sdk-js/src/ingestConnectorClient.ts",
     "packages/sdk-js/src/ingestClient.ts",
+    "packages/sdk-js/src/ingestFixtureFetch.ts",
     "packages/sdk-js/src/localIngest.ts",
     "packages/sdk-js/src/localIngestConnectorManifest.ts",
+    "packages/sdk-js/tests/ingest-connector-client.test.mjs",
     "apps/web/src/ingestSearch.ts",
     "apps/web/src/ingestConnectorState.ts",
+    "apps/web/src/ingestConnectorApiState.ts",
+    "apps/web/src/ingestApiState.ts",
+    "apps/web/tests/ingest-connector-api-state.test.mjs",
+    "packages/schemas/src/ingestConnectorApiManifest.ts",
     "packages/schemas/src/ingestConnectorManifest.ts",
+    "packages/schemas/src/ingestSearch.ts",
+    "packages/schemas/fixtures/ingest-connector-api-manifest.valid.json",
+    "packages/schemas/fixtures/ingest-connector-api-manifest.invalid.json",
+    "packages/schemas/fixtures/ingest-connector-api-manifest.schema.json",
     "packages/schemas/fixtures/ingest-connector-manifest.valid.json",
     "packages/schemas/fixtures/ingest-connector-manifest.invalid.json",
     "packages/schemas/fixtures/ingest-connector-manifest.schema.json",
     "packages/schemas/fixtures/ingest-connector-profile.schema.json",
+    "packages/schemas/fixtures/ingest-search.valid.json",
+    "packages/schemas/fixtures/ingest-search.invalid.json",
+    "packages/schemas/tests/ingest-connector-api-manifest.test.mjs",
     "packages/schemas/tests/ingest-connector-manifest.test.mjs",
 )
 
@@ -111,9 +173,22 @@ EXPECTED_COMMANDS = (
     r"python -m unittest discover -s services\ingest\tests -p test_connector_manifest.py",
     r"python -m unittest discover -s services\ingest\tests -p test_ingest_cli_connector_manifest.py",
     r"node apps\api\tests\ingest-connector-routes.test.mjs",
+    r"node apps\api\tests\ingest-connector-fixture-replay.test.mjs",
+    r"node apps\api\tests\ingest-fixture-services.test.mjs",
+    r"node apps\api\tests\ingest-openapi-routes.test.mjs",
+    r"node packages\cli\tests\ingest-connector-api-replay.test.mjs",
+    r"node packages\cli\tests\ingest-api-replay.test.mjs",
+    r"node packages\cli\tests\ingest-api-verify.test.mjs",
+    r"node packages\sdk-js\tests\client-ingest-search.test.mjs",
+    r"node packages\sdk-js\tests\ingest-connector-client.test.mjs",
+    r"node packages\sdk-js\tests\ingest-fixture-fetch.test.mjs",
     r"node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs",
+    r"node apps\web\tests\ingest-api-state.test.mjs",
+    r"node apps\web\tests\ingest-connector-api-state.test.mjs",
     r"node apps\web\tests\ingest-connector-state.test.mjs",
+    r"node packages\schemas\tests\ingest-connector-api-manifest.test.mjs",
     r"node packages\schemas\tests\ingest-connector-manifest.test.mjs",
+    r"node packages\schemas\tests\ingest-search.test.mjs",
     "npm.cmd --workspace @sovereignops/api run check",
     "npm.cmd --workspace @sovereignops/sdk-js run check",
     "npm.cmd --workspace @sovereignops/cli run check",
@@ -131,6 +206,14 @@ EXPECTED_COMMANDS = (
     r"examples\ingest-search\quarantine.json --item-id qtn_csv_beta_status "
     r"--decision release --actor-id local_reviewer --reason "
     "\"Status accepted for local indexing.\" --timestamp 2026-04-27T08:05:00.000Z",
+    r"node packages\cli\src\index.ts ingest api replay --fixture "
+    r"examples\ingest-search\api-requests.json --route /v1/ingest/structured",
+    r"node packages\cli\src\index.ts ingest api verify --fixture "
+    r"examples\ingest-search\api-requests.json --openapi docs\openapi.yaml",
+    r"node packages\cli\src\index.ts ingest connectors api replay --fixture "
+    r"examples\ingest-search\connector-api-requests.json",
+    r"node packages\cli\src\index.ts ingest-connector-api replay --fixture "
+    r"examples\ingest-search\connector-api-requests.json --id api_ingest_connectors_manifest",
 )
 
 LOCAL_SOURCE_SCHEMES = ("fixture://", "file://", "stdin://", "workspace://", "local://")
@@ -163,11 +246,21 @@ class IngestIntegrationDocsTests(unittest.TestCase):
             with self.subTest(route=route):
                 self.assertIn(f"`{route}`", self.doc_text)
 
-        for entry_point in (*EXPECTED_SDK_ENTRY_POINTS, *EXPECTED_SDK_CONNECTOR_ENTRY_POINTS):
+        for entry_point in (
+            *EXPECTED_SDK_ENTRY_POINTS,
+            *EXPECTED_SDK_CONNECTOR_ENTRY_POINTS,
+            *EXPECTED_SDK_CONNECTOR_API_ENTRY_POINTS,
+            *EXPECTED_SDK_API_ENTRY_POINTS,
+            *EXPECTED_SDK_FIXTURE_ENTRY_POINTS,
+        ):
             with self.subTest(entry_point=entry_point):
                 self.assertIn(f"`{entry_point}`", self.doc_text)
 
-        for kind in (*EXPECTED_SCHEMA_KINDS, *EXPECTED_CONNECTOR_SCHEMA_SYMBOLS):
+        for kind in (
+            *EXPECTED_SCHEMA_KINDS,
+            *EXPECTED_CONNECTOR_SCHEMA_SYMBOLS,
+            *EXPECTED_CONNECTOR_API_SCHEMA_SYMBOLS,
+        ):
             with self.subTest(kind=kind):
                 self.assertIn(f"`{kind}`", self.doc_text)
 

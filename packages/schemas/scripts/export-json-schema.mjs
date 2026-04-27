@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { errorResponseSchema, validationIssueSchema } from "../src/apiError.ts";
 import { canonicalLocalEventCatalogSchema, canonicalLocalEventSchema } from "../src/eventCatalog.ts";
+import { ingestConnectorApiManifestSchema } from "../src/ingestConnectorApiManifest.ts";
 import {
   ingestConnectorManifestSchema,
   ingestConnectorProfileSchema,
@@ -44,6 +45,7 @@ const outputs = [
   ["api-validation-issue.schema.json", validationIssueSchema],
   ["canonical-local-event.schema.json", canonicalLocalEventSchema],
   ["canonical-local-event-catalog.schema.json", canonicalLocalEventCatalogSchema],
+  ["ingest-connector-api-manifest.schema.json", ingestConnectorApiManifestSchema],
   ["ingest-connector-profile.schema.json", ingestConnectorProfileSchema],
   ["ingest-connector-manifest.schema.json", ingestConnectorManifestSchema],
   ["mcp-approval-evidence.schema.json", mcpApprovalEvidenceSchema],
