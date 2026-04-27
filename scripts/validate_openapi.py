@@ -16,6 +16,7 @@ REQUIRED_PATH_OPERATIONS = {
     "/v1/audit/export/jsonl": ("exportAuditJsonl",),
     "/v1/audit/export/csv": ("exportAuditCsv",),
     "/v1/audit/export/package": ("exportAuditPackage",),
+    "/v1/ingest/connectors": ("listIngestConnectors",),
     "/v1/ingest/evidence/export": ("exportIngestEvidence",),
     "/v1/ingest/evidence/package": ("packageIngestEvidence",),
     "/v1/workspace-session/summary": ("summarizeWorkspaceSession",),

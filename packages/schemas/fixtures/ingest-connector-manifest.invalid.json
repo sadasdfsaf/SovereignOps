@@ -1,0 +1,36 @@
+{
+  "schema_version": "ingest-connector-manifest/v0",
+  "generated_by": "C:\\Users\\operator\\secret-token.txt",
+  "connectors": [
+    {
+      "id": "markdown",
+      "display_name": "Markdown",
+      "description": "Leaky connector points at E:\\private-plan",
+      "source_kinds": ["file", "file"],
+      "media_types": ["text markdown"],
+      "citation_kinds": [],
+      "validation_modes": ["network-fetch"],
+      "safety_finding_kinds": ["raw-secret", "raw-secret"],
+      "default_untrusted": false,
+      "local_only": false,
+      "network_access": true,
+      "reads_files": "yes",
+      "requires_approval": false
+    },
+    {
+      "id": "remote",
+      "display_name": "",
+      "description": "Invalid unsupported connector",
+      "source_kinds": ["network"],
+      "media_types": ["application/json"],
+      "citation_kinds": ["url"],
+      "validation_modes": ["syntax"],
+      "safety_finding_kinds": ["raw-secret"],
+      "default_untrusted": true,
+      "local_only": true,
+      "network_access": false,
+      "reads_files": false,
+      "requires_approval": false
+    }
+  ]
+}

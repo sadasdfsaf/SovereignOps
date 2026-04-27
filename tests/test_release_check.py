@@ -68,6 +68,7 @@ def make_release_root(root: Path) -> None:
         *release_check.WORKSPACE_SESSION_FILE_STORE_REQUIRED_PATHS,
         *release_check.WORKSPACE_SESSION_SNAPSHOT_REVIEW_REQUIRED_PATHS,
         *release_check.WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS,
+        *release_check.INGEST_CONNECTOR_REQUIRED_PATHS,
         "docs/openapi.yaml",
         "docs/schema-alignment.md",
         "docs/local-data-lifecycle.md",
@@ -299,6 +300,7 @@ class ReleaseCheckTests(unittest.TestCase):
         by_name = {check.spec.name: check for check in checks}
         self.assertTrue(by_name["python-tests"].available)
         self.assertTrue(by_name["ingest-python-tests"].available)
+        self.assertTrue(by_name["ingest-connector-docs"].available)
         self.assertTrue(by_name["node-package-baseline"].available)
         self.assertTrue(by_name["ingest-evidence-parity"].available)
         self.assertTrue(by_name["ingest-evidence-api-replay"].available)
@@ -374,6 +376,8 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertEqual(calls, [])
         self.assertIn("RUN python-tests: python -m unittest discover -s tests", output.getvalue())
         self.assertIn("RUN ingest-python-tests: python -m unittest discover -s services/ingest/tests", output.getvalue())
+        self.assertIn("RUN ingest-connector-docs: python -m unittest tests.test_ingest_connectors_docs", output.getvalue())
+        self.assertIn("tests.test_validate_openapi_ingest_search", output.getvalue())
         self.assertIn("RUN status-dashboard: python scripts/status_dashboard.py --json", output.getvalue())
         self.assertIn("RUN bootstrap-docs: python -m unittest tests.test_adr_docs", output.getvalue())
         self.assertIn("RUN schema-contract-alignment: python -m unittest tests.test_schema_alignment_docs", output.getvalue())
@@ -520,6 +524,58 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("inventory API replay", alignment.description)
         self.assertIn("inventory SDK API client", security.description)
         self.assertIn("inventory API replay", security.description)
+
+    def test_ingest_connector_release_gate_tracks_public_docs_and_preview_paths(self) -> None:
+        required = set(release_check.INGEST_CONNECTOR_REQUIRED_PATHS)
+        expected = {
+            "docs/ingest-connectors.md",
+            "docs/ingest-integration.md",
+            "docs/sdk-js.md",
+            "tests/test_ingest_connectors_docs.py",
+            "tests/test_ingest_integration_docs.py",
+            "tests/test_sdk_js_docs.py",
+            "services/ingest/src/sovereignops_ingest/cli.py",
+            "services/ingest/src/sovereignops_ingest/connectors.py",
+            "services/ingest/src/sovereignops_ingest/connector_manifest.py",
+            "services/ingest/src/sovereignops_ingest/structured.py",
+            "services/ingest/src/sovereignops_ingest/repository.py",
+            "services/ingest/src/sovereignops_ingest/logs.py",
+            "services/ingest/tests/test_connector_manifest.py",
+            "services/ingest/tests/test_ingest_cli_connector_manifest.py",
+            "apps/api/src/index.ts",
+            "apps/api/src/ingestConnectorRoutes.ts",
+            "apps/api/src/ingestOpenApiRoutes.ts",
+            "apps/api/tests/ingest-connector-routes.test.mjs",
+            "packages/sdk-js/src/index.ts",
+            "packages/sdk-js/src/ingestClient.ts",
+            "packages/sdk-js/src/localIngest.ts",
+            "packages/sdk-js/src/localIngestConnectorManifest.ts",
+            "packages/sdk-js/tests/local-ingest-connector-manifest.test.mjs",
+            "apps/web/src/ingestSearch.ts",
+            "apps/web/src/ingestConnectorState.ts",
+            "apps/web/tests/ingest-connector-state.test.mjs",
+            "packages/schemas/src/index.ts",
+            "packages/schemas/src/ingestConnectorManifest.ts",
+            "packages/schemas/tests/ingest-connector-manifest.test.mjs",
+            "packages/schemas/fixtures/ingest-connector-manifest.valid.json",
+            "packages/schemas/fixtures/ingest-connector-manifest.invalid.json",
+            "packages/schemas/fixtures/ingest-connector-manifest.schema.json",
+            "packages/schemas/fixtures/ingest-connector-profile.schema.json",
+            "docs/openapi.yaml",
+            "tests/test_validate_openapi_ingest_search.py",
+        }
+        self.assertLessEqual(expected, required)
+        self.assertFalse(any(".codex-private" in path for path in required))
+
+        checks = {spec.name: spec for spec in release_check.CHECK_SPECS}
+        docs_check = checks["ingest-connector-docs"]
+        repo_health = checks["repo-health"]
+        self.assertIn("tests.test_ingest_connectors_docs", docs_check.command)
+        self.assertIn("tests.test_ingest_integration_docs", docs_check.command)
+        self.assertIn("tests.test_sdk_js_docs", docs_check.command)
+        self.assertIn("tests.test_validate_openapi_ingest_search", docs_check.command)
+        self.assertIn("local preview wiring", docs_check.description)
+        self.assertLessEqual(expected, set(repo_health.required_paths))
 
     def test_missing_tools_are_skipped_when_running_available_checks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

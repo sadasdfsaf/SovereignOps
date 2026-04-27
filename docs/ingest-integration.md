@@ -17,6 +17,36 @@ bases, and `fixture://` source URIs.
 - Imported text remains untrusted until a caller explicitly marks a source as
   trusted. Citations and checksums move through each layer with the record.
 
+## Connector Manifest Path
+
+`docs/ingest-connectors.md` is the public connector manifest and local preview
+guide. It maps Python connector capabilities to the route-shaped API preview,
+SDK helpers, and Web state builders:
+
+- Python CLI entry point:
+  `services/ingest/src/sovereignops_ingest/cli.py`.
+- Python connector modules:
+  `services/ingest/src/sovereignops_ingest/connector_manifest.py`,
+  `services/ingest/src/sovereignops_ingest/structured.py`,
+  `services/ingest/src/sovereignops_ingest/repository.py`, and
+  `services/ingest/src/sovereignops_ingest/logs.py`.
+- API connector manifest and preview route state:
+  `apps/api/src/ingestConnectorRoutes.ts` and
+  `apps/api/src/ingestOpenApiRoutes.ts`.
+- SDK route client, pure helpers, and connector manifest helpers:
+  `packages/sdk-js/src/ingestClient.ts` and
+  `packages/sdk-js/src/localIngest.ts`, plus
+  `packages/sdk-js/src/localIngestConnectorManifest.ts`.
+- Web state builders:
+  `apps/web/src/ingestSearch.ts` and
+  `apps/web/src/ingestConnectorState.ts`.
+- Schema manifest contract:
+  `packages/schemas/src/ingestConnectorManifest.ts`.
+
+The manifest path stays local-only, requires no network access, and keeps
+connector output default untrusted unless the caller explicitly passes a trusted
+option after source verification.
+
 ## API Path
 
 `apps/api/src/ingestRoutes.ts` provides the in-process route state used by API
@@ -28,6 +58,8 @@ tests and local callers:
 - `GET /v1/ingest/quarantine` lists held items.
 - `POST /v1/ingest/quarantine/:recordId/decision` records a `release` or
   `discard` decision for a pending item.
+- `GET /v1/ingest/connectors` lists connector manifest profiles for local
+  preview.
 
 `examples/ingest-search/api-requests.json` keeps the wider ingest/search
 contract examples for normalize, structured parse, repository scan, search, and
@@ -50,6 +82,17 @@ through `packages/sdk-js/src/index.ts`:
 
 Use these helpers when a caller already has local JSON and does not need to
 cross an API boundary.
+
+The SDK also exports connector manifest helpers from
+`packages/sdk-js/src/localIngestConnectorManifest.ts` through
+`packages/sdk-js/src/index.ts`:
+
+- `listLocalIngestConnectorProfiles` returns frozen default profiles.
+- `getLocalIngestConnectorProfile` resolves profile ids or connector aliases.
+- `normalizeLocalIngestConnectorManifest` converts Python/API JSON to the SDK
+  camel-case shape and rejects raw secrets or unsafe local paths.
+- `buildLocalIngestConnectorReadinessSummary` reports ready, attention, and
+  blocked profile counts.
 
 ## CLI Path
 
@@ -80,6 +123,18 @@ state:
 The Web layer consumes prepared data. It does not fetch remote data in these
 fixtures, and it should keep any link or source reference local for this path.
 
+`apps/web/src/ingestConnectorState.ts` turns Python CLI, API, and SDK connector
+manifest shapes into local capability cards and rows:
+
+- `buildIngestConnectorState`
+- `buildIngestConnectorCards`
+- `buildIngestConnectorRows`
+- `getIngestConnectorReadinessStatusLabel`
+- `getIngestConnectorSafetyStateLabel`
+
+Unsafe manifest inputs become blocked rows with redacted warnings rather than
+raw paths or secret-like values.
+
 ## Schema Contracts
 
 `packages/schemas/src/ingestSearch.ts` defines runtime validators and JSON
@@ -95,6 +150,22 @@ schema metadata for:
 
 The same contracts are exported to `packages/schemas/fixtures` and checked by
 `packages/schemas/tests/ingest-search.test.mjs`.
+
+`packages/schemas/src/ingestConnectorManifest.ts` defines the connector
+manifest schema and validators for:
+
+- `ingestConnectorManifestSchema`
+- `ingestConnectorProfileSchema`
+- `validateIngestConnectorManifest`
+- `validateIngestConnectorProfile`
+- `assertIngestConnectorManifest`
+
+The manifest fixtures are
+`packages/schemas/fixtures/ingest-connector-manifest.valid.json`,
+`packages/schemas/fixtures/ingest-connector-manifest.invalid.json`,
+`packages/schemas/fixtures/ingest-connector-manifest.schema.json`, and
+`packages/schemas/fixtures/ingest-connector-profile.schema.json`, with behavior
+checked by `packages/schemas/tests/ingest-connector-manifest.test.mjs`.
 
 ## Fixtures
 
@@ -130,7 +201,15 @@ Run these from the repository root:
 
 ```powershell
 python -m json.tool examples\ingest-search\client-session.json
+python -m unittest tests.test_ingest_connectors_docs
 python -m unittest tests.test_ingest_integration_docs
+python -m unittest tests.test_sdk_js_docs
+python -m unittest discover -s services\ingest\tests -p test_connector_manifest.py
+python -m unittest discover -s services\ingest\tests -p test_ingest_cli_connector_manifest.py
+node apps\api\tests\ingest-connector-routes.test.mjs
+node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs
+node apps\web\tests\ingest-connector-state.test.mjs
+node packages\schemas\tests\ingest-connector-manifest.test.mjs
 npm.cmd --workspace @sovereignops/api run check
 npm.cmd --workspace @sovereignops/sdk-js run check
 npm.cmd --workspace @sovereignops/cli run check

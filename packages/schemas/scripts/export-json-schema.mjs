@@ -6,6 +6,10 @@ import { fileURLToPath } from "node:url";
 
 import { errorResponseSchema, validationIssueSchema } from "../src/apiError.ts";
 import { canonicalLocalEventCatalogSchema, canonicalLocalEventSchema } from "../src/eventCatalog.ts";
+import {
+  ingestConnectorManifestSchema,
+  ingestConnectorProfileSchema,
+} from "../src/ingestConnectorManifest.ts";
 import { jsonSchemaCatalog, jsonSchemas, schemaKinds } from "../src/jsonSchema.ts";
 import { mcpApprovalEvidenceSchema } from "../src/mcpApprovalEvidence.ts";
 import {
@@ -40,6 +44,8 @@ const outputs = [
   ["api-validation-issue.schema.json", validationIssueSchema],
   ["canonical-local-event.schema.json", canonicalLocalEventSchema],
   ["canonical-local-event-catalog.schema.json", canonicalLocalEventCatalogSchema],
+  ["ingest-connector-profile.schema.json", ingestConnectorProfileSchema],
+  ["ingest-connector-manifest.schema.json", ingestConnectorManifestSchema],
   ["mcp-approval-evidence.schema.json", mcpApprovalEvidenceSchema],
   ["mcp-approval-evidence-record.schema.json", mcpApprovalEvidenceRecordSchema],
   ["mcp-approval-evidence-record-list.schema.json", mcpApprovalEvidenceRecordListSchema],

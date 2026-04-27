@@ -1,0 +1,109 @@
+{
+  "schema_version": "ingest-connector-manifest/v1",
+  "generated_by": "sovereignops-schemas",
+  "connectors": [
+    {
+      "id": "markdown",
+      "display_name": "Markdown",
+      "description": "Imports local Markdown and plain text notes with line citations.",
+      "source_kinds": ["file"],
+      "media_types": ["text/markdown", "text/plain"],
+      "citation_kinds": ["line-range"],
+      "validation_modes": ["utf8-decode", "size-limit", "safety-scan"],
+      "safety_finding_kinds": [
+        "embedded-instruction-override",
+        "embedded-prompt-reference",
+        "raw-secret"
+      ],
+      "default_untrusted": true,
+      "local_only": true,
+      "network_access": false,
+      "reads_files": true,
+      "requires_approval": false
+    },
+    {
+      "id": "json",
+      "display_name": "JSON",
+      "description": "Imports local JSON records with JSON-path citations and syntax validation.",
+      "source_kinds": ["file", "record"],
+      "media_types": ["application/json"],
+      "citation_kinds": ["json-path"],
+      "validation_modes": ["syntax", "size-limit", "safety-scan"],
+      "safety_finding_kinds": [
+        "embedded-instruction-override",
+        "embedded-prompt-reference",
+        "raw-secret"
+      ],
+      "default_untrusted": true,
+      "local_only": true,
+      "network_access": false,
+      "reads_files": true,
+      "requires_approval": false
+    },
+    {
+      "id": "csv",
+      "display_name": "CSV",
+      "description": "Imports local CSV tables with row and cell citations.",
+      "source_kinds": ["file"],
+      "media_types": ["text/csv"],
+      "citation_kinds": ["row", "table-cell"],
+      "validation_modes": [
+        "required-columns",
+        "unique-columns",
+        "utf8-decode",
+        "size-limit",
+        "safety-scan"
+      ],
+      "safety_finding_kinds": [
+        "embedded-instruction-override",
+        "embedded-prompt-reference",
+        "raw-secret"
+      ],
+      "default_untrusted": true,
+      "local_only": true,
+      "network_access": false,
+      "reads_files": true,
+      "requires_approval": false
+    },
+    {
+      "id": "log",
+      "display_name": "Log",
+      "description": "Imports local log lines and newline-delimited records with timestamp citations.",
+      "source_kinds": ["file", "stream"],
+      "media_types": ["text/plain", "application/x-ndjson"],
+      "citation_kinds": ["line-range", "timestamp"],
+      "validation_modes": ["utf8-decode", "size-limit", "safety-scan"],
+      "safety_finding_kinds": [
+        "embedded-instruction-override",
+        "embedded-prompt-reference",
+        "raw-secret"
+      ],
+      "default_untrusted": true,
+      "local_only": true,
+      "network_access": false,
+      "reads_files": true,
+      "requires_approval": false
+    },
+    {
+      "id": "repository",
+      "display_name": "Repository",
+      "description": "Scans local repository paths with safe relative path and file citations.",
+      "source_kinds": ["directory"],
+      "media_types": ["application/vnd.sovereignops.repository+json"],
+      "citation_kinds": ["file-path", "line-range"],
+      "validation_modes": ["path-boundary", "media-type", "size-limit", "safety-scan"],
+      "safety_finding_kinds": [
+        "embedded-instruction-override",
+        "embedded-prompt-reference",
+        "path-traversal",
+        "private-path",
+        "raw-secret"
+      ],
+      "default_untrusted": true,
+      "local_only": true,
+      "network_access": false,
+      "reads_files": true,
+      "requires_approval": true
+    }
+  ]
+}

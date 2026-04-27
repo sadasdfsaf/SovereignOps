@@ -47,6 +47,17 @@ console.log(workspace.describe(), plan.dryRun);
 
 - SDK exports: `packages/sdk-js/src/index.ts`
 - Shared client types and typed errors: `packages/sdk-js/src/client.ts`
+- Ingest/search route client: `packages/sdk-js/src/ingestClient.ts`
+- Ingest/search pure helpers: `packages/sdk-js/src/localIngest.ts`
+- Ingest connector manifest helpers:
+  `packages/sdk-js/src/localIngestConnectorManifest.ts`
+- Ingest connector guide: `docs/ingest-connectors.md`
+- Focused ingest/search API client test:
+  `packages/sdk-js/tests/client-ingest-search.test.mjs`
+- Focused local ingest helper test:
+  `packages/sdk-js/tests/local-ingest.test.mjs`
+- Focused connector manifest helper test:
+  `packages/sdk-js/tests/local-ingest-connector-manifest.test.mjs`
 - Workspace session retention cleanup API client:
   `packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupApiClient.ts`
 - Workspace session retention cleanup inventory API client:
@@ -84,6 +95,110 @@ console.log(workspace.describe(), plan.dryRun);
   `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.invalid.json`,
   and
   `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.schema.json`
+
+## Ingest Connector Preview Helpers
+
+Use `createIngestSearchClient` from `packages/sdk-js/src/ingestClient.ts` when
+callers want route-shaped local preview for ingest/search connector output.
+The client can run entirely against an injected `fetch`; examples require no network access.
+Route client methods include `IngestSearchClient.ingestStructured` and
+`IngestSearchClient.scanRepository`.
+
+```ts
+import {
+  createIngestSearchClient,
+  normalizeLocalSourceSummaries,
+  buildLocalSearchView,
+  searchLocalText,
+  listLocalIngestConnectorProfiles,
+  normalizeLocalIngestConnectorManifest,
+  buildLocalIngestConnectorReadinessSummary,
+} from "@sovereignops/sdk-js";
+
+const ingestClient = createIngestSearchClient({
+  baseUrl: "local://api/v1",
+  fetch: fakeFetch([
+    jsonResponse(200, {
+      ok: true,
+      sourceUri: "fixture://ingest-search/records.csv",
+      mediaType: "text/csv",
+      summary: {
+        documentCount: 1,
+        indexedCount: 1,
+        quarantineCount: 0,
+        validationErrorCount: 0,
+      },
+      documents: [
+        {
+          id: "doc_records_alpha",
+          sourceUri: "fixture://ingest-search/records.csv",
+          mediaType: "text/csv",
+          checksum:
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          title: "Alpha",
+          untrusted: true,
+          quarantineState: "clear",
+          citations: [
+            {
+              sourceUri: "fixture://ingest-search/records.csv",
+              trusted: false,
+              range: { row: 2 },
+            },
+          ],
+        },
+      ],
+      quarantine: { items: [] },
+    }),
+  ]),
+});
+
+const preview = await ingestClient.ingestStructured({
+  workspaceId: "wsp_notes_lab",
+  sourceUri: "fixture://ingest-search/records.csv",
+  mediaType: "text/csv",
+  content: "id,title\nalpha,Alpha\n",
+});
+
+console.log(preview.documents[0].untrusted);
+
+const documents = normalizeLocalSourceSummaries([
+  {
+    id: "src_records",
+    title: "Records",
+    records: [
+      {
+        id: "doc_records_alpha",
+        title: "Alpha",
+        body: "Checksum and citation sample",
+      },
+    ],
+  },
+]);
+const view = buildLocalSearchView(documents);
+console.log(searchLocalText(view, "checksum", { limit: 5 }));
+
+const profiles = listLocalIngestConnectorProfiles();
+const normalizedManifest = normalizeLocalIngestConnectorManifest({
+  profiles,
+});
+console.log(buildLocalIngestConnectorReadinessSummary(normalizedManifest).readyCount);
+```
+
+Connector preview guidance lives in `docs/ingest-connectors.md`. Keep SDK
+examples local-only, keep source paths repository-relative, and keep connector
+results default untrusted unless the caller passes `options.trusted` after
+source verification.
+
+Use `packages/sdk-js/src/localIngestConnectorManifest.ts` when callers already
+have a Python or API manifest. The helper surface includes
+`LOCAL_INGEST_CONNECTOR_MANIFEST_KIND`,
+`LOCAL_INGEST_CONNECTOR_MANIFEST_SCHEMA_VERSION`,
+`listLocalIngestConnectorProfiles`, `getLocalIngestConnectorProfile`,
+`normalizeLocalIngestConnectorManifest`,
+`buildLocalIngestConnectorReadinessSummary`, and
+`LocalIngestConnectorManifestError`. The normalizer rejects raw secrets, private
+paths, path traversal, and non-local references before returning frozen local
+profiles with `trustedByDefault: false`.
 
 ## Workspace Session Snapshot Retention Cleanup API Preview
 
@@ -420,6 +535,10 @@ Run focused docs and SDK checks from the repository root:
 
 ```powershell
 python -m unittest tests.test_sdk_js_docs
+python -m unittest tests.test_ingest_connectors_docs
+node packages\sdk-js\tests\client-ingest-search.test.mjs
+node packages\sdk-js\tests\local-ingest.test.mjs
+node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention.test.mjs

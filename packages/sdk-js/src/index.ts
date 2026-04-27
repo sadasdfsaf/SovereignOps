@@ -27,6 +27,7 @@ export * from "./ingestClient.ts";
 export * from "./ingestFixtureFetch.ts";
 export * from "./localEventApiClient.ts";
 export * from "./localIngestEvidence.ts";
+export * from "./localIngestConnectorManifest.ts";
 export * from "./localEvents.ts";
 export * from "./localIngest.ts";
 export * from "./localLifecycle.ts";

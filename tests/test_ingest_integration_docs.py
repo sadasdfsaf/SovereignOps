@@ -17,6 +17,7 @@ FIXTURE_ROOT = ROOT / "examples" / "ingest-search"
 EXPECTED_HEADINGS = (
     "# Ingest/Search Integration Path",
     "## Local Boundary",
+    "## Connector Manifest Path",
     "## API Path",
     "## SDK Path",
     "## CLI Path",
@@ -34,12 +35,23 @@ EXPECTED_API_ROUTES = (
     "POST /v1/ingest/quarantine/:recordId/decision",
 )
 
+EXPECTED_CONNECTOR_API_ROUTES = (
+    "GET /v1/ingest/connectors",
+)
+
 EXPECTED_SDK_ENTRY_POINTS = (
     "normalizeLocalSourceSummaries",
     "buildLocalSearchView",
     "searchLocalText",
     "groupLocalQuarantineRecords",
     "prepareLocalQuarantineDecisionPayload",
+)
+
+EXPECTED_SDK_CONNECTOR_ENTRY_POINTS = (
+    "listLocalIngestConnectorProfiles",
+    "getLocalIngestConnectorProfile",
+    "normalizeLocalIngestConnectorManifest",
+    "buildLocalIngestConnectorReadinessSummary",
 )
 
 EXPECTED_SCHEMA_KINDS = (
@@ -52,6 +64,14 @@ EXPECTED_SCHEMA_KINDS = (
     "quarantineDecision",
 )
 
+EXPECTED_CONNECTOR_SCHEMA_SYMBOLS = (
+    "ingestConnectorManifestSchema",
+    "ingestConnectorProfileSchema",
+    "validateIngestConnectorManifest",
+    "validateIngestConnectorProfile",
+    "assertIngestConnectorManifest",
+)
+
 EXPECTED_FIXTURE_PATHS = (
     "examples/ingest-search/repository.json",
     "examples/ingest-search/ingest-log.json",
@@ -61,9 +81,39 @@ EXPECTED_FIXTURE_PATHS = (
     "examples/ingest-search/client-session.json",
 )
 
+EXPECTED_CONNECTOR_PATHS = (
+    "docs/ingest-connectors.md",
+    "services/ingest/src/sovereignops_ingest/cli.py",
+    "services/ingest/src/sovereignops_ingest/connector_manifest.py",
+    "services/ingest/src/sovereignops_ingest/structured.py",
+    "services/ingest/src/sovereignops_ingest/repository.py",
+    "services/ingest/src/sovereignops_ingest/logs.py",
+    "apps/api/src/ingestConnectorRoutes.ts",
+    "apps/api/src/ingestOpenApiRoutes.ts",
+    "packages/sdk-js/src/ingestClient.ts",
+    "packages/sdk-js/src/localIngest.ts",
+    "packages/sdk-js/src/localIngestConnectorManifest.ts",
+    "apps/web/src/ingestSearch.ts",
+    "apps/web/src/ingestConnectorState.ts",
+    "packages/schemas/src/ingestConnectorManifest.ts",
+    "packages/schemas/fixtures/ingest-connector-manifest.valid.json",
+    "packages/schemas/fixtures/ingest-connector-manifest.invalid.json",
+    "packages/schemas/fixtures/ingest-connector-manifest.schema.json",
+    "packages/schemas/fixtures/ingest-connector-profile.schema.json",
+    "packages/schemas/tests/ingest-connector-manifest.test.mjs",
+)
+
 EXPECTED_COMMANDS = (
     r"python -m json.tool examples\ingest-search\client-session.json",
+    "python -m unittest tests.test_ingest_connectors_docs",
     "python -m unittest tests.test_ingest_integration_docs",
+    "python -m unittest tests.test_sdk_js_docs",
+    r"python -m unittest discover -s services\ingest\tests -p test_connector_manifest.py",
+    r"python -m unittest discover -s services\ingest\tests -p test_ingest_cli_connector_manifest.py",
+    r"node apps\api\tests\ingest-connector-routes.test.mjs",
+    r"node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs",
+    r"node apps\web\tests\ingest-connector-state.test.mjs",
+    r"node packages\schemas\tests\ingest-connector-manifest.test.mjs",
     "npm.cmd --workspace @sovereignops/api run check",
     "npm.cmd --workspace @sovereignops/sdk-js run check",
     "npm.cmd --workspace @sovereignops/cli run check",
@@ -109,15 +159,15 @@ class IngestIntegrationDocsTests(unittest.TestCase):
             with self.subTest(heading=heading):
                 self.assertIn(heading, self.doc_text)
 
-        for route in EXPECTED_API_ROUTES:
+        for route in (*EXPECTED_API_ROUTES, *EXPECTED_CONNECTOR_API_ROUTES):
             with self.subTest(route=route):
                 self.assertIn(f"`{route}`", self.doc_text)
 
-        for entry_point in EXPECTED_SDK_ENTRY_POINTS:
+        for entry_point in (*EXPECTED_SDK_ENTRY_POINTS, *EXPECTED_SDK_CONNECTOR_ENTRY_POINTS):
             with self.subTest(entry_point=entry_point):
                 self.assertIn(f"`{entry_point}`", self.doc_text)
 
-        for kind in EXPECTED_SCHEMA_KINDS:
+        for kind in (*EXPECTED_SCHEMA_KINDS, *EXPECTED_CONNECTOR_SCHEMA_SYMBOLS):
             with self.subTest(kind=kind):
                 self.assertIn(f"`{kind}`", self.doc_text)
 
@@ -126,9 +176,18 @@ class IngestIntegrationDocsTests(unittest.TestCase):
                 self.assertTrue((ROOT / fixture_path).is_file(), fixture_path)
                 self.assertIn(f"`{fixture_path}`", self.doc_text)
 
+        for connector_path in EXPECTED_CONNECTOR_PATHS:
+            with self.subTest(connector_path=connector_path):
+                self.assertTrue((ROOT / connector_path).is_file(), connector_path)
+                self.assertIn(f"`{connector_path}`", self.doc_text)
+
         for command in EXPECTED_COMMANDS:
             with self.subTest(command=command):
                 self.assertIn(command, self.doc_text)
+
+        for phrase in ("local-only", "no network access", "default untrusted"):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, self.lower_doc_text)
 
         self.assertNotIn("curl ", self.lower_doc_text)
         self.assertNotIn("npx ", self.lower_doc_text)

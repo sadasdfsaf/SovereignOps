@@ -604,6 +604,22 @@ paths:
                 $ref: "#/components/schemas/CompactionPlanResponse"
         default:
           $ref: "#/components/responses/Error"
+  /v1/ingest/connectors:
+    get:
+      tags:
+        - ingest
+      summary: List local ingest connector profiles.
+      description: Returns the in-process connector capability manifest. This route does not read files, call network services, or perform durable writes.
+      operationId: listIngestConnectors
+      responses:
+        "200":
+          description: Local connector profiles for preview clients.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestConnectorManifest"
+        default:
+          $ref: "#/components/responses/IngestSearchError"
   /v1/ingest/normalize:
     post:
       tags:
@@ -3581,6 +3597,125 @@ components:
         maxTextBytes:
           type: integer
           minimum: 1
+      additionalProperties: false
+    IngestConnectorCapability:
+      type: string
+      enum:
+        - ingest.normalize
+        - ingest.structured
+        - repository.scan
+        - search.query
+        - quarantine.preview
+    IngestConnectorAuthProfile:
+      type: object
+      required:
+        - mode
+        - required
+      properties:
+        mode:
+          type: string
+          const: none
+        required:
+          type: boolean
+          const: false
+      additionalProperties: false
+    IngestConnectorPreviewProfile:
+      type: object
+      required:
+        - dryRun
+        - maxItems
+        - maxTextBytes
+      properties:
+        dryRun:
+          type: boolean
+          const: true
+        maxItems:
+          type: integer
+          minimum: 1
+        maxTextBytes:
+          type: integer
+          minimum: 1
+      additionalProperties: false
+    IngestConnectorSafetyProfile:
+      type: object
+      required:
+        - localOnly
+        - networkAccess
+        - durableWrites
+        - untrustedByDefault
+      properties:
+        localOnly:
+          type: boolean
+          const: true
+        networkAccess:
+          type: boolean
+          const: false
+        durableWrites:
+          type: boolean
+          const: false
+        untrustedByDefault:
+          type: boolean
+      additionalProperties: false
+    IngestConnectorProfile:
+      type: object
+      required:
+        - id
+        - label
+        - description
+        - transport
+        - capabilities
+        - mediaTypes
+        - auth
+        - preview
+        - safety
+      properties:
+        id:
+          type: string
+          pattern: '^local\.[A-Za-z0-9_.-]{1,96}$'
+        label:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        transport:
+          type: string
+          const: in-process
+        capabilities:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/IngestConnectorCapability"
+        mediaTypes:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/IngestMediaType"
+        auth:
+          $ref: "#/components/schemas/IngestConnectorAuthProfile"
+        preview:
+          $ref: "#/components/schemas/IngestConnectorPreviewProfile"
+        safety:
+          $ref: "#/components/schemas/IngestConnectorSafetyProfile"
+      additionalProperties: false
+    IngestConnectorManifest:
+      type: object
+      required:
+        - schemaVersion
+        - localOnly
+        - connectors
+      properties:
+        schemaVersion:
+          type: string
+          const: ingest-connector-manifest/v1
+        localOnly:
+          type: boolean
+          const: true
+        connectors:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/IngestConnectorProfile"
       additionalProperties: false
     IngestNormalizeRequest:
       type: object

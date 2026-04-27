@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sovereignops.local/ingest-connectors/profile.schema.json",
+  "title": "Ingest connector profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "display_name",
+    "description",
+    "source_kinds",
+    "media_types",
+    "citation_kinds",
+    "validation_modes",
+    "safety_finding_kinds",
+    "default_untrusted",
+    "local_only",
+    "network_access",
+    "reads_files",
+    "requires_approval"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "enum": [
+        "markdown",
+        "json",
+        "csv",
+        "log",
+        "repository"
+      ]
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!.*(?:E:|C:|/Users/|/home/|\\\\Users\\\\|secret|token|password|apikey|api_key)).*\\S.*$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!.*(?:E:|C:|/Users/|/home/|\\\\Users\\\\|secret|token|password|apikey|api_key)).*\\S.*$"
+    },
+    "source_kinds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "file",
+          "directory",
+          "stream",
+          "record"
+        ]
+      }
+    },
+    "media_types": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[^\\s/]+/[^\\s]+$"
+      }
+    },
+    "citation_kinds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "line-range",
+          "json-path",
+          "table-cell",
+          "row",
+          "file-path",
+          "timestamp"
+        ]
+      }
+    },
+    "validation_modes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "syntax",
+          "required-columns",
+          "unique-columns",
+          "path-boundary",
+          "media-type",
+          "size-limit",
+          "utf8-decode",
+          "safety-scan"
+        ]
+      }
+    },
+    "safety_finding_kinds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "embedded-instruction-override",
+          "embedded-prompt-reference",
+          "path-traversal",
+          "private-path",
+          "raw-secret"
+        ]
+      }
+    },
+    "default_untrusted": {
+      "type": "boolean",
+      "const": true,
+      "enum": [
+        true
+      ]
+    },
+    "local_only": {
+      "type": "boolean",
+      "const": true,
+      "enum": [
+        true
+      ]
+    },
+    "network_access": {
+      "type": "boolean",
+      "const": false,
+      "enum": [
+        false
+      ]
+    },
+    "reads_files": {
+      "type": "boolean"
+    },
+    "requires_approval": {
+      "type": "boolean"
+    }
+  }
+}

@@ -65,6 +65,12 @@ INGEST_SEARCH_OPERATIONS = (
 )
 
 EXPECTED_SCHEMAS = {
+    "IngestConnectorAuthProfile",
+    "IngestConnectorCapability",
+    "IngestConnectorManifest",
+    "IngestConnectorPreviewProfile",
+    "IngestConnectorProfile",
+    "IngestConnectorSafetyProfile",
     "IngestNormalizeRequest",
     "IngestNormalizeResponse",
     "IngestOptions",
@@ -108,6 +114,26 @@ EXPECTED_SCHEMAS = {
 }
 
 REQUIRED_FIELDS = {
+    "IngestConnectorAuthProfile": ("mode", "required"),
+    "IngestConnectorManifest": ("schemaVersion", "localOnly", "connectors"),
+    "IngestConnectorPreviewProfile": ("dryRun", "maxItems", "maxTextBytes"),
+    "IngestConnectorProfile": (
+        "id",
+        "label",
+        "description",
+        "transport",
+        "capabilities",
+        "mediaTypes",
+        "auth",
+        "preview",
+        "safety",
+    ),
+    "IngestConnectorSafetyProfile": (
+        "localOnly",
+        "networkAccess",
+        "durableWrites",
+        "untrustedByDefault",
+    ),
     "IngestNormalizeRequest": ("workspaceId", "sourceUri", "mediaType", "content"),
     "IngestNormalizeResponse": (
         "ok",
@@ -238,6 +264,43 @@ class ValidateOpenApiIngestSearchTests(unittest.TestCase):
                         f'- $ref: "#/components/parameters/{parameter_ref}"',
                         _stripped_lines(method_block),
                     )
+
+    def test_connector_manifest_route_shape(self) -> None:
+        path_block = _require_block(self, self.lines, "/v1/ingest/connectors", 2)
+        method_block = _require_block(self, path_block, "get", 4)
+        tag_block = _require_block(self, method_block, "tags", 6)
+        responses_block = _require_block(self, method_block, "responses", 6)
+        status_block = _require_block(self, responses_block, '"200"', 8)
+        default_block = _require_block(self, responses_block, "default", 8)
+
+        self.assertIn("- ingest", _stripped_lines(tag_block))
+        self.assertIn("operationId: listIngestConnectors", _stripped_lines(method_block))
+        self.assertTrue(_has_schema_ref(status_block, "IngestConnectorManifest"))
+        self.assertIn(
+            '$ref: "#/components/responses/IngestSearchError"',
+            _stripped_lines(default_block),
+        )
+
+        manifest_block = _require_block(self, self.lines, "IngestConnectorManifest", 4)
+        self.assertIn("const: ingest-connector-manifest/v1", _stripped_lines(manifest_block))
+        self.assertIn("const: true", _stripped_lines(manifest_block))
+        self.assertTrue(_has_schema_ref(manifest_block, "IngestConnectorProfile"))
+
+        profile_block = _require_block(self, self.lines, "IngestConnectorProfile", 4)
+        for ref in (
+            "IngestConnectorCapability",
+            "IngestMediaType",
+            "IngestConnectorAuthProfile",
+            "IngestConnectorPreviewProfile",
+            "IngestConnectorSafetyProfile",
+        ):
+            with self.subTest(ref=ref):
+                self.assertTrue(_has_schema_ref(profile_block, ref))
+
+        safety_block = _require_block(self, self.lines, "IngestConnectorSafetyProfile", 4)
+        self.assertIn("networkAccess:", "\n".join(safety_block))
+        self.assertIn("durableWrites:", "\n".join(safety_block))
+        self.assertIn("const: false", _stripped_lines(safety_block))
 
     def test_required_schemas_are_declared(self) -> None:
         for schema_name in sorted(EXPECTED_SCHEMAS):
