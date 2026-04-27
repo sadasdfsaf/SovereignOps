@@ -9,9 +9,11 @@ export function canExecute(gate: GatewayPolicyGate): boolean {
 }
 
 export * from "./adapter.ts";
+export * from "./approvalSessions.ts";
 export { AuditEmitter, createAuditEmitter } from "./audit.ts";
 export type { AuditEvent, AuditEventType, AuditListener, AuditRecord, AuditSink } from "./audit.ts";
 export * from "./auditEmitter.ts";
+export * from "./protocol.ts";
 export {
   PolicyApprovalRequiredError,
   PolicyDeniedError,
@@ -38,6 +40,7 @@ export {
   createToolRegistry,
 } from "./registry.ts";
 export * from "./resources.ts";
+export * from "./toolAdapter.ts";
 export * from "./tools.ts";
 export type {
   GatewayHandlerContext,

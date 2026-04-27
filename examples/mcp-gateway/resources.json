@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "mcp-gateway-fixtures.v1",
+  "generatedAt": "2026-04-27T07:00:00.000Z",
+  "resources": [
+    {
+      "id": "res_workspace_summary",
+      "uri": "workspace://demo-alpha/summaries/current",
+      "name": "Demo Alpha Summary",
+      "description": "Synthetic summary for a local demo workspace.",
+      "mimeType": "application/json",
+      "sizeBytes": 1536,
+      "updatedAt": "2026-04-27T06:45:00.000Z",
+      "tags": [
+        "demo",
+        "summary",
+        "local"
+      ]
+    },
+    {
+      "id": "res_snapshot_inventory",
+      "uri": "local://snapshots/demo-alpha/inventory",
+      "name": "Snapshot Inventory",
+      "description": "Synthetic index of local snapshot entries and counts.",
+      "mimeType": "application/json",
+      "sizeBytes": 2048,
+      "updatedAt": "2026-04-27T06:50:00.000Z",
+      "tags": [
+        "snapshot",
+        "inventory",
+        "local"
+      ]
+    },
+    {
+      "id": "res_sync_preview",
+      "uri": "fixture://sync/demo-alpha/preview",
+      "name": "Sync Preview",
+      "description": "Synthetic local preview of pending sync items.",
+      "mimeType": "application/json",
+      "sizeBytes": 1280,
+      "updatedAt": "2026-04-27T06:55:00.000Z",
+      "tags": [
+        "sync",
+        "preview",
+        "local"
+      ]
+    }
+  ]
+}

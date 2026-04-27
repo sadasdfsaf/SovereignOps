@@ -87,6 +87,17 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
         required_paths=("scripts/validate_openapi.py", "docs/openapi.yaml"),
     ),
     CheckSpec(
+        name="mcp-gateway-fixtures",
+        description="Validate MCP gateway example fixtures.",
+        command=(PYTHON, "scripts/validate_mcp_gateway_fixtures.py"),
+        required_paths=(
+            "scripts/validate_mcp_gateway_fixtures.py",
+            "examples/mcp-gateway/resources.json",
+            "examples/mcp-gateway/tools.json",
+            "examples/mcp-gateway/approval-sessions.json",
+        ),
+    ),
+    CheckSpec(
         name="python-tests",
         description="Run repository Python unit tests.",
         command=(PYTHON, "-m", "unittest", "discover", "-s", "tests"),

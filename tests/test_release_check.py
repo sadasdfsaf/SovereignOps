@@ -14,6 +14,7 @@ def make_release_root(root: Path) -> None:
     (root / ".git").mkdir()
     (root / "scripts").mkdir()
     (root / "docs").mkdir()
+    (root / "examples" / "mcp-gateway").mkdir(parents=True)
     (root / "tests").mkdir()
     for path in (
         "scripts/loc_budget.py",
@@ -21,6 +22,7 @@ def make_release_root(root: Path) -> None:
         "scripts/env_guard.py",
         "scripts/rust_guard.py",
         "scripts/validate_openapi.py",
+        "scripts/validate_mcp_gateway_fixtures.py",
         "scripts/node-check.mjs",
         "docs/openapi.yaml",
         "docs/local-data-lifecycle.md",
@@ -30,6 +32,9 @@ def make_release_root(root: Path) -> None:
         "docs/fuzzing.md",
         "scripts/loc_integrity.py",
         "scripts/release_notes.py",
+        "examples/mcp-gateway/resources.json",
+        "examples/mcp-gateway/tools.json",
+        "examples/mcp-gateway/approval-sessions.json",
         "package.json",
         "pnpm-workspace.yaml",
         "Cargo.toml",

@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "mcp-gateway-fixtures.v1",
+  "generatedAt": "2026-04-27T07:00:00.000Z",
+  "sessions": [
+    {
+      "id": "aps_snapshot_export_pending",
+      "toolName": "export_snapshot_bundle",
+      "resourceUri": "local://snapshots/demo-alpha/inventory",
+      "requestedBy": "user_demo_requester",
+      "requestedAt": "2026-04-27T07:05:00.000Z",
+      "updatedAt": "2026-04-27T07:05:00.000Z",
+      "expiresAt": "2026-04-27T08:05:00.000Z",
+      "status": "pending",
+      "request": {
+        "reason": "Prepare a local snapshot bundle for review.",
+        "parameters": {
+          "workspaceId": "wsp_demo_alpha",
+          "snapshotId": "snap_daily_001"
+        }
+      },
+      "events": [
+        {
+          "id": "ape_snapshot_export_requested",
+          "type": "requested",
+          "at": "2026-04-27T07:05:00.000Z",
+          "message": "Approval session opened for local snapshot export."
+        }
+      ]
+    },
+    {
+      "id": "aps_sync_preview_approved",
+      "toolName": "preview_sync_batch",
+      "resourceUri": "fixture://sync/demo-alpha/preview",
+      "requestedBy": "user_demo_requester",
+      "requestedAt": "2026-04-27T07:10:00.000Z",
+      "updatedAt": "2026-04-27T07:14:00.000Z",
+      "expiresAt": "2026-04-27T08:10:00.000Z",
+      "resolvedAt": "2026-04-27T07:14:00.000Z",
+      "resolvedBy": "user_demo_reviewer",
+      "status": "approved",
+      "request": {
+        "reason": "Preview local sync work before any durable write.",
+        "parameters": {
+          "workspaceId": "wsp_demo_alpha",
+          "limit": 25
+        }
+      },
+      "decision": {
+        "id": "apd_sync_preview_approved",
+        "outcome": "approved",
+        "at": "2026-04-27T07:14:00.000Z",
+        "by": "user_demo_reviewer",
+        "summary": "Approved for local preview output only."
+      },
+      "events": [
+        {
+          "id": "ape_sync_preview_requested",
+          "type": "requested",
+          "at": "2026-04-27T07:10:00.000Z",
+          "message": "Approval session opened for sync preview."
+        },
+        {
+          "id": "ape_sync_preview_approved",
+          "type": "approved",
+          "at": "2026-04-27T07:14:00.000Z",
+          "message": "Approval session approved for preview."
+        }
+      ]
+    },
+    {
+      "id": "aps_summary_read_expired",
+      "toolName": "read_resource_summary",
+      "resourceUri": "workspace://demo-alpha/summaries/current",
+      "requestedBy": "user_demo_requester",
+      "requestedAt": "2026-04-27T07:20:00.000Z",
+      "updatedAt": "2026-04-27T08:21:00.000Z",
+      "expiresAt": "2026-04-27T08:20:00.000Z",
+      "resolvedAt": "2026-04-27T08:21:00.000Z",
+      "status": "expired",
+      "terminalReason": "The review window ended before a decision.",
+      "request": {
+        "reason": "Read the latest local summary metadata.",
+        "parameters": {
+          "resourceUri": "workspace://demo-alpha/summaries/current"
+        }
+      },
+      "events": [
+        {
+          "id": "ape_summary_read_requested",
+          "type": "requested",
+          "at": "2026-04-27T07:20:00.000Z",
+          "message": "Approval session opened for resource summary read."
+        },
+        {
+          "id": "ape_summary_read_expired",
+          "type": "expired",
+          "at": "2026-04-27T08:21:00.000Z",
+          "message": "Approval session expired without a decision."
+        }
+      ]
+    }
+  ]
+}

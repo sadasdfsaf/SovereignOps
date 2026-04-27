@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "mcp-gateway-fixtures.v1",
+  "generatedAt": "2026-04-27T07:00:00.000Z",
+  "tools": [
+    {
+      "id": "tool_read_resource_summary",
+      "name": "read_resource_summary",
+      "title": "Read Resource Summary",
+      "description": "Returns metadata for a synthetic local resource.",
+      "readOnly": true,
+      "destructive": false,
+      "requiresApproval": false,
+      "localOnly": true,
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "resourceUri"
+        ],
+        "properties": {
+          "resourceUri": {
+            "type": "string",
+            "description": "Local resource URI to summarize."
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "resourceUri",
+          "name",
+          "updatedAt"
+        ],
+        "properties": {
+          "resourceUri": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "safeDefaults": {
+        "includeContent": false,
+        "maxBytes": 4096
+      }
+    },
+    {
+      "id": "tool_preview_sync_batch",
+      "name": "preview_sync_batch",
+      "title": "Preview Sync Batch",
+      "description": "Builds a deterministic preview of local sync work.",
+      "readOnly": true,
+      "destructive": false,
+      "requiresApproval": false,
+      "localOnly": true,
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "workspaceId"
+        ],
+        "properties": {
+          "workspaceId": {
+            "type": "string",
+            "pattern": "^wsp_[A-Za-z0-9_-]{1,64}$"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "workspaceId",
+          "itemCount"
+        ],
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "itemCount": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "safeDefaults": {
+        "dryRun": true,
+        "limit": 25
+      }
+    },
+    {
+      "id": "tool_export_snapshot_bundle",
+      "name": "export_snapshot_bundle",
+      "title": "Export Snapshot Bundle",
+      "description": "Prepares a deterministic local snapshot bundle after approval.",
+      "readOnly": true,
+      "destructive": false,
+      "requiresApproval": true,
+      "localOnly": true,
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "workspaceId",
+          "snapshotId"
+        ],
+        "properties": {
+          "workspaceId": {
+            "type": "string",
+            "pattern": "^wsp_[A-Za-z0-9_-]{1,64}$"
+          },
+          "snapshotId": {
+            "type": "string",
+            "pattern": "^snap_[A-Za-z0-9_-]{1,64}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "bundleUri",
+          "manifestUri"
+        ],
+        "properties": {
+          "bundleUri": {
+            "type": "string"
+          },
+          "manifestUri": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "safeDefaults": {
+        "dryRun": true,
+        "format": "json"
+      }
+    }
+  ]
+}

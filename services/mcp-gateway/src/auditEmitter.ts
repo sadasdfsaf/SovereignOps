@@ -3,7 +3,8 @@ export type ToolAuditEventType =
   | "tool_call_approved"
   | "tool_call_approval_required"
   | "tool_call_denied"
-  | "tool_call_executed";
+  | "tool_call_executed"
+  | "tool_call_failed";
 
 export interface ToolAuditEvent {
   type: ToolAuditEventType;
@@ -113,6 +114,10 @@ export class ToolAuditEmitter implements ToolAuditSink {
 
   executed(event: Omit<ToolAuditEvent, "type">): ToolAuditRecord {
     return this.emit({ ...event, type: "tool_call_executed" });
+  }
+
+  failed(event: Omit<ToolAuditEvent, "type">): ToolAuditRecord {
+    return this.emit({ ...event, type: "tool_call_failed" });
   }
 
   entries(): ToolAuditRecord[] {
