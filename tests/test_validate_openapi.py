@@ -47,6 +47,9 @@ paths:
   /v1/ingest/evidence/package:
     post:
       operationId: packageIngestEvidence
+  /v1/plugins/review-artifacts/preview:
+    post:
+      operationId: previewPluginReviewArtifact
 components:
   responses:
     Error:

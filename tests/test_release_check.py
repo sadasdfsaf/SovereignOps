@@ -23,6 +23,7 @@ def make_release_root(root: Path) -> None:
     (root / "examples" / "ingest-search").mkdir(parents=True)
     (root / "examples" / "plugins" / "release-notes").mkdir(parents=True)
     (root / "apps" / "api" / "src").mkdir(parents=True)
+    (root / "apps" / "api" / "tests").mkdir(parents=True)
     (root / "apps" / "web" / "src").mkdir(parents=True)
     (root / "apps" / "web" / "tests").mkdir(parents=True)
     (root / "packages" / "cli" / "src").mkdir(parents=True)
@@ -30,6 +31,11 @@ def make_release_root(root: Path) -> None:
     (root / "packages" / "ingest-evidence" / "src").mkdir(parents=True)
     (root / "packages" / "plugin-sdk" / "src").mkdir(parents=True)
     (root / "packages" / "plugin-sdk" / "tests").mkdir(parents=True)
+    (root / "packages" / "schemas" / "src").mkdir(parents=True)
+    (root / "packages" / "schemas" / "tests").mkdir(parents=True)
+    (root / "packages" / "schemas" / "fixtures").mkdir(parents=True)
+    (root / "packages" / "sdk-js" / "src").mkdir(parents=True)
+    (root / "packages" / "sdk-js" / "tests").mkdir(parents=True)
     (root / "services" / "automation" / "src").mkdir(parents=True)
     (root / "services" / "automation" / "tests").mkdir(parents=True)
     (root / "services" / "ingest" / "src" / "sovereignops_ingest").mkdir(parents=True)
@@ -37,6 +43,7 @@ def make_release_root(root: Path) -> None:
     (root / "tests").mkdir()
     for path in (
         "scripts/loc_budget.py",
+        "scripts/release_check.py",
         "scripts/repo_health.py",
         "scripts/public_boundary_guard.py",
         "scripts/env_guard.py",
@@ -59,6 +66,7 @@ def make_release_root(root: Path) -> None:
         "docs/ingest-evidence-api-fixtures.md",
         "docs/plugin-sandbox.md",
         "docs/plugin-release-notes-example.md",
+        "docs/plugin-review-artifact-api.md",
         "docs/plugin-review-artifacts.md",
         "scripts/loc_integrity.py",
         "scripts/release_notes.py",
@@ -85,6 +93,7 @@ def make_release_root(root: Path) -> None:
         "examples/plugins/release-notes/manifest.json",
         "examples/plugins/release-notes/plugin.json",
         "examples/plugins/release-notes/index.mjs",
+        "examples/plugins/release-notes/review-artifact-api-requests.json",
         "examples/plugins/release-notes/review-artifact.json",
         "examples/plugins/release-notes/sample-input.json",
         "examples/plugins/release-notes/README.md",
@@ -98,6 +107,8 @@ def make_release_root(root: Path) -> None:
         "tests/test_ingest_evidence_api_fixture_alignment.py",
         "tests/test_plugin_sandbox_docs.py",
         "tests/test_plugin_automation_alignment.py",
+        "tests/test_plugin_review_artifact_api_alignment.py",
+        "tests/test_plugin_review_artifact_api_docs.py",
         "tests/test_plugin_review_artifacts_docs.py",
         "tests/test_plugin_review_artifact_alignment.py",
         "tests/test_ingest_contract_alignment.py",
@@ -105,12 +116,23 @@ def make_release_root(root: Path) -> None:
         "tests/test_validate_openapi_ingest_evidence.py",
         "tests/ingest_evidence_parity.test.mjs",
         "apps/api/src/ingestEvidenceRoutes.ts",
+        "apps/api/src/pluginReviewArtifactRoutes.ts",
+        "apps/api/tests/plugin-review-artifact-routes.test.mjs",
         "packages/cli/src/index.ts",
         "packages/cli/src/ingestEvidence.ts",
         "packages/cli/src/ingestEvidenceApiReplay.ts",
+        "packages/cli/src/pluginReviewArtifactApiReplay.ts",
         "packages/cli/src/pluginReviewArtifact.ts",
+        "packages/cli/tests/plugin-review-artifact-api-replay.test.mjs",
         "packages/cli/tests/plugin-review-artifact.test.mjs",
         "packages/ingest-evidence/src/index.ts",
+        "packages/schemas/src/pluginReviewArtifact.ts",
+        "packages/schemas/tests/plugin-review-artifact.test.mjs",
+        "packages/schemas/fixtures/plugin-review-artifact-preview.valid.json",
+        "packages/schemas/fixtures/plugin-review-artifact-preview.invalid.json",
+        "packages/schemas/fixtures/plugin-review-artifact-preview.schema.json",
+        "packages/sdk-js/src/pluginReviewArtifactClient.ts",
+        "packages/sdk-js/tests/client-plugin-review-artifact.test.mjs",
         "packages/plugin-sdk/src/reviewArtifact.ts",
         "packages/plugin-sdk/src/sandboxReview.ts",
         "packages/plugin-sdk/tests/sandbox-review.test.mjs",
@@ -121,8 +143,10 @@ def make_release_root(root: Path) -> None:
         "services/automation/tests/automation-audit.test.mjs",
         "services/automation/tests/plugin-review.test.mjs",
         "apps/web/src/automationPluginReview.ts",
+        "apps/web/src/pluginReviewArtifactApiState.ts",
         "apps/web/src/pluginReviewArtifactState.ts",
         "apps/web/tests/automation-plugin-review.test.mjs",
+        "apps/web/tests/plugin-review-artifact-api-state.test.mjs",
         "apps/web/tests/plugin-review-artifact-state.test.mjs",
         "services/ingest/src/sovereignops_ingest/cli.py",
         "services/ingest/src/sovereignops_ingest/index.py",
@@ -158,6 +182,7 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertTrue(by_name["ingest-evidence-api-replay"].available)
         self.assertTrue(by_name["plugin-automation-alignment"].available)
         self.assertTrue(by_name["plugin-review-artifact-alignment"].available)
+        self.assertTrue(by_name["plugin-review-artifact-api-alignment"].available)
         self.assertTrue(by_name["npm-workspace-check"].available)
         self.assertTrue(by_name["cargo-check"].available)
         self.assertFalse(by_name["pnpm-workspace-check"].available)

@@ -21,6 +21,7 @@ export * from "./lifecycleReview.ts";
 export * from "./mcpApprovalState.ts";
 export * from "./mcpReview.ts";
 export * from "./onboarding.ts";
+export * from "./pluginReviewArtifactApiState.ts";
 export * from "./pluginReviewArtifactState.ts";
 export * from "./routes.ts";
 export * from "./tasks.ts";

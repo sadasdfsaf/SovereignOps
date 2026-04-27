@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { jsonSchemaCatalog, jsonSchemas, schemaKinds } from "../src/jsonSchema.ts";
+import { pluginReviewArtifactPreviewSchema } from "../src/pluginReviewArtifact.ts";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const fixturesDir = join(packageDir, "fixtures");
@@ -13,6 +14,7 @@ const checkOnly = process.argv.includes("--check");
 const outputs = [
   ["schema-catalog.json", jsonSchemaCatalog],
   ...schemaKinds.map((kind) => [`${kind}.schema.json`, jsonSchemas[kind]]),
+  ["plugin-review-artifact-preview.schema.json", pluginReviewArtifactPreviewSchema],
 ];
 
 await mkdir(fixturesDir, { recursive: true });

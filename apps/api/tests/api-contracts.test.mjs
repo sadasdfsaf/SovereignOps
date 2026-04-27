@@ -10,6 +10,7 @@ import {
   jsonResponse,
 } from "../src/router.ts";
 import { mountMcpRoutes } from "../src/mcpRoutes.ts";
+import { mountPluginReviewArtifactRoutes } from "../src/pluginReviewArtifactRoutes.ts";
 import { mountSyncRoutes } from "../src/syncRoutes.ts";
 import {
   createUploadBatch,
@@ -55,6 +56,7 @@ test("documented OpenAPI sync and MCP operations are mounted by public routes", 
     ["callMcpTool", "POST /v1/mcp/tools/call"],
     ["listMcpApprovalSessions", "GET /v1/mcp/approval-sessions"],
     ["decideMcpApprovalSession", "POST /v1/mcp/approval-sessions/:sessionId/decision"],
+    ["previewPluginReviewArtifact", "POST /v1/plugins/review-artifacts/preview"],
   ]);
 
   for (const [operationId, expectedRouteKey] of expectedOperations) {
@@ -354,6 +356,7 @@ function createPublicContractRouter(options = {}) {
     options.mcpDependencies ?? createMcpDependencies(),
     { basePath: "/v1/mcp", pathStyle: "openapi" },
   );
+  mountPluginReviewArtifactRoutes(router);
 
   return router;
 }

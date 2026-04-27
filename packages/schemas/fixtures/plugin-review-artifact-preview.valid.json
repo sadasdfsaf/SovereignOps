@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "plugin-review-artifact-preview.v1",
+  "generatedAt": "2026-04-27T12:00:00Z",
+  "workspaceId": "wsp_round27local",
+  "reviewId": "prv_round27preview",
+  "pluginId": "plug_offlineNotes",
+  "artifactId": "art_previewBundle",
+  "localOnly": true,
+  "proposalOnly": true,
+  "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "sourceFiles": [
+    {
+      "id": "manifest",
+      "path": "plugins/offline-notes/plugin.json",
+      "mediaType": "application/json",
+      "role": "manifest",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "byteSize": 742,
+      "includedInPreview": true
+    },
+    {
+      "id": "entrypoint",
+      "path": "plugins/offline-notes/src/main.ts",
+      "mediaType": "text/typescript",
+      "role": "entrypoint",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "byteSize": 2894,
+      "includedInPreview": true
+    },
+    {
+      "id": "assetIcon",
+      "path": "plugins/offline-notes/assets/icon.svg",
+      "mediaType": "image/svg+xml",
+      "role": "asset",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "byteSize": 513,
+      "includedInPreview": false
+    }
+  ],
+  "redactions": [
+    {
+      "id": "redactToken",
+      "sourceFileId": "entrypoint",
+      "kind": "credential",
+      "range": {
+        "startLine": 18,
+        "endLine": 18,
+        "startColumn": 12,
+        "endColumn": 44
+      },
+      "replacement": "[redacted]",
+      "originalFingerprint": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+  ],
+  "externalCalls": [],
+  "preview": {
+    "artifactType": "pluginReviewArtifact",
+    "title": "Offline notes helper preview",
+    "summary": "Local preview generated from manifest and entrypoint files with one credential-like value redacted.",
+    "renderMode": "markdown",
+    "sections": [
+      {
+        "id": "overview",
+        "title": "Manifest overview",
+        "sourceFileIds": ["manifest"],
+        "redactionIds": [],
+        "contentFingerprint": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      },
+      {
+        "id": "entrypointSummary",
+        "title": "Entrypoint summary",
+        "sourceFileIds": ["entrypoint"],
+        "redactionIds": ["redactToken"],
+        "contentFingerprint": "1111111111111111111111111111111111111111111111111111111111111111"
+      }
+    ]
+  }
+}

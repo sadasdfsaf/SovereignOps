@@ -346,6 +346,7 @@ export const validators = {
 
 export * from "./ingestEvidence.ts";
 export * from "./ingestSearch.ts";
+export * from "./pluginReviewArtifact.ts";
 
 function isOneOf<TValue extends string>(value: unknown, allowed: readonly TValue[]): value is TValue {
   return typeof value === "string" && allowed.includes(value as TValue);

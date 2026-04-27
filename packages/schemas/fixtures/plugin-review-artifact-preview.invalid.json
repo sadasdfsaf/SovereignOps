@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "plugin-review-artifact-preview.v0",
+  "generatedAt": "2026-04-27 12:00:00",
+  "workspaceId": "workspace-round27",
+  "reviewId": "round27preview",
+  "pluginId": "offlineNotes",
+  "artifactId": "previewBundle",
+  "localOnly": false,
+  "proposalOnly": false,
+  "fingerprint": "not-a-sha",
+  "sourceFiles": [
+    {
+      "id": "manifest",
+      "path": "/tmp/plugin.json",
+      "mediaType": "application json",
+      "role": "runtime",
+      "sha256": "bbbb",
+      "byteSize": -1,
+      "includedInPreview": "yes",
+      "extra": true
+    },
+    {
+      "id": "manifest",
+      "path": "plugins/offline-notes/src/main.ts",
+      "mediaType": "text/typescript",
+      "role": "entrypoint",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "byteSize": 2894,
+      "includedInPreview": true
+    }
+  ],
+  "redactions": [
+    {
+      "id": "redactToken",
+      "sourceFileId": "missingFile",
+      "kind": "other",
+      "range": {
+        "startLine": 9,
+        "endLine": 8,
+        "startColumn": 5,
+        "endColumn": 2
+      },
+      "replacement": "visible-value",
+      "originalFingerprint": "eeee"
+    }
+  ],
+  "externalCalls": [
+    {
+      "id": "catalogLookup",
+      "method": "TRACE",
+      "url": "",
+      "purpose": "",
+      "requestedBySourceFileId": "missingFile",
+      "proposalOnly": false,
+      "executed": true
+    }
+  ],
+  "preview": {
+    "artifactType": "otherArtifact",
+    "title": "",
+    "summary": "",
+    "renderMode": "html",
+    "sections": [
+      {
+        "id": "overview",
+        "title": "Manifest overview",
+        "sourceFileIds": ["missingFile"],
+        "redactionIds": ["missingRedaction"],
+        "contentFingerprint": "ffff"
+      },
+      {
+        "id": "overview",
+        "title": "Duplicate overview",
+        "sourceFileIds": ["manifest"],
+        "redactionIds": [],
+        "contentFingerprint": "1111111111111111111111111111111111111111111111111111111111111111"
+      }
+    ],
+    "extra": true
+  },
+  "unexpected": true
+}

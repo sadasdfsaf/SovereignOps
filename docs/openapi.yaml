@@ -18,6 +18,7 @@ tags:
   - name: ingest
   - name: search
   - name: quarantine
+  - name: plugins
 paths:
   /health:
     get:
@@ -777,6 +778,30 @@ paths:
                 $ref: "#/components/schemas/QuarantineDecisionResponse"
         default:
           $ref: "#/components/responses/IngestSearchError"
+  /v1/plugins/review-artifacts/preview:
+    post:
+      tags:
+        - plugins
+      summary: Preview a local plugin review artifact.
+      description: Local preview only; callers provide manifest, sandbox, automation, and audit inputs in the request body.
+      operationId: previewPluginReviewArtifact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PluginReviewArtifactPreviewRequest"
+      responses:
+        "200":
+          description: Redacted plugin review artifact preview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PluginReviewArtifactPreviewResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
 components:
   parameters:
     WorkspaceId:
@@ -3880,3 +3905,77 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ValidationIssue"
+      additionalProperties: false
+    PluginReviewArtifactPreviewRequest:
+      type: object
+      required:
+        - manifest
+        - sandboxReview
+      properties:
+        manifest:
+          type: object
+          additionalProperties: true
+        sandboxReview:
+          type: object
+          additionalProperties: true
+        automationReferences:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        auditReferences:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        approvalGates:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        evidence:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      additionalProperties: false
+    PluginReviewArtifactPreviewResponse:
+      type: object
+      required:
+        - kind
+        - localOnly
+        - redacted
+        - schemaVersion
+        - reviewId
+        - fingerprint
+        - decision
+        - artifact
+      properties:
+        kind:
+          type: string
+          const: plugin-review-artifact.preview
+        localOnly:
+          type: boolean
+          const: true
+        redacted:
+          type: boolean
+          const: true
+        schemaVersion:
+          type: string
+          const: plugin-review-artifact/v1
+        reviewId:
+          type: string
+          minLength: 1
+        fingerprint:
+          type: string
+          pattern: "^[a-f0-9]{32}$"
+        decision:
+          type: string
+          enum:
+            - approved
+            - approval_required
+            - denied
+        artifact:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
