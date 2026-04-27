@@ -22,6 +22,7 @@ export class WorkspaceClient {
 
 export * from "./client.ts";
 export * from "./ingestEvidenceClient.ts";
+export * from "./ingestEvidenceFixtureFetch.ts";
 export * from "./ingestClient.ts";
 export * from "./ingestFixtureFetch.ts";
 export * from "./localIngestEvidence.ts";

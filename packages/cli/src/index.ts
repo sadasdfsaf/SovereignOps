@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 export * from "./commands.ts";
 export * from "./lifecycle.ts";
 export * from "./auditExport.ts";
+export * from "./ingestEvidenceApiReplay.ts";
 export * from "./ingestEvidence.ts";
 export * from "./ingestApiReplay.ts";
 export * from "./ingestApiVerify.ts";
@@ -14,6 +15,7 @@ export * from "./mcpReplay.ts";
 
 import { runAuditExportCli } from "./auditExport.ts";
 import { runCli as runCoreCli } from "./commands.ts";
+import { runIngestEvidenceApiReplayCli } from "./ingestEvidenceApiReplay.ts";
 import { runIngestEvidenceCli } from "./ingestEvidence.ts";
 import { runIngestApiReplayCli } from "./ingestApiReplay.ts";
 import { runIngestApiVerifyCli } from "./ingestApiVerify.ts";
@@ -28,6 +30,7 @@ export async function runCli(
   options: Parameters<typeof runCoreCli>[1] &
     Parameters<typeof runLifecycleCli>[1] &
     Parameters<typeof runAuditExportCli>[1] &
+    Parameters<typeof runIngestEvidenceApiReplayCli>[1] &
     Parameters<typeof runIngestEvidenceCli>[1] &
     Parameters<typeof runIngestApiReplayCli>[1] &
     Parameters<typeof runIngestApiVerifyCli>[1] &
@@ -38,6 +41,7 @@ export async function runCli(
 ): ReturnType<typeof runCoreCli> {
   return (
     (await runAuditExportCli(argv, options)) ??
+    (await runIngestEvidenceApiReplayCli(argv, options)) ??
     (await runIngestEvidenceCli(argv, options)) ??
     (await runIngestApiReplayCli(argv, options)) ??
     (await runIngestApiVerifyCli(argv, options)) ??

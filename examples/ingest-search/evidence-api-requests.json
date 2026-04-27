@@ -1,0 +1,256 @@
+{
+  "schemaVersion": "ingest-evidence-api-requests.v1",
+  "generatedAt": "2026-04-27T09:05:00.000Z",
+  "localOnly": true,
+  "network": {
+    "mode": "disabled",
+    "notes": "Replay these requests through createApiRouter(createIngestEvidenceRoutes()) without starting a live server."
+  },
+  "inputEvidence": {
+    "id": "auditEvidence",
+    "fixturePath": "examples/ingest-search/audit-evidence.json",
+    "schemaVersion": "ingest-search-audit-evidence.v1",
+    "sha256": "582ffdf85628e0584af37df39aa85d94d78dd3d8209abc88e9d9ef01978f7980"
+  },
+  "requests": [
+    {
+      "id": "api_evidence_export_summary",
+      "title": "Export filtered evidence summary",
+      "route": {
+        "method": "POST",
+        "path": "/v1/ingest/evidence/export"
+      },
+      "request": {
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "evidence": {
+            "$fixtureRef": "auditEvidence"
+          },
+          "format": "summary",
+          "createdAt": "2026-04-27T09:00:00.000Z",
+          "exportId": "ingest_evidence_fixture_summary",
+          "filters": {
+            "sourceUris": ["fixture://ingest-search/records.csv"],
+            "citationKinds": ["quarantineItem"]
+          }
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "kind": "ingest-evidence.export",
+        "format": "summary",
+        "fingerprint": "sha256:6ec121c4a68d82f4c72481be18ca3099f7605986e42d32eed0ba272cdc661ce0",
+        "manifestFingerprint": "sha256:81c85aa141bb66dc24bb209d606b9c0f24226018193ead29fd1b965532bdfa9c",
+        "contentFingerprint": "sha256:ffa105352de31d85515010a8628d918c7b8038db567b663f25f91ff7b8894dbb",
+        "summary": {
+          "sourceCount": 1,
+          "evidenceFileCount": 9,
+          "citationCount": 1,
+          "quarantineDecisionCount": 1,
+          "apiRequestTraceCount": 4,
+          "clientSessionTraceCount": 3
+        },
+        "contentJson": {
+          "sourceCount": 1,
+          "evidenceFileCount": 9,
+          "citationCount": 1,
+          "quarantineDecisionCount": 1,
+          "apiRequestTraceCount": 4,
+          "clientSessionTraceCount": 3
+        }
+      }
+    },
+    {
+      "id": "api_evidence_export_json",
+      "title": "Export selected evidence sections as JSON",
+      "route": {
+        "method": "POST",
+        "path": "/v1/ingest/evidence/export"
+      },
+      "request": {
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "evidence": {
+            "$fixtureRef": "auditEvidence"
+          },
+          "format": "json",
+          "createdAt": "2026-04-27T09:00:00.000Z",
+          "exportId": "ingest_evidence_fixture_json",
+          "filters": {
+            "sections": ["evidenceFiles", "sourceSnapshots", "citationEvidence"],
+            "evidenceFileIds": ["recordsCsv", "recordsJson"]
+          }
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "kind": "ingest-evidence.export",
+        "format": "json",
+        "fingerprint": "sha256:eea11989db59c9050ba0ed6ed9b65983932be5834e8d3956f01706bf9c53adb6",
+        "manifestFingerprint": "sha256:a3135a5c48f054dfb25f541e8ad128946c39b1dc477c16b781716cb0fe2cde0f",
+        "contentFingerprint": "sha256:eea11989db59c9050ba0ed6ed9b65983932be5834e8d3956f01706bf9c53adb6",
+        "summary": {
+          "sourceCount": 3,
+          "evidenceFileCount": 2,
+          "citationCount": 4,
+          "quarantineDecisionCount": 0,
+          "apiRequestTraceCount": 0,
+          "clientSessionTraceCount": 0
+        },
+        "contentEvidenceFileIds": ["recordsCsv", "recordsJson"],
+        "contentSourceUris": [
+          "fixture://ingest-search/notes.md",
+          "fixture://ingest-search/records.csv",
+          "fixture://ingest-search/records.json"
+        ],
+        "contentCitationKinds": ["indexDocument", "indexDocument", "indexDocument", "quarantineItem"]
+      }
+    },
+    {
+      "id": "api_evidence_export_manifest",
+      "title": "Export full evidence manifest",
+      "route": {
+        "method": "POST",
+        "path": "/v1/ingest/evidence/export"
+      },
+      "request": {
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "evidence": {
+            "$fixtureRef": "auditEvidence"
+          },
+          "format": "manifest",
+          "createdAt": "2026-04-27T09:00:00.000Z",
+          "exportId": "ingest_evidence_fixture_manifest"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "kind": "ingest-evidence.export",
+        "format": "manifest",
+        "fingerprint": "sha256:c8456ac0adcc97ce59b1615ff6792e8e53e20ecda1030de25edbf1743cf2a8d5",
+        "manifestFingerprint": "sha256:94d4480b7d04ce4770d428ef5e52503ec5d66368aa627daa0b3901a2227fc362",
+        "contentFingerprint": "sha256:4907a845921db62c6222a2d09e97b311851354fee1429f5e7a6bc7f6efba3258",
+        "summary": {
+          "sourceCount": 3,
+          "evidenceFileCount": 9,
+          "citationCount": 4,
+          "quarantineDecisionCount": 1,
+          "apiRequestTraceCount": 6,
+          "clientSessionTraceCount": 4
+        },
+        "sectionItemCounts": {
+          "evidenceFiles": 9,
+          "sourceSnapshots": 3,
+          "citationEvidence": 4,
+          "quarantineDecisions": 1,
+          "apiRequestTrace": 6,
+          "clientSessionTrace": 4
+        }
+      }
+    },
+    {
+      "id": "api_evidence_package",
+      "title": "Build selected evidence package",
+      "route": {
+        "method": "POST",
+        "path": "/v1/ingest/evidence/package"
+      },
+      "request": {
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "evidence": {
+            "$fixtureRef": "auditEvidence"
+          },
+          "options": {
+            "createdAt": "2026-04-27T09:00:00.000Z",
+            "exportId": "ingest_evidence_fixture_package",
+            "filters": {
+              "sections": ["evidenceFiles", "sourceSnapshots", "citationEvidence"],
+              "evidenceFileIds": ["recordsCsv", "recordsJson"]
+            }
+          }
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "kind": "ingest-evidence.package",
+        "fingerprint": "sha256:77213a1ce158387d9edaac2310821e123bbd369accb3640d7b5a3ca3ace75af5",
+        "manifestFingerprint": "sha256:e579551aeb1a3e33f94849ffae45af1a580e5172b0c4e0980ba646400e1f2fe7",
+        "contentFingerprint": "sha256:eea11989db59c9050ba0ed6ed9b65983932be5834e8d3956f01706bf9c53adb6",
+        "summary": {
+          "sourceCount": 3,
+          "evidenceFileCount": 2,
+          "citationCount": 4,
+          "quarantineDecisionCount": 0,
+          "apiRequestTraceCount": 0,
+          "clientSessionTraceCount": 0
+        },
+        "files": [
+          {
+            "path": "manifest.json",
+            "mediaType": "application/json",
+            "bytes": 1342,
+            "fingerprint": "sha256:45dcc90340937738bb542f8b8517899b52db3ae03bb7bb8586d4e3f9e9d63ddb"
+          },
+          {
+            "path": "evidence.json",
+            "mediaType": "application/json",
+            "bytes": 2740,
+            "fingerprint": "sha256:eea11989db59c9050ba0ed6ed9b65983932be5834e8d3956f01706bf9c53adb6"
+          }
+        ]
+      }
+    },
+    {
+      "id": "api_evidence_export_bad_section",
+      "title": "Reject unsupported evidence section",
+      "route": {
+        "method": "POST",
+        "path": "/v1/ingest/evidence/export"
+      },
+      "request": {
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "evidence": {
+            "$fixtureRef": "auditEvidence"
+          },
+          "format": "json",
+          "filters": {
+            "sections": ["notASection"]
+          }
+        }
+      },
+      "expect": {
+        "status": 400,
+        "contentType": "application/json",
+        "error": {
+          "code": "validation_failed",
+          "message": "Ingest evidence section is unsupported.",
+          "details": {
+            "path": "body.filters.sections.0"
+          }
+        }
+      }
+    }
+  ]
+}

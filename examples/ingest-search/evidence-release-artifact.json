@@ -1,0 +1,186 @@
+{
+  "schemaVersion": "ingest-evidence-release-artifact.v1",
+  "generatedAt": "2026-04-27T08:40:00.000Z",
+  "artifactId": "ingest_evidence_fixture_replay_release_001",
+  "workspaceId": "wsp_ingest_demo",
+  "localOnly": true,
+  "referencedFiles": [
+    "examples/ingest-search/evidence-api-requests.json",
+    "examples/ingest-search/audit-evidence.json",
+    "examples/ingest-search/evidence-export-session.json",
+    "examples/ingest-search/evidence-parity-session.json"
+  ],
+  "sourceMetadata": [
+    {
+      "id": "api_requests",
+      "kind": "apiFixture",
+      "path": "examples/ingest-search/evidence-api-requests.json",
+      "schemaVersion": "ingest-evidence-api-requests.v1",
+      "sha256": "32bd735f924bdc91e283b2decc706e841cdeb8a7af687327d36262b3808fba42",
+      "counts": {
+        "requests": 5
+      }
+    },
+    {
+      "id": "audit_evidence",
+      "kind": "auditEvidence",
+      "path": "examples/ingest-search/audit-evidence.json",
+      "schemaVersion": "ingest-search-audit-evidence.v1",
+      "sha256": "582ffdf85628e0584af37df39aa85d94d78dd3d8209abc88e9d9ef01978f7980",
+      "counts": {
+        "sources": 3,
+        "evidenceFiles": 9,
+        "citations": 4,
+        "quarantineDecisions": 1,
+        "apiRequestTraces": 6,
+        "clientSessionTraces": 4
+      }
+    },
+    {
+      "id": "evidence_package",
+      "kind": "packageMetadata",
+      "path": "examples/ingest-search/evidence-export-session.json",
+      "schemaVersion": "ingest-evidence-export-session.v1",
+      "sha256": "52c1d20126e2c9040a54593cd721ad98f2af90fa82eba2bacb6ade117e28e5f1",
+      "counts": {
+        "normalizedRecords": 28,
+        "jsonlLines": 28,
+        "csvRows": 28,
+        "csvColumns": 7
+      }
+    },
+    {
+      "id": "evidence_parity",
+      "kind": "parityMetadata",
+      "path": "examples/ingest-search/evidence-parity-session.json",
+      "schemaVersion": "ingest-evidence-parity-session.v1",
+      "sha256": "5dbd6f415028ad77785717694014452162163806bd32840da4c692187b8aa771",
+      "counts": {
+        "records": 27,
+        "normalizedRecords": 28,
+        "sourceChecksums": 9
+      }
+    }
+  ],
+  "surfaceReplay": [
+    {
+      "surface": "api",
+      "entryPoint": "createIngestEvidenceRoutes",
+      "inputMetadataId": "api_requests",
+      "output": "inProcessEvidenceRouteReplay",
+      "assertions": [
+        "fixture references stay inside the workspace",
+        "evidence checksum matches fixture metadata",
+        "export and package routes are replayed from checked-in JSON"
+      ]
+    },
+    {
+      "surface": "sdk",
+      "entryPoint": "createIngestEvidenceFixtureClientHarness",
+      "inputMetadataId": "api_requests",
+      "output": "matchedFixtureCalls",
+      "assertions": [
+        "method and path match the fixture entry",
+        "request body matches the fixture entry",
+        "typed client methods return fixture responses"
+      ]
+    },
+    {
+      "surface": "cli",
+      "entryPoint": "runIngestEvidenceApiReplayCli",
+      "inputMetadataId": "api_requests",
+      "output": "ingest-evidence-api-fixture-replay",
+      "assertions": [
+        "replay output is JSON",
+        "route filters reduce the request set",
+        "unsafe fixture paths fail with JSON stderr"
+      ]
+    },
+    {
+      "surface": "web",
+      "entryPoint": "buildIngestEvidenceApiState",
+      "inputMetadataId": "api_requests",
+      "output": "reviewState",
+      "assertions": [
+        "format cards match fixture exports",
+        "route rows match fixture routes",
+        "package descriptors match fixture files"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "cli_api_replay_all",
+      "surface": "cli",
+      "command": "node packages\\cli\\src\\index.ts ingest evidence api replay --fixture examples\\ingest-search\\evidence-api-requests.json"
+    },
+    {
+      "id": "cli_api_replay_export",
+      "surface": "cli",
+      "command": "node packages\\cli\\src\\index.ts ingest evidence api replay --fixture examples\\ingest-search\\evidence-api-requests.json --method POST --route /v1/ingest/evidence/export"
+    }
+  ],
+  "packageMetadata": {
+    "kind": "ingest-evidence.package",
+    "manifestKind": "ingest-evidence.manifest",
+    "packageId": "ingest_evidence_demo_001",
+    "recordCount": 28,
+    "fingerprint": "fnv1a64:4c86fe3a3e9c66cc",
+    "manifestFingerprint": "fnv1a64:e705c60717adb0dc",
+    "evidenceFingerprint": "fnv1a64:19194235a1285631",
+    "jsonlFingerprint": "fnv1a64:2e60846d48e5bb45",
+    "csvFingerprint": "fnv1a64:cb4ede0470052a8b"
+  },
+  "auditMetadata": {
+    "schemaVersion": "ingest-search-audit-evidence.v1",
+    "workspaceId": "wsp_ingest_demo",
+    "sessionId": "[REDACTED]",
+    "localOnly": true,
+    "summary": {
+      "sourceCount": 3,
+      "evidenceFileCount": 9,
+      "citationCount": 4,
+      "quarantineDecisionCount": 1,
+      "apiRequestTraceCount": 6,
+      "clientSessionTraceCount": 4
+    },
+    "sourceUris": [
+      "fixture://ingest-search/notes.md",
+      "fixture://ingest-search/records.csv",
+      "fixture://ingest-search/records.json"
+    ]
+  },
+  "webReview": {
+    "apiStateBuilder": "buildIngestEvidenceApiState",
+    "evidenceReviewBuilder": "buildIngestEvidenceReview",
+    "inputMetadataIds": [
+      "api_requests",
+      "evidence_package"
+    ],
+    "expectedPanels": [
+      "formatCards",
+      "routeRows",
+      "packageDescriptors"
+    ]
+  },
+  "redaction": {
+    "marker": "[REDACTED]",
+    "appliesBefore": [
+      "jsonl",
+      "csv",
+      "manifest",
+      "packageFingerprint"
+    ],
+    "scopes": [
+      "sessionId",
+      "credentialLikeKeys",
+      "credentialLikeValues",
+      "requestErrorDetails"
+    ]
+  },
+  "validationCommands": [
+    "python -m json.tool examples\\ingest-search\\evidence-api-requests.json",
+    "python -m json.tool examples\\ingest-search\\evidence-release-artifact.json",
+    "python -m unittest tests.test_ingest_evidence_api_fixtures_docs"
+  ]
+}
