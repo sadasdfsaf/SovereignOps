@@ -25,6 +25,9 @@ import {
   workspaceSessionSnapshotRetentionCleanupRequestSchema,
   workspaceSessionSnapshotRetentionCleanupResponseSchema,
 } from "../src/workspaceSessionSnapshotRetentionCleanup.ts";
+import {
+  workspaceSessionSnapshotRetentionCleanupInventoryPreviewRequestSchema,
+} from "../src/workspaceSessionSnapshotRetentionCleanupInventory.ts";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const fixturesDir = join(packageDir, "fixtures");
@@ -50,6 +53,10 @@ const outputs = [
   [
     "workspace-session-snapshot-retention-cleanup-request.schema.json",
     workspaceSessionSnapshotRetentionCleanupRequestSchema,
+  ],
+  [
+    "workspace-session-snapshot-retention-cleanup-inventory-request.schema.json",
+    workspaceSessionSnapshotRetentionCleanupInventoryPreviewRequestSchema,
   ],
   [
     "workspace-session-snapshot-retention-cleanup-response.schema.json",

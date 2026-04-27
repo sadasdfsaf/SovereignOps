@@ -38,6 +38,7 @@ export * from "./localWorkspaceSessionFileStore.ts";
 export * from "./localWorkspaceSessionSnapshotApiClient.ts";
 export * from "./localWorkspaceSessionSnapshotRetention.ts";
 export * from "./localWorkspaceSessionSnapshotRetentionCleanupApiClient.ts";
+export * from "./localWorkspaceSessionSnapshotRetentionCleanupInventoryApiClient.ts";
 export * from "./localWorkspaceSessionSnapshotReview.ts";
 export * from "./localWorkspaceSessionSnapshotReviewApiClient.ts";
 export * from "./localWorkspaceSessionStore.ts";

@@ -23,6 +23,7 @@ export * from "./pluginReviewArtifactRecordsReplay.ts";
 export * from "./workspaceSessionApiReplay.ts";
 export * from "./workspaceSessionSnapshotRetentionCleanup.ts";
 export * from "./workspaceSessionSnapshotRetentionCleanupInventory.ts";
+export * from "./workspaceSessionSnapshotRetentionCleanupInventoryApiReplay.ts";
 export * from "./workspaceSessionSnapshotRetentionCleanupApiReplay.ts";
 export * from "./workspaceSessionSnapshotReview.ts";
 export * from "./workspaceSessionSnapshotStore.ts";
@@ -49,6 +50,7 @@ import { runPluginReviewArtifactCli } from "./pluginReviewArtifact.ts";
 import { runWorkspaceSessionApiReplayCli } from "./workspaceSessionApiReplay.ts";
 import { runWorkspaceSessionSnapshotRetentionCleanupCli } from "./workspaceSessionSnapshotRetentionCleanup.ts";
 import { runWorkspaceSessionSnapshotRetentionCleanupInventoryCli } from "./workspaceSessionSnapshotRetentionCleanupInventory.ts";
+import { runWorkspaceSessionSnapshotRetentionCleanupInventoryApiReplayCli } from "./workspaceSessionSnapshotRetentionCleanupInventoryApiReplay.ts";
 import { runWorkspaceSessionSnapshotRetentionCleanupApiReplayCli } from "./workspaceSessionSnapshotRetentionCleanupApiReplay.ts";
 import { runWorkspaceSessionSnapshotReviewCli } from "./workspaceSessionSnapshotReview.ts";
 import { runWorkspaceSessionSnapshotStoreCli } from "./workspaceSessionSnapshotStore.ts";
@@ -77,6 +79,7 @@ export async function runCli(
     Parameters<typeof runWorkspaceSessionApiReplayCli>[1] &
     Parameters<typeof runWorkspaceSessionSnapshotRetentionCleanupCli>[1] &
     Parameters<typeof runWorkspaceSessionSnapshotRetentionCleanupInventoryCli>[1] &
+    Parameters<typeof runWorkspaceSessionSnapshotRetentionCleanupInventoryApiReplayCli>[1] &
     Parameters<typeof runWorkspaceSessionSnapshotRetentionCleanupApiReplayCli>[1] &
     Parameters<typeof runWorkspaceSessionSnapshotReviewCli>[1] &
     Parameters<typeof runWorkspaceSessionSnapshotStoreCli>[1] = {},
@@ -84,8 +87,9 @@ export async function runCli(
   return (
     (await runAuditExportCli(argv, options)) ??
     (await runWorkspaceSessionSnapshotRetentionCleanupCli(argv, options)) ??
-    (await runWorkspaceSessionSnapshotRetentionCleanupInventoryCli(argv, options)) ??
+    (await runWorkspaceSessionSnapshotRetentionCleanupInventoryApiReplayCli(argv, options)) ??
     (await runWorkspaceSessionSnapshotRetentionCleanupApiReplayCli(argv, options)) ??
+    (await runWorkspaceSessionSnapshotRetentionCleanupInventoryCli(argv, options)) ??
     (await runWorkspaceSessionSnapshotReviewCli(argv, options)) ??
     (await runWorkspaceSessionSnapshotStoreCli(argv, options)) ??
     (await runWorkspaceSessionApiReplayCli(argv, options)) ??

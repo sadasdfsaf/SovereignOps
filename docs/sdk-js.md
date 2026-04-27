@@ -49,14 +49,22 @@ console.log(workspace.describe(), plan.dryRun);
 - Shared client types and typed errors: `packages/sdk-js/src/client.ts`
 - Workspace session retention cleanup API client:
   `packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupApiClient.ts`
+- Workspace session retention cleanup inventory API client:
+  `packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupInventoryApiClient.ts`
 - Workspace session retention cleanup pure helpers:
   `packages/sdk-js/src/localWorkspaceSessionSnapshotRetention.ts`
 - Retention cleanup API fixture:
   `examples/workspace-session/snapshot-retention-cleanup-api-requests.json`
+- Retention cleanup inventory fixture:
+  `examples/workspace-session/snapshot-retention-cleanup-inventory.json`
+- Retention cleanup inventory API fixture:
+  `examples/workspace-session/snapshot-retention-cleanup-inventory-api-requests.json`
 - Retention cleanup dry-run guide:
   `docs/workspace-session-snapshot-retention-cleanup.md`
 - Focused API client test:
   `packages/sdk-js/tests/local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs`
+- Focused inventory API client test:
+  `packages/sdk-js/tests/local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs`
 - Focused pure helper test:
   `packages/sdk-js/tests/local-workspace-session-snapshot-retention.test.mjs`
 - API client boundary test:
@@ -71,6 +79,11 @@ console.log(workspace.describe(), plan.dryRun);
   `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.invalid.json`,
   and
   `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.schema.json`
+- Inventory request schema fixtures:
+  `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.valid.json`,
+  `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.invalid.json`,
+  and
+  `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.schema.json`
 
 ## Workspace Session Snapshot Retention Cleanup API Preview
 
@@ -192,6 +205,76 @@ The client normalizer `normalizeLocalWorkspaceSessionSnapshotRetentionCleanupPre
 accepts exactly one of `entries`, `files`, or `records`; rejects circular values,
 unknown top-level fields, non-finite numbers, raw local paths, raw lock tokens,
 and credential-shaped strings; then returns a frozen JSON-compatible clone.
+
+## Workspace Session Snapshot Retention Cleanup Inventory API Preview
+
+Use `createLocalWorkspaceSessionSnapshotRetentionCleanupInventoryApiClient` for
+the Round 46 inventory route. The client posts to
+`POST /v1/workspace-session/snapshot-retention-cleanup/inventory/preview`,
+normalizes
+`WorkspaceSessionSnapshotRetentionCleanupInventoryPreviewRequest`, and validates
+the same local dry-run cleanup plan response as the parent cleanup preview.
+
+```ts
+import {
+  createLocalWorkspaceSessionSnapshotRetentionCleanupInventoryApiClient,
+  previewLocalWorkspaceSessionSnapshotRetentionCleanupInventoryViaApi,
+} from "@sovereignops/sdk-js";
+
+const inventoryClient =
+  createLocalWorkspaceSessionSnapshotRetentionCleanupInventoryApiClient({
+    baseUrl: "local://api/v1",
+    apiKey: "[REDACTED]",
+    fetch: fakeFetch([jsonResponse(200, inventoryPreviewResponse)]),
+  });
+
+const inventoryPreview = await inventoryClient.preview({
+  inventory: [
+    {
+      path: "snapshots/snap-current.json",
+      snapshotId: "snap_notes_current",
+      workspaceId: "wsp_notes_lab",
+      deviceId: "dev_laptop_alpha",
+      createdAt: "2026-04-28T03:50:00.000Z",
+      updatedAt: "2026-04-28T03:55:00.000Z",
+      fingerprint:
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      eventCount: 12,
+    },
+  ],
+  policy: {
+    maxCount: 2,
+    now: "2026-04-28T04:00:00.000Z",
+  },
+});
+
+console.log(inventoryPreview.localOnly, inventoryPreview.durableWrites);
+
+await previewLocalWorkspaceSessionSnapshotRetentionCleanupInventoryViaApi(
+  {
+    baseUrl: "local://api/v1",
+    apiKey: "[REDACTED]",
+    fetch: fakeFetch([jsonResponse(200, inventoryPreviewResponse)]),
+  },
+  {
+    files: [
+      {
+        path: "snapshots/snap-previous.json",
+        snapshotId: "snap_notes_previous",
+        workspaceId: "wsp_notes_lab",
+        createdAt: "2026-04-28T03:00:00.000Z",
+      },
+    ],
+  },
+);
+```
+
+The inventory normalizer
+`normalizeLocalWorkspaceSessionSnapshotRetentionCleanupInventoryPreviewRequest`
+accepts bounded `inventory`, `entries`, `files`, or `records` arrays plus
+bounded policy fields. It rejects unknown fields, raw local paths, traversal,
+raw lock material, credential-shaped values, request-body retention flags, and
+durable-write or delete intent before fetch is called.
 
 ## Fake-Fetch Testing
 
@@ -338,6 +421,7 @@ Run focused docs and SDK checks from the repository root:
 ```powershell
 python -m unittest tests.test_sdk_js_docs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs
+node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention.test.mjs
 npm.cmd --workspace @sovereignops/sdk-js run check
 python scripts\public_boundary_guard.py --json

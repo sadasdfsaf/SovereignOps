@@ -178,6 +178,52 @@ failures. Its schemas are cleanup-safe: they allow only bounded relative
 inventory paths, forbid unknown fields, reuse the local dry-run cleanup plan
 response, and omit raw secret, token, request-body, write, and delete fields.
 
+## Round 46 Inventory Replay Handoff
+
+The Round 46 release gate extends the inventory preview contract across SDK API
+client, CLI API replay, request schema fixtures, and E2E replay surfaces:
+
+- SDK inventory API client module:
+  `packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupInventoryApiClient.ts`
+- SDK inventory API client test:
+  `packages/sdk-js/tests/local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs`
+- SDK inventory API client helpers:
+  `createLocalWorkspaceSessionSnapshotRetentionCleanupInventoryApiClient`,
+  `previewLocalWorkspaceSessionSnapshotRetentionCleanupInventoryViaApi`, and
+  `normalizeLocalWorkspaceSessionSnapshotRetentionCleanupInventoryPreviewRequest`
+- Inventory API replay fixture:
+  `examples/workspace-session/snapshot-retention-cleanup-inventory-api-requests.json`
+- Inventory API replay CLI module:
+  `packages/cli/src/workspaceSessionSnapshotRetentionCleanupInventoryApiReplay.ts`
+- Inventory API replay CLI test:
+  `packages/cli/tests/workspace-session-snapshot-retention-cleanup-inventory-api-replay.test.mjs`
+- Inventory API replay CLI helpers:
+  `runWorkspaceSessionSnapshotRetentionCleanupInventoryApiReplayCli`,
+  `loadWorkspaceSessionSnapshotRetentionCleanupInventoryApiRequests`,
+  `createWorkspaceSessionSnapshotRetentionCleanupInventoryApiDispatcher`, and
+  `isWorkspaceSessionSnapshotRetentionCleanupInventoryApiReplayCommand`
+- Inventory API replay commands:
+  `sovereignops workspace-session snapshot retention-cleanup inventory api replay --fixture <path>`
+  and
+  `sovereignops workspace-session-snapshot-retention-cleanup-inventory-api replay --fixture <path>`
+- Inventory request schema fixtures:
+  `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.valid.json`,
+  `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.invalid.json`,
+  and
+  `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.schema.json`
+- Inventory E2E replay test:
+  `tests/test_workspace_session_snapshot_retention_cleanup_inventory_e2e.py`
+
+The SDK inventory API client must keep the existing route path,
+`POST /v1/workspace-session/snapshot-retention-cleanup/inventory/preview`, and
+must use the OpenAPI request schema
+`WorkspaceSessionSnapshotRetentionCleanupInventoryPreviewRequest`. The inventory
+API replay fixture must dispatch only checked-in JSON requests through local
+route helpers. The request schema fixtures must cover valid and invalid
+inventory preview bodies without introducing raw body, token, absolute path, or
+mutation fields. The inventory E2E replay must compare SDK, API replay, CLI
+replay, and Web inventory state without network access.
+
 ## Fixture
 
 `examples/workspace-session/snapshot-retention-cleanup.json` contains:
@@ -200,5 +246,10 @@ python -m unittest tests.test_workspace_session_snapshot_retention_cleanup_docs
 python -m unittest tests.test_workspace_session_snapshot_retention_cleanup_alignment
 python -m unittest tests.test_validate_openapi_workspace_session_snapshot_retention_cleanup
 node --test tests/security/workspace_session_snapshot_retention_cleanup_inventory_threats.test.mjs
+node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs
+node packages\cli\tests\workspace-session-snapshot-retention-cleanup-inventory-api-replay.test.mjs
+node packages\schemas\tests\workspace-session-snapshot-retention-cleanup.test.mjs
+python -m unittest tests.test_workspace_session_snapshot_retention_cleanup_inventory_e2e
+python scripts\release_check.py --dry-run
 python scripts\validate_openapi.py docs\openapi.yaml
 ```

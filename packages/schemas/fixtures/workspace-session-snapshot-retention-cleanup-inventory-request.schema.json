@@ -1,0 +1,2089 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sovereignops.local/workspace-session/snapshot-retention-cleanup-inventory-request.schema.json",
+  "title": "Workspace session snapshot retention cleanup inventory preview request",
+  "oneOf": [
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup inventory array request with top-level policy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inventory": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Workspace session snapshot retention cleanup inventory input item",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "relativePath": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "snapshotId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+              },
+              "workspaceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "deviceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sessionId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sourceKind": {
+                "type": "string",
+                "enum": [
+                  "file-metadata",
+                  "snapshot-record",
+                  "snapshot-record-summary",
+                  "unknown"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+              },
+              "createdAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "updatedAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "eventCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "fingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "snapshotFingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "auditSafe": {
+                "type": "boolean",
+                "const": true
+              },
+              "redacted": {
+                "type": "boolean",
+                "const": true
+              },
+              "metadata": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                },
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 240,
+                      "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                    },
+                    {
+                      "type": [
+                        "number",
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "required": []
+          }
+        },
+        "maxCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "maxAgeMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "now": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "inventory"
+      ]
+    },
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup inventory array request with policy object",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inventory": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Workspace session snapshot retention cleanup inventory input item",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "relativePath": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "snapshotId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+              },
+              "workspaceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "deviceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sessionId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sourceKind": {
+                "type": "string",
+                "enum": [
+                  "file-metadata",
+                  "snapshot-record",
+                  "snapshot-record-summary",
+                  "unknown"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+              },
+              "createdAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "updatedAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "eventCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "fingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "snapshotFingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "auditSafe": {
+                "type": "boolean",
+                "const": true
+              },
+              "redacted": {
+                "type": "boolean",
+                "const": true
+              },
+              "metadata": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                },
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 240,
+                      "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                    },
+                    {
+                      "type": [
+                        "number",
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "required": []
+          }
+        },
+        "policy": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Workspace session snapshot retention cleanup inventory policy",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxCount": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "maxAgeMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "now": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+            }
+          },
+          "required": []
+        }
+      },
+      "required": [
+        "inventory",
+        "policy"
+      ]
+    },
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup inventory entries request with top-level policy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inventory": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Workspace session snapshot retention cleanup inventory entries",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entries": {
+              "type": "array",
+              "maxItems": 1000,
+              "items": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "Workspace session snapshot retention cleanup inventory input item",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "snapshotId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+                  },
+                  "workspaceId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "deviceId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "sourceKind": {
+                    "type": "string",
+                    "enum": [
+                      "file-metadata",
+                      "snapshot-record",
+                      "snapshot-record-summary",
+                      "unknown"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+                  },
+                  "sizeBytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "eventCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "fingerprint": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "snapshotFingerprint": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "auditSafe": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "redacted": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                    },
+                    "additionalProperties": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 240,
+                          "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                        },
+                        {
+                          "type": [
+                            "number",
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": []
+              }
+            }
+          },
+          "required": [
+            "entries"
+          ]
+        },
+        "maxCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "maxAgeMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "now": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "inventory"
+      ]
+    },
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup inventory entries request with policy object",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inventory": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Workspace session snapshot retention cleanup inventory entries",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entries": {
+              "type": "array",
+              "maxItems": 1000,
+              "items": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "Workspace session snapshot retention cleanup inventory input item",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "snapshotId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+                  },
+                  "workspaceId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "deviceId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "sourceKind": {
+                    "type": "string",
+                    "enum": [
+                      "file-metadata",
+                      "snapshot-record",
+                      "snapshot-record-summary",
+                      "unknown"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+                  },
+                  "sizeBytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "eventCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "fingerprint": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "snapshotFingerprint": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "auditSafe": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "redacted": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                    },
+                    "additionalProperties": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 240,
+                          "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                        },
+                        {
+                          "type": [
+                            "number",
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": []
+              }
+            }
+          },
+          "required": [
+            "entries"
+          ]
+        },
+        "policy": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Workspace session snapshot retention cleanup inventory policy",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxCount": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "maxAgeMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "now": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+            }
+          },
+          "required": []
+        }
+      },
+      "required": [
+        "inventory",
+        "policy"
+      ]
+    },
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup inventory files request with top-level policy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inventory": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Workspace session snapshot retention cleanup inventory files",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "files": {
+              "type": "array",
+              "maxItems": 1000,
+              "items": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "Workspace session snapshot retention cleanup inventory input item",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "snapshotId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+                  },
+                  "workspaceId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "deviceId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "sourceKind": {
+                    "type": "string",
+                    "enum": [
+                      "file-metadata",
+                      "snapshot-record",
+                      "snapshot-record-summary",
+                      "unknown"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+                  },
+                  "sizeBytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "eventCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "fingerprint": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "snapshotFingerprint": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "auditSafe": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "redacted": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                    },
+                    "additionalProperties": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 240,
+                          "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                        },
+                        {
+                          "type": [
+                            "number",
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": []
+              }
+            }
+          },
+          "required": [
+            "files"
+          ]
+        },
+        "maxCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "maxAgeMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "now": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "inventory"
+      ]
+    },
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup inventory files request with policy object",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inventory": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Workspace session snapshot retention cleanup inventory files",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "files": {
+              "type": "array",
+              "maxItems": 1000,
+              "items": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "Workspace session snapshot retention cleanup inventory input item",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "snapshotId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+                  },
+                  "workspaceId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "deviceId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "sourceKind": {
+                    "type": "string",
+                    "enum": [
+                      "file-metadata",
+                      "snapshot-record",
+                      "snapshot-record-summary",
+                      "unknown"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+                  },
+                  "sizeBytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "eventCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "fingerprint": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "snapshotFingerprint": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "auditSafe": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "redacted": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                    },
+                    "additionalProperties": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 240,
+                          "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                        },
+                        {
+                          "type": [
+                            "number",
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": []
+              }
+            }
+          },
+          "required": [
+            "files"
+          ]
+        },
+        "policy": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Workspace session snapshot retention cleanup inventory policy",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxCount": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "maxAgeMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "now": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+            }
+          },
+          "required": []
+        }
+      },
+      "required": [
+        "inventory",
+        "policy"
+      ]
+    },
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup inventory records request with top-level policy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inventory": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Workspace session snapshot retention cleanup inventory records",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "records": {
+              "type": "array",
+              "maxItems": 1000,
+              "items": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "Workspace session snapshot retention cleanup inventory input item",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "snapshotId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+                  },
+                  "workspaceId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "deviceId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "sourceKind": {
+                    "type": "string",
+                    "enum": [
+                      "file-metadata",
+                      "snapshot-record",
+                      "snapshot-record-summary",
+                      "unknown"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+                  },
+                  "sizeBytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "eventCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "fingerprint": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "snapshotFingerprint": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "auditSafe": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "redacted": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                    },
+                    "additionalProperties": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 240,
+                          "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                        },
+                        {
+                          "type": [
+                            "number",
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": []
+              }
+            }
+          },
+          "required": [
+            "records"
+          ]
+        },
+        "maxCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "maxAgeMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "now": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "inventory"
+      ]
+    },
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup inventory records request with policy object",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inventory": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Workspace session snapshot retention cleanup inventory records",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "records": {
+              "type": "array",
+              "maxItems": 1000,
+              "items": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "Workspace session snapshot retention cleanup inventory input item",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "snapshotId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+                  },
+                  "workspaceId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "deviceId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+                  },
+                  "sourceKind": {
+                    "type": "string",
+                    "enum": [
+                      "file-metadata",
+                      "snapshot-record",
+                      "snapshot-record-summary",
+                      "unknown"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+                  },
+                  "sizeBytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "eventCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "fingerprint": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "snapshotFingerprint": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "auditSafe": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "redacted": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                    },
+                    "additionalProperties": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 240,
+                          "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                        },
+                        {
+                          "type": [
+                            "number",
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": []
+              }
+            }
+          },
+          "required": [
+            "records"
+          ]
+        },
+        "policy": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Workspace session snapshot retention cleanup inventory policy",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxCount": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "maxAgeMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "now": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+            }
+          },
+          "required": []
+        }
+      },
+      "required": [
+        "inventory",
+        "policy"
+      ]
+    },
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup entries request with top-level policy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Workspace session snapshot retention cleanup inventory input item",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "relativePath": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "snapshotId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+              },
+              "workspaceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "deviceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sessionId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sourceKind": {
+                "type": "string",
+                "enum": [
+                  "file-metadata",
+                  "snapshot-record",
+                  "snapshot-record-summary",
+                  "unknown"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+              },
+              "createdAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "updatedAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "eventCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "fingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "snapshotFingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "auditSafe": {
+                "type": "boolean",
+                "const": true
+              },
+              "redacted": {
+                "type": "boolean",
+                "const": true
+              },
+              "metadata": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                },
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 240,
+                      "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                    },
+                    {
+                      "type": [
+                        "number",
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "required": []
+          }
+        },
+        "maxCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "maxAgeMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "now": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "entries"
+      ]
+    },
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup entries request with policy object",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Workspace session snapshot retention cleanup inventory input item",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "relativePath": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "snapshotId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+              },
+              "workspaceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "deviceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sessionId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sourceKind": {
+                "type": "string",
+                "enum": [
+                  "file-metadata",
+                  "snapshot-record",
+                  "snapshot-record-summary",
+                  "unknown"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+              },
+              "createdAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "updatedAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "eventCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "fingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "snapshotFingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "auditSafe": {
+                "type": "boolean",
+                "const": true
+              },
+              "redacted": {
+                "type": "boolean",
+                "const": true
+              },
+              "metadata": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                },
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 240,
+                      "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                    },
+                    {
+                      "type": [
+                        "number",
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "required": []
+          }
+        },
+        "policy": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Workspace session snapshot retention cleanup inventory policy",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxCount": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "maxAgeMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "now": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+            }
+          },
+          "required": []
+        }
+      },
+      "required": [
+        "entries",
+        "policy"
+      ]
+    },
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup files request with top-level policy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "files": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Workspace session snapshot retention cleanup inventory input item",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "relativePath": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "snapshotId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+              },
+              "workspaceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "deviceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sessionId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sourceKind": {
+                "type": "string",
+                "enum": [
+                  "file-metadata",
+                  "snapshot-record",
+                  "snapshot-record-summary",
+                  "unknown"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+              },
+              "createdAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "updatedAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "eventCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "fingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "snapshotFingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "auditSafe": {
+                "type": "boolean",
+                "const": true
+              },
+              "redacted": {
+                "type": "boolean",
+                "const": true
+              },
+              "metadata": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                },
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 240,
+                      "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                    },
+                    {
+                      "type": [
+                        "number",
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "required": []
+          }
+        },
+        "maxCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "maxAgeMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "now": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "files"
+      ]
+    },
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup files request with policy object",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "files": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Workspace session snapshot retention cleanup inventory input item",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "relativePath": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "snapshotId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+              },
+              "workspaceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "deviceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sessionId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sourceKind": {
+                "type": "string",
+                "enum": [
+                  "file-metadata",
+                  "snapshot-record",
+                  "snapshot-record-summary",
+                  "unknown"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+              },
+              "createdAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "updatedAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "eventCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "fingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "snapshotFingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "auditSafe": {
+                "type": "boolean",
+                "const": true
+              },
+              "redacted": {
+                "type": "boolean",
+                "const": true
+              },
+              "metadata": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                },
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 240,
+                      "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                    },
+                    {
+                      "type": [
+                        "number",
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "required": []
+          }
+        },
+        "policy": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Workspace session snapshot retention cleanup inventory policy",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxCount": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "maxAgeMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "now": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+            }
+          },
+          "required": []
+        }
+      },
+      "required": [
+        "files",
+        "policy"
+      ]
+    },
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup records request with top-level policy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "records": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Workspace session snapshot retention cleanup inventory input item",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "relativePath": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "snapshotId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+              },
+              "workspaceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "deviceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sessionId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sourceKind": {
+                "type": "string",
+                "enum": [
+                  "file-metadata",
+                  "snapshot-record",
+                  "snapshot-record-summary",
+                  "unknown"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+              },
+              "createdAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "updatedAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "eventCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "fingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "snapshotFingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "auditSafe": {
+                "type": "boolean",
+                "const": true
+              },
+              "redacted": {
+                "type": "boolean",
+                "const": true
+              },
+              "metadata": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                },
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 240,
+                      "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                    },
+                    {
+                      "type": [
+                        "number",
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "required": []
+          }
+        },
+        "maxCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "maxAgeMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "now": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "records"
+      ]
+    },
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Workspace session snapshot retention cleanup records request with policy object",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "records": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Workspace session snapshot retention cleanup inventory input item",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "relativePath": {
+                "type": "string",
+                "pattern": "^(?:(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]{1,240}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "snapshotId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+              },
+              "workspaceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "deviceId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sessionId": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._:-]{0,160}|\\[redacted(?::[A-Za-z0-9_-]+)*\\])$"
+              },
+              "sourceKind": {
+                "type": "string",
+                "enum": [
+                  "file-metadata",
+                  "snapshot-record",
+                  "snapshot-record-summary",
+                  "unknown"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "^[A-Za-z0-9\\[][A-Za-z0-9 ._,:()\\[\\]\\/-]{0,79}$"
+              },
+              "createdAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "updatedAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+              },
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "eventCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "fingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "snapshotFingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "auditSafe": {
+                "type": "boolean",
+                "const": true
+              },
+              "redacted": {
+                "type": "boolean",
+                "const": true
+              },
+              "metadata": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!.*(?:[aA][pP][iI][._-]?[kK][eE][yY]|[aA][uU][tT][hH]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][oO][oO][kK][iI][eE]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[jJ][wW][tT]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?|[pP][rR][iI][vV][aA][tT][eE][._-]?[kK][eE][yY]|[rR][eE][fF][rR][eE][sS][hH][._-]?[tT][oO][kK][eE][nN]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][._-]?[tT][oO][kK][eE][nN]|[sS][iI][gG][nN][iI][nN][gG][._-]?[kK][eE][yY]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+                },
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 240,
+                      "pattern": "^(?!\\[redacted(?::[A-Za-z0-9_-]+)*\\]$)(?!.*(?:[bB][eE][aA][rR][eE][rR]\\s+\\S+|(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|lock_[A-Za-z0-9_-]{4,}|[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/(?:Users|home|var|tmp|private|mnt|Volumes)/|[aA][pP][iI][._-]?[kK][eE][yY]\\s*[:=]|[pP][aA][sS][sS](?:[wW][oO][rR][dD]|[pP][hH][rR][aA][sS][eE])?\\s*[:=]|[sS][eE][cC][rR][eE][tT]\\s*[:=]|[tT][oO][kK][eE][nN]\\s*[:=])).*$"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^\\[redacted(?::[A-Za-z0-9_-]+)*\\]$"
+                    },
+                    {
+                      "type": [
+                        "number",
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "required": []
+          }
+        },
+        "policy": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Workspace session snapshot retention cleanup inventory policy",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxCount": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "maxAgeMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "now": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+            }
+          },
+          "required": []
+        }
+      },
+      "required": [
+        "records",
+        "policy"
+      ]
+    }
+  ]
+}

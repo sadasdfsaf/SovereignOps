@@ -20,6 +20,7 @@ EXPECTED_SECTIONS = (
     "## SDK And Command Names",
     "## Round 44 Release Handoff",
     "## Inventory Preview",
+    "## Round 46 Inventory Replay Handoff",
     "## Fixture",
     "## Validation Commands",
 )
@@ -80,6 +81,25 @@ EXPECTED_INVENTORY_REFERENCES = (
     "tests/security/workspace_session_snapshot_retention_cleanup_inventory_threats.test.mjs",
 )
 
+EXPECTED_ROUND46_REFERENCES = (
+    "packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupInventoryApiClient.ts",
+    "packages/sdk-js/tests/local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs",
+    "createLocalWorkspaceSessionSnapshotRetentionCleanupInventoryApiClient",
+    "previewLocalWorkspaceSessionSnapshotRetentionCleanupInventoryViaApi",
+    "normalizeLocalWorkspaceSessionSnapshotRetentionCleanupInventoryPreviewRequest",
+    "examples/workspace-session/snapshot-retention-cleanup-inventory-api-requests.json",
+    "packages/cli/src/workspaceSessionSnapshotRetentionCleanupInventoryApiReplay.ts",
+    "packages/cli/tests/workspace-session-snapshot-retention-cleanup-inventory-api-replay.test.mjs",
+    "runWorkspaceSessionSnapshotRetentionCleanupInventoryApiReplayCli",
+    "loadWorkspaceSessionSnapshotRetentionCleanupInventoryApiRequests",
+    "createWorkspaceSessionSnapshotRetentionCleanupInventoryApiDispatcher",
+    "isWorkspaceSessionSnapshotRetentionCleanupInventoryApiReplayCommand",
+    "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.valid.json",
+    "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.invalid.json",
+    "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.schema.json",
+    "tests/test_workspace_session_snapshot_retention_cleanup_inventory_e2e.py",
+)
+
 EXPECTED_VALIDATION_COMMANDS = (
     r"python -m json.tool examples\workspace-session\snapshot-retention-cleanup.json",
     "python -m unittest tests.test_workspace_session_snapshot_retention_cleanup_docs",
@@ -89,6 +109,11 @@ EXPECTED_VALIDATION_COMMANDS = (
 EXPECTED_INVENTORY_VALIDATION_COMMANDS = (
     "python -m unittest tests.test_validate_openapi_workspace_session_snapshot_retention_cleanup",
     "node --test tests/security/workspace_session_snapshot_retention_cleanup_inventory_threats.test.mjs",
+    r"node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs",
+    r"node packages\cli\tests\workspace-session-snapshot-retention-cleanup-inventory-api-replay.test.mjs",
+    r"node packages\schemas\tests\workspace-session-snapshot-retention-cleanup.test.mjs",
+    "python -m unittest tests.test_workspace_session_snapshot_retention_cleanup_inventory_e2e",
+    r"python scripts\release_check.py --dry-run",
     r"python scripts\validate_openapi.py docs\openapi.yaml",
 )
 
@@ -164,6 +189,10 @@ class WorkspaceSessionSnapshotRetentionCleanupDocsTests(unittest.TestCase):
             with self.subTest(inventory_reference=reference):
                 self.assertIn(reference, self.doc_text)
 
+        for reference in EXPECTED_ROUND46_REFERENCES:
+            with self.subTest(round46_reference=reference):
+                self.assertIn(reference, self.doc_text)
+
         for command in (
             EXPECTED_VALIDATION_COMMANDS
             + EXPECTED_INVENTORY_VALIDATION_COMMANDS
@@ -190,6 +219,11 @@ class WorkspaceSessionSnapshotRetentionCleanupDocsTests(unittest.TestCase):
             "The retention cleanup inventory preview is the Round 45 handoff",
             "The OpenAPI contract is body-only JSON.",
             "omit raw secret, token, request-body,",
+            "The Round 46 release gate extends the inventory preview contract",
+            "must keep the existing route path",
+            "must dispatch only checked-in JSON requests through local",
+            "must cover valid and invalid",
+            "The inventory E2E replay must compare SDK",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, self.doc_text)

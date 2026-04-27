@@ -485,6 +485,42 @@ class ReleaseCheckTests(unittest.TestCase):
             security.command,
         )
 
+    def test_retention_cleanup_release_gate_tracks_round46_inventory_replay_files(self) -> None:
+        required = set(release_check.WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS)
+        expected = {
+            "examples/workspace-session/snapshot-retention-cleanup-inventory-api-requests.json",
+            "packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupInventoryApiClient.ts",
+            "packages/sdk-js/tests/local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs",
+            "packages/cli/src/workspaceSessionSnapshotRetentionCleanupInventoryApiReplay.ts",
+            "packages/cli/tests/workspace-session-snapshot-retention-cleanup-inventory-api-replay.test.mjs",
+            "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.valid.json",
+            "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.invalid.json",
+            "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.schema.json",
+            "tests/test_workspace_session_snapshot_retention_cleanup_inventory_e2e.py",
+        }
+        self.assertLessEqual(expected, required)
+
+        checks = {spec.name: spec for spec in release_check.CHECK_SPECS}
+        alignment = checks["workspace-session-snapshot-retention-cleanup-alignment"]
+        security = checks["workspace-session-snapshot-retention-cleanup-security"]
+        self.assertIn(
+            "packages/sdk-js/tests/local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs",
+            security.command,
+        )
+        self.assertIn(
+            "packages/cli/tests/workspace-session-snapshot-retention-cleanup-inventory-api-replay.test.mjs",
+            security.command,
+        )
+        self.assertIn(
+            "tests.test_workspace_session_snapshot_retention_cleanup_inventory_e2e",
+            alignment.command,
+        )
+        self.assertIn("inventory SDK API client", alignment.description)
+        self.assertIn("inventory request schema fixtures", alignment.description)
+        self.assertIn("inventory API replay", alignment.description)
+        self.assertIn("inventory SDK API client", security.description)
+        self.assertIn("inventory API replay", security.description)
+
     def test_missing_tools_are_skipped_when_running_available_checks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

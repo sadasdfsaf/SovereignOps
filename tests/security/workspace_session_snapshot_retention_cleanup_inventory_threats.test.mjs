@@ -25,6 +25,23 @@ const responseSchema = "WorkspaceSessionSnapshotRetentionCleanupPreviewResponse"
 const itemSchema = "WorkspaceSessionSnapshotRetentionCleanupInventoryInputItem";
 const policySchema = "WorkspaceSessionSnapshotRetentionCleanupInventoryPolicy";
 const cleanupIssueSchema = "WorkspaceSessionSnapshotRetentionCleanupIssue";
+const inventoryApiClientPath =
+  "packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupInventoryApiClient.ts";
+const inventoryApiClientTestPath =
+  "packages/sdk-js/tests/local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs";
+const inventoryApiReplayFixturePath =
+  "examples/workspace-session/snapshot-retention-cleanup-inventory-api-requests.json";
+const inventoryApiReplayModulePath =
+  "packages/cli/src/workspaceSessionSnapshotRetentionCleanupInventoryApiReplay.ts";
+const inventoryApiReplayTestPath =
+  "packages/cli/tests/workspace-session-snapshot-retention-cleanup-inventory-api-replay.test.mjs";
+const inventoryE2eTestPath =
+  "tests/test_workspace_session_snapshot_retention_cleanup_inventory_e2e.py";
+const inventorySchemaFixturePaths = Object.freeze([
+  "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.valid.json",
+  "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.invalid.json",
+  "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.schema.json",
+]);
 
 const inventorySurfaceSchemas = Object.freeze([
   requestSchema,
@@ -73,6 +90,21 @@ describe("workspace session snapshot retention cleanup inventory threats", () =>
       "packages/cli/src/workspaceSessionSnapshotRetentionCleanupInventory.ts",
       "apps/web/src/workspaceSessionSnapshotRetentionCleanupInventoryState.ts",
       "tests/security/workspace_session_snapshot_retention_cleanup_inventory_threats.test.mjs",
+      "The Round 46 release gate extends the inventory preview contract",
+      inventoryApiClientPath,
+      inventoryApiClientTestPath,
+      "createLocalWorkspaceSessionSnapshotRetentionCleanupInventoryApiClient",
+      "previewLocalWorkspaceSessionSnapshotRetentionCleanupInventoryViaApi",
+      "normalizeLocalWorkspaceSessionSnapshotRetentionCleanupInventoryPreviewRequest",
+      inventoryApiReplayFixturePath,
+      inventoryApiReplayModulePath,
+      inventoryApiReplayTestPath,
+      "runWorkspaceSessionSnapshotRetentionCleanupInventoryApiReplayCli",
+      "loadWorkspaceSessionSnapshotRetentionCleanupInventoryApiRequests",
+      "createWorkspaceSessionSnapshotRetentionCleanupInventoryApiDispatcher",
+      "isWorkspaceSessionSnapshotRetentionCleanupInventoryApiReplayCommand",
+      ...inventorySchemaFixturePaths,
+      inventoryE2eTestPath,
     ]) {
       assert.ok(docsText.includes(expected), `missing inventory docs text: ${expected}`);
     }
@@ -92,6 +124,20 @@ describe("workspace session snapshot retention cleanup inventory threats", () =>
       ),
       "release_check must track the inventory security test",
     );
+    for (const expected of [
+      inventoryApiClientPath,
+      inventoryApiClientTestPath,
+      inventoryApiReplayFixturePath,
+      inventoryApiReplayModulePath,
+      inventoryApiReplayTestPath,
+      ...inventorySchemaFixturePaths,
+      inventoryE2eTestPath,
+    ]) {
+      assert.ok(
+        releaseCheckText.includes(expected),
+        `release_check must track ${expected}`,
+      );
+    }
   });
 
   it("exposes a body-only JSON OpenAPI route with Error response refs", () => {

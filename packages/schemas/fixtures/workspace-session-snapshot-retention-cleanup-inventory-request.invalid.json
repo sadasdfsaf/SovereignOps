@@ -1,0 +1,29 @@
+{
+  "inventory": {
+    "files": [],
+    "records": [
+      {
+        "relativePath": "../snapshots/snap-escape.json",
+        "snapshotId": "snap-team-alpha-bad",
+        "createdAt": "not-a-timestamp",
+        "auditSafe": false,
+        "redacted": false,
+        "lockToken": "placeholder-lock-material",
+        "metadata": {
+          "apiToken": "visible-value",
+          "nested": {
+            "label": "not allowed"
+          }
+        }
+      }
+    ]
+  },
+  "records": [],
+  "policy": {
+    "maxCount": -1,
+    "extra": true
+  },
+  "maxAgeMs": 1.5,
+  "now": "not-a-date",
+  "unexpected": true
+}

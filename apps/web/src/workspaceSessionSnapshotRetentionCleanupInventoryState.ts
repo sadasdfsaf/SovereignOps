@@ -486,30 +486,27 @@ function resolvePayload(input: unknown): ResolvedPayload {
     return parsed;
   }
 
-  if (isInventoryPayloadLike(input)) {
-    return { root: input, payload: input, errors: [] };
+  return resolveRecordPayload(input);
+}
+
+function resolveRecordPayload(input: AnyRecord): ResolvedPayload {
+  const replay = resolveApiReplayPayload(input);
+  if (replay !== undefined) {
+    return replay;
   }
 
-  const responseBody = recordField(recordField(input, "response"), "body");
-  if (responseBody !== undefined && isInventoryPayloadLike(responseBody)) {
+  const wrapped = unwrapInventoryResponsePayload(input);
+  if (wrapped !== undefined) {
     return {
       root: input,
-      payload: responseBody,
-      sourceKind: "api_inventory_preview",
+      payload: wrapped.payload,
+      sourceKind: wrapped.sourceKind,
       errors: [],
     };
   }
 
-  for (const key of ["body", "data", "value", "result", "preview"]) {
-    const nested = recordField(input, key);
-    if (nested !== undefined && isInventoryPayloadLike(nested)) {
-      return {
-        root: input,
-        payload: nested,
-        sourceKind: key === "body" ? "api_inventory_preview" : undefined,
-        errors: [],
-      };
-    }
+  if (isInventoryPayloadLike(input)) {
+    return { root: input, payload: input, errors: [] };
   }
 
   for (const key of [
@@ -534,6 +531,15 @@ function parseJsonPayload(
 ): ResolvedPayload {
   try {
     const parsed = JSON.parse(value) as unknown;
+    if (isRecord(parsed)) {
+      const resolved = resolveRecordPayload(parsed);
+      return {
+        root: resolved.root ?? parsed,
+        payload: resolved.payload,
+        sourceKind: resolved.sourceKind ?? sourceKind,
+        errors: resolved.errors,
+      };
+    }
     return { root: parsed, payload: parsed, sourceKind, errors: [] };
   } catch {
     return {
@@ -542,6 +548,219 @@ function parseJsonPayload(
       errors: [buildError("parse", "Retention cleanup inventory JSON could not be parsed.")],
     };
   }
+}
+
+function resolveApiReplayPayload(input: AnyRecord): ResolvedPayload | undefined {
+  if (!isApiReplayEnvelope(input)) {
+    return undefined;
+  }
+
+  const replayErrors = replayErrorsFromEnvelope(input);
+  const replayPayload = replayInventoryPayload(input);
+  if (replayPayload !== undefined) {
+    return {
+      root: input,
+      payload: replayPayload,
+      sourceKind: "api_inventory_preview",
+      errors: replayErrors,
+    };
+  }
+
+  return {
+    root: input,
+    payload: undefined,
+    sourceKind: "api_inventory_preview",
+    errors: replayErrors.length > 0
+      ? replayErrors
+      : [
+          buildError(
+            "api_replay",
+            "Retention cleanup inventory API replay did not include a successful inventory preview response.",
+          ),
+        ],
+  };
+}
+
+function isApiReplayEnvelope(input: AnyRecord): boolean {
+  const kind = normalizeToken(stringField(input, "kind", "type"));
+  return (
+    kind.includes("api_replay") ||
+    kind.includes("api_fixture_replay") ||
+    kind.includes("fixture_replay") ||
+    kind.includes("request_replay") ||
+    integerField(
+      input,
+      "replayedRequests",
+      "replayed_requests",
+      "passedRequests",
+      "passed_requests",
+      "failedRequests",
+      "failed_requests",
+    ) !== undefined ||
+    arrayField(input, "requests", "results", "replays").some(isReplayItemLike)
+  );
+}
+
+function replayInventoryPayload(input: AnyRecord): AnyRecord | undefined {
+  const direct = unwrapInventoryResponsePayload(input);
+  if (direct !== undefined) {
+    return direct.payload;
+  }
+
+  const replayItems = arrayField(input, "requests", "results", "replays")
+    .filter(isRecord);
+  const sortedItems = [
+    ...replayItems.filter(replayItemSuccessful),
+    ...replayItems.filter((item) => !replayItemSuccessful(item)),
+  ];
+  for (const item of sortedItems) {
+    for (const response of replayItemResponses(item)) {
+      const nested = unwrapInventoryResponsePayload(response);
+      if (nested !== undefined) {
+        return nested.payload;
+      }
+    }
+  }
+  return undefined;
+}
+
+function replayItemResponses(item: AnyRecord): AnyRecord[] {
+  return [
+    recordField(item, "actual", "response", "result", "output"),
+    recordField(recordField(item, "actual"), "response", "result", "output"),
+    recordField(recordField(item, "response"), "actual", "result", "output"),
+  ].filter(isDefined);
+}
+
+function replayErrorsFromEnvelope(
+  input: AnyRecord,
+): WorkspaceSessionSnapshotRetentionCleanupInventoryError[] {
+  const declaredFailures = integerField(
+    input,
+    "failedRequests",
+    "failed_requests",
+    "failedCount",
+    "failed_count",
+    "failureCount",
+    "failure_count",
+  );
+  const replayItems = arrayField(input, "requests", "results", "replays");
+  const malformedItems = replayItems.filter((item) => !isReplayItemLike(item)).length;
+  const failedItems = replayItems
+    .filter(isRecord)
+    .filter((item) => !replayItemSuccessful(item)).length;
+  const failureCount = Math.max(declaredFailures ?? 0, failedItems);
+  const errors: WorkspaceSessionSnapshotRetentionCleanupInventoryError[] = [];
+
+  if (failureCount > 0) {
+    errors.push(
+      buildError(
+        "api_replay_failed",
+        `Retention cleanup inventory API replay reported ${failureCount} failed request${
+          failureCount === 1 ? "" : "s"
+        }.`,
+      ),
+    );
+  }
+  if (malformedItems > 0) {
+    errors.push(
+      buildError(
+        "api_replay_malformed",
+        `Retention cleanup inventory API replay ignored ${malformedItems} malformed replay item${
+          malformedItems === 1 ? "" : "s"
+        }.`,
+      ),
+    );
+  }
+
+  return errors;
+}
+
+function isReplayItemLike(value: unknown): boolean {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return (
+    recordField(value, "actual", "response", "result", "output") !== undefined ||
+    stringField(value, "id", "requestId", "request_id") !== undefined ||
+    integerField(value, "status", "statusCode", "status_code", "actualStatus") !== undefined ||
+    booleanField(value, "passed", "ok") !== undefined ||
+    recordField(value, "matches") !== undefined
+  );
+}
+
+function replayItemSuccessful(item: AnyRecord): boolean {
+  const explicit = booleanField(item, "passed", "ok", "success");
+  if (explicit !== undefined) {
+    return explicit;
+  }
+
+  const matches = recordField(item, "matches");
+  if (matches !== undefined) {
+    return !Object.values(matches).some((value) => value === false);
+  }
+
+  const status =
+    integerField(item, "status", "statusCode", "status_code", "actualStatus") ??
+    integerField(recordField(item, "actual", "response", "result", "output"), "status", "statusCode", "status_code");
+  return status === undefined || status >= 200 && status < 300;
+}
+
+function unwrapInventoryResponsePayload(
+  value: unknown,
+  depth = 0,
+  seen = new WeakSet<object>(),
+): { readonly payload: AnyRecord; readonly sourceKind?: WorkspaceSessionSnapshotRetentionCleanupInventorySourceKind } | undefined {
+  if (!isRecord(value) || depth > 5) {
+    return undefined;
+  }
+  if (seen.has(value)) {
+    return undefined;
+  }
+  seen.add(value);
+
+  if (
+    isInventoryPayloadLike(value) &&
+    !isApiReplayEnvelope(value) &&
+    !isResponseWrapper(value)
+  ) {
+    return { payload: value };
+  }
+
+  const sourceKind = isResponseWrapper(value) ? "api_inventory_preview" : undefined;
+  for (const key of ["response", "actual", "result", "output"]) {
+    const nested = recordField(value, key);
+    const unwrapped = unwrapInventoryResponsePayload(nested, depth + 1, seen);
+    if (unwrapped !== undefined) {
+      return {
+        payload: unwrapped.payload,
+        sourceKind: unwrapped.sourceKind ?? "api_inventory_preview",
+      };
+    }
+  }
+
+  for (const key of ["body", "data", "value", "payload", "preview", "json"]) {
+    const nested = recordField(value, key);
+    const unwrapped = unwrapInventoryResponsePayload(nested, depth + 1, seen);
+    if (unwrapped !== undefined) {
+      return {
+        payload: unwrapped.payload,
+        sourceKind: unwrapped.sourceKind ?? sourceKind,
+      };
+    }
+  }
+
+  return undefined;
+}
+
+function isResponseWrapper(value: AnyRecord): boolean {
+  return (
+    valueField(value, "body", "data", "value", "payload", "preview", "json") !== undefined ||
+    recordField(value, "response", "actual", "result", "output") !== undefined ||
+    integerField(value, "status", "statusCode", "status_code") !== undefined ||
+    booleanField(value, "ok", "success") !== undefined ||
+    recordField(value, "headers") !== undefined
+  );
 }
 
 function collectRows(

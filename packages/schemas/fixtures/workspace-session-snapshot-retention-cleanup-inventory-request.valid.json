@@ -1,0 +1,50 @@
+{
+  "inventory": {
+    "records": [
+      {
+        "sourceKind": "file-metadata",
+        "relativePath": "snapshots/team-alpha-current.json",
+        "snapshotId": "snap-team-alpha-current",
+        "workspaceId": "wsp_team_alpha",
+        "deviceId": "dev_laptop_alpha",
+        "sessionId": "[redacted:session:current]",
+        "label": "Current local snapshot",
+        "createdAt": "2026-04-28T03:50:00.000Z",
+        "updatedAt": "2026-04-28T03:55:00.000Z",
+        "sizeBytes": 12288,
+        "eventCount": 12,
+        "fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "snapshotFingerprint": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "auditSafe": true,
+        "redacted": true,
+        "metadata": {
+          "clientLabel": "desktop-sync",
+          "maskedValue": "[REDACTED]",
+          "retryCount": 0
+        }
+      },
+      {
+        "sourceKind": "snapshot-record-summary",
+        "path": "[redacted:path:stale]",
+        "snapshotId": "snap-team-alpha-stale",
+        "workspaceId": "wsp_team_alpha",
+        "deviceId": "dev_laptop_alpha",
+        "sessionId": "[redacted:session:stale]",
+        "label": "Stale local snapshot",
+        "createdAt": "2026-04-26T02:00:00.000Z",
+        "updatedAt": "2026-04-26T02:05:00.000Z",
+        "sizeBytes": 8192,
+        "eventCount": 7,
+        "fingerprint": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "snapshotFingerprint": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+        "auditSafe": true,
+        "redacted": true
+      }
+    ]
+  },
+  "policy": {
+    "maxCount": 1,
+    "maxAgeMs": 86400000,
+    "now": "2026-04-28T04:00:00.000Z"
+  }
+}
