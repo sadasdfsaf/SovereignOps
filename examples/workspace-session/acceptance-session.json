@@ -1,0 +1,336 @@
+{
+  "schemaVersion": "workspace-session-isolation-acceptance/v1",
+  "generatedAt": "2026-04-27T18:15:00.000Z",
+  "acceptanceId": "acc_workspace_session_001",
+  "workspaceId": "wsp_notes_lab",
+  "deviceId": "dev_laptop_alpha",
+  "localOnly": true,
+  "network": {
+    "mode": "disabled",
+    "allowedHttpPrefixes": [],
+    "allowedUriPrefixes": [
+      "local://",
+      "workspace://",
+      "fixture://workspace-session/"
+    ]
+  },
+  "fixtures": {
+    "guide": "docs/workspace-session-isolation.md",
+    "acceptanceSession": "examples/workspace-session/acceptance-session.json",
+    "desktopCommands": "apps/desktop/src/commands.ts",
+    "sdkWorkspace": "packages/sdk-js/src/workspace.ts",
+    "sdkStorage": "packages/sdk-js/src/storage.ts",
+    "pathSecurity": "packages/path-security/src/index.ts",
+    "cliCommands": "packages/cli/src/commands.ts",
+    "webLocalStore": "apps/web/src/localStore.ts",
+    "syncBundles": "services/sync/src/bundles.ts",
+    "workspaceBackup": "packages/workspace-backup/src/index.ts",
+    "observability": "packages/observability/src/index.ts"
+  },
+  "workspace": {
+    "rootDisplay": "workspace://wsp_notes_lab",
+    "layoutVersion": 3,
+    "safeRelativePaths": [
+      ".sovereignops/workspace.json",
+      "records/events.json",
+      "records/audit.json",
+      "records/sync-cursors.json",
+      "records/snapshots/workspace.json.enc"
+    ],
+    "blockedPathSamples": [
+      "../outside.json",
+      "C:/outside/workspace.json",
+      "//server/share/workspace.json",
+      "~/workspace.json",
+      "cache/session.json",
+      "keys/root.pem",
+      ".codex-private/session.json"
+    ]
+  },
+  "desktop": {
+    "contractSource": "apps/desktop/src/commands.ts",
+    "commands": [
+      {
+        "id": "workspace.open",
+        "tauriCommand": "workspace_open",
+        "payload": "WorkspaceOpenPayload",
+        "result": "WorkspaceLayoutDescriptor",
+        "hostEffects": [
+          "filesystem-read",
+          "state-transition"
+        ]
+      },
+      {
+        "id": "workspace.lock",
+        "tauriCommand": "workspace_lock",
+        "payload": "WorkspaceLockPayload",
+        "result": "WorkspaceLockTransition",
+        "hostEffects": [
+          "state-transition",
+          "filesystem-write"
+        ]
+      },
+      {
+        "id": "workspace.unlock",
+        "tauriCommand": "workspace_unlock",
+        "payload": "WorkspaceUnlockPayload",
+        "result": "WorkspaceLockTransition",
+        "hostEffects": [
+          "state-transition",
+          "filesystem-write"
+        ]
+      },
+      {
+        "id": "workspace.plan_file_layout_migration",
+        "tauriCommand": "workspace_plan_file_layout_migration",
+        "payload": "WorkspaceLayoutMigrationInput",
+        "result": "WorkspaceLayoutMigrationPlan",
+        "hostEffects": [
+          "filesystem-read"
+        ]
+      }
+    ],
+    "lockFlow": {
+      "initial": "unlocked",
+      "afterLock": "locked",
+      "afterUnlock": "unlocked",
+      "rawLockTokenStored": false,
+      "tokenRef": "lock_ref:f3a1c0de"
+    }
+  },
+  "sdk": {
+    "modules": [
+      "packages/sdk-js/src/workspace.ts",
+      "packages/sdk-js/src/storage.ts",
+      "packages/path-security/src/index.ts"
+    ],
+    "helpers": [
+      "createInMemoryWorkspaceClient",
+      "validateWorkspaceDescriptor",
+      "appendEvent",
+      "listEvents",
+      "snapshot",
+      "validateJsonStorageRelativePath",
+      "validateLocalRelativePath"
+    ],
+    "sessionExpectations": {
+      "client": "in-memory",
+      "readonlySnapshots": true,
+      "workspaceCount": 1,
+      "eventCount": 2,
+      "storageKinds": [
+        "workspaceDescriptors",
+        "workspaceEvents",
+        "auditRecords",
+        "syncCursors"
+      ]
+    }
+  },
+  "cli": {
+    "module": "packages/cli/src/commands.ts",
+    "workingDirectory": "repository-root",
+    "commands": [
+      "sovereignops workspace create --workspace-id wsp_notes_lab --name NotesLab",
+      "sovereignops workspace list",
+      "sovereignops ingest event --workspace-id wsp_notes_lab --type note.created",
+      "sovereignops audit preview --workspace-id wsp_notes_lab --limit 5",
+      "sovereignops export bundle --workspace-id wsp_notes_lab"
+    ],
+    "checks": {
+      "exitCodes": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "stdoutJson": true,
+      "stderrEmpty": true,
+      "readsOutsideWorkspace": false
+    }
+  },
+  "web": {
+    "module": "apps/web/src/localStore.ts",
+    "stateCards": [
+      {
+        "id": "session_lock",
+        "status": "ready",
+        "count": 1,
+        "redactedDisplay": "workspace://wsp_notes_lab"
+      },
+      {
+        "id": "storage_scope",
+        "status": "ready",
+        "count": 4,
+        "redactedDisplay": "records/... [path:9d3a21f4b6c8]"
+      },
+      {
+        "id": "path_guard",
+        "status": "ready",
+        "count": 7,
+        "redactedDisplay": "[restricted-path path:4380c451aef2]"
+      },
+      {
+        "id": "backup_ready",
+        "status": "ready",
+        "count": 2,
+        "redactedDisplay": "records/snapshots/workspace.json.enc"
+      },
+      {
+        "id": "audit_redaction",
+        "status": "ready",
+        "count": 8,
+        "redactedDisplay": "[REDACTED]"
+      }
+    ]
+  },
+  "syncBackup": {
+    "syncModule": "services/sync/src/bundles.ts",
+    "backupModule": "packages/workspace-backup/src/index.ts",
+    "uploadBatch": {
+      "workspaceId": "wsp_notes_lab",
+      "deviceId": "dev_laptop_alpha",
+      "baseCursor": "cur_v1:0000000000000000:origin",
+      "nextCursor": "cur_v1:0000000000000002:evt_notes_002",
+      "eventIds": [
+        "evt_notes_001",
+        "evt_notes_002"
+      ],
+      "checksum": "sha256:4a336f32a64debc9c9b9c502a2af915c3722cc4900f5482e5d1b96e6f4b40b6f"
+    },
+    "downloadWindow": {
+      "afterCursor": "cur_v1:0000000000000000:origin",
+      "nextCursor": "cur_v1:0000000000000002:evt_notes_002",
+      "hasMore": false
+    },
+    "backup": {
+      "manifestVersion": "1.0.0",
+      "backupId": "bkp_notes_lab_acceptance",
+      "workspaceId": "wsp_notes_lab",
+      "createdByActorId": "act_local_operator",
+      "payloadIds": [
+        "pay_workspace_state",
+        "pay_workspace_events"
+      ],
+      "payloadStorage": "encrypted-descriptors-only",
+      "restoreMode": "preview",
+      "unsafeRestoreBlocked": true
+    }
+  },
+  "audit": {
+    "module": "packages/observability/src/index.ts",
+    "replacement": "[REDACTED]",
+    "redactedRefs": {
+      "backupRef": "backup:7f31d88b91a2",
+      "workspaceRef": "workspace:1e18d7c9a640",
+      "actorRef": "actor:4d0cb9eab2f1"
+    },
+    "redactedPaths": [
+      "attributes.authorization",
+      "attributes.apiKey",
+      "attributes.accessToken",
+      "attributes.password",
+      "attributes.secret",
+      "attributes.token",
+      "attributes.email",
+      "attributes.phone"
+    ],
+    "rawPayloadBodiesStored": false,
+    "rawIdentifiersStored": false,
+    "absolutePathsStored": false
+  },
+  "gates": [
+    {
+      "id": "desktop_command_contract",
+      "status": "pass",
+      "checks": [
+        "command_ids",
+        "tauri_commands",
+        "host_effects",
+        "lock_transitions",
+        "layout_version"
+      ]
+    },
+    {
+      "id": "sdk_session_helpers",
+      "status": "pass",
+      "checks": [
+        "descriptor_validation",
+        "readonly_snapshots",
+        "session_separation",
+        "json_storage_paths",
+        "local_relative_paths"
+      ]
+    },
+    {
+      "id": "cli_acceptance_checks",
+      "status": "pass",
+      "checks": [
+        "workspace_create",
+        "workspace_list",
+        "event_append",
+        "audit_preview",
+        "bundle_export"
+      ]
+    },
+    {
+      "id": "web_state_cards",
+      "status": "pass",
+      "checks": [
+        "card_ids",
+        "card_statuses",
+        "card_counts",
+        "redacted_displays"
+      ]
+    },
+    {
+      "id": "sync_backup_readiness",
+      "status": "pass",
+      "checks": [
+        "checksum",
+        "cursor_window",
+        "backup_prefixes",
+        "restore_preview",
+        "unsafe_restore_block"
+      ]
+    },
+    {
+      "id": "audit_redaction",
+      "status": "pass",
+      "checks": [
+        "replacement_marker",
+        "redacted_refs",
+        "sensitive_paths",
+        "no_raw_payload_bodies"
+      ]
+    },
+    {
+      "id": "path_escape_gate",
+      "status": "pass",
+      "checks": [
+        "traversal",
+        "drive_prefix",
+        "unc_path",
+        "home_shortcut",
+        "remote_scheme",
+        "cache_path",
+        "key_material_path",
+        "private_pack_path"
+      ]
+    }
+  ],
+  "acceptanceCriteria": [
+    "desktop_contract_ready",
+    "sdk_helpers_ready",
+    "cli_checks_ready",
+    "web_cards_ready",
+    "sync_backup_ready",
+    "audit_redaction_ready",
+    "path_escape_blocked",
+    "local_only_sources"
+  ],
+  "validationCommands": [
+    "python -m json.tool examples\\workspace-session\\acceptance-session.json",
+    "python -m unittest tests.test_workspace_session_isolation_docs"
+  ]
+}

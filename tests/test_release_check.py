@@ -27,6 +27,8 @@ def make_release_root(root: Path) -> None:
     (root / "examples" / "plugins" / "release-notes").mkdir(parents=True)
     (root / "apps" / "api" / "src").mkdir(parents=True)
     (root / "apps" / "api" / "tests").mkdir(parents=True)
+    (root / "apps" / "desktop" / "src").mkdir(parents=True)
+    (root / "apps" / "desktop" / "tests").mkdir(parents=True)
     (root / "apps" / "web" / "src").mkdir(parents=True)
     (root / "apps" / "web" / "tests").mkdir(parents=True)
     (root / "packages" / "cli" / "src").mkdir(parents=True)
@@ -60,6 +62,7 @@ def make_release_root(root: Path) -> None:
         "scripts/validate_mcp_gateway_fixtures.py",
         "scripts/node-check.mjs",
         *release_check.LOCAL_EVENT_CATALOG_REQUIRED_PATHS,
+        *release_check.WORKSPACE_SESSION_REQUIRED_PATHS,
         "docs/openapi.yaml",
         "docs/schema-alignment.md",
         "docs/local-data-lifecycle.md",
@@ -298,6 +301,8 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertTrue(by_name["bootstrap-docs"].available)
         self.assertTrue(by_name["schema-contract-alignment"].available)
         self.assertTrue(by_name["local-event-catalog-integration"].available)
+        self.assertTrue(by_name["workspace-session-integration"].available)
+        self.assertTrue(by_name["workspace-session-docs"].available)
         self.assertTrue(by_name["plugin-automation-alignment"].available)
         self.assertTrue(by_name["mcp-approval-evidence-api-alignment"].available)
         self.assertTrue(by_name["mcp-approval-evidence-records-api-alignment"].available)
@@ -359,6 +364,8 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("RUN schema-contract-alignment: python -m unittest tests.test_schema_alignment_docs", output.getvalue())
         self.assertIn("RUN loc-integrity: python scripts/loc_integrity.py", output.getvalue())
         self.assertIn("SKIP local-event-catalog-integration: missing tool: node", output.getvalue())
+        self.assertIn("SKIP workspace-session-integration: missing tool: node", output.getvalue())
+        self.assertIn("RUN workspace-session-docs: python -m unittest tests.test_workspace_session_isolation_docs", output.getvalue())
         self.assertIn("SKIP release-notes-smoke:", output.getvalue())
         self.assertIn("SKIP cargo-check: missing tool: cargo", output.getvalue())
 

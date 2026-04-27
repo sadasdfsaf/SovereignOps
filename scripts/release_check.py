@@ -98,6 +98,25 @@ LOCAL_EVENT_CATALOG_REQUIRED_PATHS: tuple[str, ...] = (
     "services/sync/tests/event-catalog.test.mjs",
 )
 
+WORKSPACE_SESSION_REQUIRED_PATHS: tuple[str, ...] = (
+    "docs/workspace-session-isolation.md",
+    "examples/workspace-session/acceptance-session.json",
+    "tests/test_workspace_session_isolation_docs.py",
+    "tests/security/workspace_session_threats.test.mjs",
+    "apps/desktop/package.json",
+    "apps/desktop/src/workspaceSessionIsolation.ts",
+    "apps/desktop/tests/workspace-session-isolation.test.mjs",
+    "packages/sdk-js/package.json",
+    "packages/sdk-js/src/index.ts",
+    "packages/sdk-js/src/localWorkspaceSession.ts",
+    "packages/sdk-js/tests/local-workspace-session.test.mjs",
+    "packages/cli/package.json",
+    "packages/cli/tests/workspace-session-acceptance.test.mjs",
+    "apps/web/package.json",
+    "apps/web/src/workspaceSessionState.ts",
+    "apps/web/tests/workspace-session-state.test.mjs",
+)
+
 
 @dataclass(frozen=True)
 class CheckSpec:
@@ -142,6 +161,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
         required_paths=(
             "scripts/repo_health.py",
             *LOCAL_EVENT_CATALOG_REQUIRED_PATHS,
+            *WORKSPACE_SESSION_REQUIRED_PATHS,
             "docs/local-data-lifecycle.md",
             "docs/maintainership.md",
             "docs/security-checklist.md",
@@ -352,6 +372,32 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "tests.test_validate_openapi_local_events",
         ),
         required_paths=LOCAL_EVENT_CATALOG_REQUIRED_PATHS,
+    ),
+    CheckSpec(
+        name="workspace-session-integration",
+        description="Validate local workspace session isolation helpers across Desktop, SDK, CLI, Web, and security tests.",
+        command=(
+            "node",
+            "--test",
+            "apps/desktop/tests/workspace-session-isolation.test.mjs",
+            "packages/sdk-js/tests/local-workspace-session.test.mjs",
+            "packages/cli/tests/workspace-session-acceptance.test.mjs",
+            "apps/web/tests/workspace-session-state.test.mjs",
+            "tests/security/workspace_session_threats.test.mjs",
+        ),
+        required_paths=WORKSPACE_SESSION_REQUIRED_PATHS,
+        tool_candidates=("node",),
+    ),
+    CheckSpec(
+        name="workspace-session-docs",
+        description="Validate workspace session isolation documentation and examples.",
+        command=(
+            PYTHON,
+            "-m",
+            "unittest",
+            "tests.test_workspace_session_isolation_docs",
+        ),
+        required_paths=WORKSPACE_SESSION_REQUIRED_PATHS,
     ),
     CheckSpec(
         name="mcp-gateway-fixtures",
