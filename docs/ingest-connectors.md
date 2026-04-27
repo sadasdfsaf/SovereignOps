@@ -187,6 +187,31 @@ safety fields as the connector manifest: `localOnly: true`,
 `networkAccess: false`, `durableWrites: false`, `dryRun: true`, and
 untrusted-by-default preview content.
 
+`examples/ingest-search/connector-mcp-api-requests.json` is the public MCP API
+fixture for route replay and parity checks. It uses
+`ingest-connector-mcp-api-requests.v1`, keeps `apiBase` local, disables
+network mode, and covers the resource list, single resource read, dry-run
+preview, missing resource, and bad preview body cases. Replay should dispatch
+through `createApiRouter([...createIngestConnectorRoutes(),
+...createIngestConnectorMcpRoutes()])` in memory so no server or socket is
+required.
+
+Focused MCP API replay commands:
+
+```powershell
+node packages\cli\src\index.ts ingest connectors mcp api replay --fixture examples\ingest-search\connector-mcp-api-requests.json
+node packages\cli\src\index.ts ingest-connector-mcp-api replay --fixture examples\ingest-search\connector-mcp-api-requests.json --id mcp_ingest_connector_resources
+```
+
+The SDK parity surface is `createIngestConnectorMcpClient` with an injected
+fixture fetch built from `examples/ingest-search/connector-mcp-api-requests.json`.
+The fixture fetch must match method, path, and JSON body, record local calls,
+reject drift as JSON-only errors, and never fall back to global fetch. The Web
+parity surface is `buildIngestConnectorMcpState`; it consumes the same fixture,
+CLI replay output, SDK responses, or route responses as captured JSON and
+builds frozen request cards, resource rows, dry-run labels, safety indicators,
+and redacted error states.
+
 `packages/sdk-js/src/ingestConnectorMcpClient.ts` should expose
 `createIngestConnectorMcpClient`, `listResources`,
 `listConnectorResources`, `listMcpConnectorResources`, `readResource`,
@@ -221,6 +246,7 @@ node apps\api\tests\ingest-connector-mcp-routes.test.mjs
 node packages\cli\tests\ingest-connector-mcp-preview.test.mjs
 node packages\sdk-js\tests\ingest-connector-mcp-client.test.mjs
 node apps\web\tests\ingest-connector-mcp-state.test.mjs
+node packages\cli\src\index.ts ingest connectors mcp api replay --fixture examples\ingest-search\connector-mcp-api-requests.json
 python scripts\release_check.py --dry-run
 ```
 
@@ -544,6 +570,7 @@ The local preview fixtures live under `examples/ingest-search`:
 - `examples/ingest-search/quarantine.json`
 - `examples/ingest-search/api-requests.json`
 - `examples/ingest-search/connector-api-requests.json`
+- `examples/ingest-search/connector-mcp-api-requests.json`
 - `examples/ingest-search/client-session.json`
 
 `examples/ingest-search/api-requests.json` is the canonical local API replay
@@ -562,6 +589,14 @@ It is also the input for the SDK connector fixture harness in
 `packages/sdk-js/src/ingestConnectorFixtureFetch.ts` and the cross-surface
 connector API parity test in `tests/test_ingest_connector_api_e2e.py`.
 
+`examples/ingest-search/connector-mcp-api-requests.json` is the connector MCP
+API replay fixture for route replay, CLI replay, SDK injected fixture fetch,
+Web fixture state, and E2E parity. It stays local-only, replays
+`GET /v1/ingest/connectors/mcp/resources`,
+`GET /v1/ingest/connectors/mcp/resources/{connectorId}`, and
+`POST /v1/ingest/connectors/mcp/preview`, and keeps negative cases for missing
+resources and preview body validation.
+
 Do not add private planning paths, machine-specific absolute paths, or remote
 URLs to connector docs or fixtures.
 
@@ -577,6 +612,8 @@ python -m unittest discover -s services\ingest\tests -p test_connector_manifest.
 python -m unittest discover -s services\ingest\tests -p test_ingest_cli_connector_manifest.py
 node apps\api\tests\ingest-connector-routes.test.mjs
 node apps\api\tests\ingest-connector-fixture-replay.test.mjs
+node apps\api\tests\ingest-connector-mcp-routes.test.mjs
+node packages\cli\src\index.ts ingest connectors mcp api replay --fixture examples\ingest-search\connector-mcp-api-requests.json
 node apps\api\tests\ingest-fixture-services.test.mjs
 node apps\api\tests\ingest-openapi-routes.test.mjs
 node packages\cli\tests\ingest-connector-api-replay.test.mjs

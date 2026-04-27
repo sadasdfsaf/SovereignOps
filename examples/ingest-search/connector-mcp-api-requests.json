@@ -1,0 +1,541 @@
+{
+  "schemaVersion": "ingest-connector-mcp-api-requests.v1",
+  "generatedAt": "2026-04-27T22:30:00.000Z",
+  "apiBase": "local://ingest-connector-mcp-api",
+  "localOnly": true,
+  "network": {
+    "mode": "disabled",
+    "notes": "Replay these requests through createApiRouter([...createIngestConnectorRoutes(), ...createIngestConnectorMcpRoutes()]) without starting a live server."
+  },
+  "durableWrites": false,
+  "auth": {
+    "mode": "none",
+    "required": false
+  },
+  "requests": [
+    {
+      "id": "mcp_ingest_connector_resources",
+      "title": "Replay local ingest connector MCP resource list",
+      "method": "GET",
+      "path": "/v1/ingest/connectors/mcp/resources",
+      "headers": {
+        "accept": "application/json"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "schemaVersion": "ingest-connector-mcp-resources/v1",
+        "localOnly": true,
+        "noNetwork": true,
+        "durableWrites": false,
+        "metadata": {
+          "localOnly": true,
+          "noNetwork": true,
+          "durableWrites": false
+        },
+        "resources": [
+          {
+            "schemaVersion": "ingest-connector-mcp-resource/v1",
+            "localOnly": true,
+            "noNetwork": true,
+            "durableWrites": false,
+            "metadata": {
+              "localOnly": true,
+              "noNetwork": true,
+              "durableWrites": false
+            },
+            "connectorId": "local.files",
+            "resource": {
+              "uri": "sovereignops://ingest/connectors/local.files",
+              "name": "Ingest Connector: Local Files",
+              "description": "Previews caller-provided local file content for normalization, indexing, and search.",
+              "mimeType": "application/json"
+            },
+            "connector": {
+              "id": "local.files",
+              "label": "Local Files",
+              "description": "Previews caller-provided local file content for normalization, indexing, and search.",
+              "transport": "in-process",
+              "capabilities": [
+                "ingest.normalize",
+                "ingest.structured",
+                "repository.scan",
+                "search.query",
+                "quarantine.preview"
+              ],
+              "mediaTypes": [
+                "text/plain",
+                "text/markdown",
+                "text/csv",
+                "application/json"
+              ],
+              "auth": {
+                "mode": "none",
+                "required": false
+              },
+              "preview": {
+                "dryRun": true,
+                "maxItems": 50,
+                "maxTextBytes": 65536
+              },
+              "safety": {
+                "localOnly": true,
+                "networkAccess": false,
+                "durableWrites": false,
+                "untrustedByDefault": true
+              }
+            },
+            "content": {
+              "uri": "sovereignops://ingest/connectors/local.files",
+              "mimeType": "application/json",
+              "text": "{\"schemaVersion\":\"ingest-connector-mcp-resource-content/v1\",\"localOnly\":true,\"noNetwork\":true,\"durableWrites\":false,\"connector\":{\"id\":\"local.files\",\"label\":\"Local Files\",\"description\":\"Previews caller-provided local file content for normalization, indexing, and search.\",\"transport\":\"in-process\",\"capabilities\":[\"ingest.normalize\",\"ingest.structured\",\"repository.scan\",\"search.query\",\"quarantine.preview\"],\"mediaTypes\":[\"text/plain\",\"text/markdown\",\"text/csv\",\"application/json\"],\"auth\":{\"mode\":\"none\",\"required\":false},\"preview\":{\"dryRun\":true,\"maxItems\":50,\"maxTextBytes\":65536},\"safety\":{\"localOnly\":true,\"networkAccess\":false,\"durableWrites\":false,\"untrustedByDefault\":true}},\"resource\":{\"uri\":\"sovereignops://ingest/connectors/local.files\",\"name\":\"Ingest Connector: Local Files\",\"description\":\"Previews caller-provided local file content for normalization, indexing, and search.\",\"mimeType\":\"application/json\"}}"
+            }
+          },
+          {
+            "schemaVersion": "ingest-connector-mcp-resource/v1",
+            "localOnly": true,
+            "noNetwork": true,
+            "durableWrites": false,
+            "metadata": {
+              "localOnly": true,
+              "noNetwork": true,
+              "durableWrites": false
+            },
+            "connectorId": "local.manual",
+            "resource": {
+              "uri": "sovereignops://ingest/connectors/local.manual",
+              "name": "Ingest Connector: Manual Text",
+              "description": "Accepts pasted or caller-supplied text for local normalization and preview search.",
+              "mimeType": "application/json"
+            },
+            "connector": {
+              "id": "local.manual",
+              "label": "Manual Text",
+              "description": "Accepts pasted or caller-supplied text for local normalization and preview search.",
+              "transport": "in-process",
+              "capabilities": [
+                "ingest.normalize",
+                "ingest.structured",
+                "search.query"
+              ],
+              "mediaTypes": [
+                "text/plain",
+                "text/markdown",
+                "application/json"
+              ],
+              "auth": {
+                "mode": "none",
+                "required": false
+              },
+              "preview": {
+                "dryRun": true,
+                "maxItems": 20,
+                "maxTextBytes": 32768
+              },
+              "safety": {
+                "localOnly": true,
+                "networkAccess": false,
+                "durableWrites": false,
+                "untrustedByDefault": true
+              }
+            },
+            "content": {
+              "uri": "sovereignops://ingest/connectors/local.manual",
+              "mimeType": "application/json",
+              "text": "{\"schemaVersion\":\"ingest-connector-mcp-resource-content/v1\",\"localOnly\":true,\"noNetwork\":true,\"durableWrites\":false,\"connector\":{\"id\":\"local.manual\",\"label\":\"Manual Text\",\"description\":\"Accepts pasted or caller-supplied text for local normalization and preview search.\",\"transport\":\"in-process\",\"capabilities\":[\"ingest.normalize\",\"ingest.structured\",\"search.query\"],\"mediaTypes\":[\"text/plain\",\"text/markdown\",\"application/json\"],\"auth\":{\"mode\":\"none\",\"required\":false},\"preview\":{\"dryRun\":true,\"maxItems\":20,\"maxTextBytes\":32768},\"safety\":{\"localOnly\":true,\"networkAccess\":false,\"durableWrites\":false,\"untrustedByDefault\":true}},\"resource\":{\"uri\":\"sovereignops://ingest/connectors/local.manual\",\"name\":\"Ingest Connector: Manual Text\",\"description\":\"Accepts pasted or caller-supplied text for local normalization and preview search.\",\"mimeType\":\"application/json\"}}"
+            }
+          },
+          {
+            "schemaVersion": "ingest-connector-mcp-resource/v1",
+            "localOnly": true,
+            "noNetwork": true,
+            "durableWrites": false,
+            "metadata": {
+              "localOnly": true,
+              "noNetwork": true,
+              "durableWrites": false
+            },
+            "connectorId": "local.workspace-index",
+            "resource": {
+              "uri": "sovereignops://ingest/connectors/local.workspace-index",
+              "name": "Ingest Connector: Workspace Index",
+              "description": "Queries the in-process local search index without contacting external services.",
+              "mimeType": "application/json"
+            },
+            "connector": {
+              "id": "local.workspace-index",
+              "label": "Workspace Index",
+              "description": "Queries the in-process local search index without contacting external services.",
+              "transport": "in-process",
+              "capabilities": [
+                "search.query",
+                "quarantine.preview"
+              ],
+              "mediaTypes": [
+                "text/plain",
+                "text/markdown",
+                "text/csv",
+                "application/json"
+              ],
+              "auth": {
+                "mode": "none",
+                "required": false
+              },
+              "preview": {
+                "dryRun": true,
+                "maxItems": 100,
+                "maxTextBytes": 16384
+              },
+              "safety": {
+                "localOnly": true,
+                "networkAccess": false,
+                "durableWrites": false,
+                "untrustedByDefault": false
+              }
+            },
+            "content": {
+              "uri": "sovereignops://ingest/connectors/local.workspace-index",
+              "mimeType": "application/json",
+              "text": "{\"schemaVersion\":\"ingest-connector-mcp-resource-content/v1\",\"localOnly\":true,\"noNetwork\":true,\"durableWrites\":false,\"connector\":{\"id\":\"local.workspace-index\",\"label\":\"Workspace Index\",\"description\":\"Queries the in-process local search index without contacting external services.\",\"transport\":\"in-process\",\"capabilities\":[\"search.query\",\"quarantine.preview\"],\"mediaTypes\":[\"text/plain\",\"text/markdown\",\"text/csv\",\"application/json\"],\"auth\":{\"mode\":\"none\",\"required\":false},\"preview\":{\"dryRun\":true,\"maxItems\":100,\"maxTextBytes\":16384},\"safety\":{\"localOnly\":true,\"networkAccess\":false,\"durableWrites\":false,\"untrustedByDefault\":false}},\"resource\":{\"uri\":\"sovereignops://ingest/connectors/local.workspace-index\",\"name\":\"Ingest Connector: Workspace Index\",\"description\":\"Queries the in-process local search index without contacting external services.\",\"mimeType\":\"application/json\"}}"
+            }
+          }
+        ]
+      },
+      "expectedChecks": {
+        "schemaVersion": "ingest-connector-mcp-resources/v1",
+        "localOnly": true,
+        "resourceCount": 3,
+        "connectorIds": [
+          "local.files",
+          "local.manual",
+          "local.workspace-index"
+        ]
+      }
+    },
+    {
+      "id": "mcp_ingest_connector_local_files_resource",
+      "title": "Replay one ingest connector MCP resource",
+      "method": "GET",
+      "path": "/v1/ingest/connectors/mcp/resources/local.files",
+      "headers": {
+        "accept": "application/json"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "schemaVersion": "ingest-connector-mcp-resource/v1",
+        "localOnly": true,
+        "noNetwork": true,
+        "durableWrites": false,
+        "metadata": {
+          "localOnly": true,
+          "noNetwork": true,
+          "durableWrites": false
+        },
+        "resource": {
+          "schemaVersion": "ingest-connector-mcp-resource/v1",
+          "localOnly": true,
+          "noNetwork": true,
+          "durableWrites": false,
+          "metadata": {
+            "localOnly": true,
+            "noNetwork": true,
+            "durableWrites": false
+          },
+          "connectorId": "local.files",
+          "resource": {
+            "uri": "sovereignops://ingest/connectors/local.files",
+            "name": "Ingest Connector: Local Files",
+            "description": "Previews caller-provided local file content for normalization, indexing, and search.",
+            "mimeType": "application/json"
+          },
+          "connector": {
+            "id": "local.files",
+            "label": "Local Files",
+            "description": "Previews caller-provided local file content for normalization, indexing, and search.",
+            "transport": "in-process",
+            "capabilities": [
+              "ingest.normalize",
+              "ingest.structured",
+              "repository.scan",
+              "search.query",
+              "quarantine.preview"
+            ],
+            "mediaTypes": [
+              "text/plain",
+              "text/markdown",
+              "text/csv",
+              "application/json"
+            ],
+            "auth": {
+              "mode": "none",
+              "required": false
+            },
+            "preview": {
+              "dryRun": true,
+              "maxItems": 50,
+              "maxTextBytes": 65536
+            },
+            "safety": {
+              "localOnly": true,
+              "networkAccess": false,
+              "durableWrites": false,
+              "untrustedByDefault": true
+            }
+          },
+          "content": {
+            "uri": "sovereignops://ingest/connectors/local.files",
+            "mimeType": "application/json",
+            "text": "{\"schemaVersion\":\"ingest-connector-mcp-resource-content/v1\",\"localOnly\":true,\"noNetwork\":true,\"durableWrites\":false,\"connector\":{\"id\":\"local.files\",\"label\":\"Local Files\",\"description\":\"Previews caller-provided local file content for normalization, indexing, and search.\",\"transport\":\"in-process\",\"capabilities\":[\"ingest.normalize\",\"ingest.structured\",\"repository.scan\",\"search.query\",\"quarantine.preview\"],\"mediaTypes\":[\"text/plain\",\"text/markdown\",\"text/csv\",\"application/json\"],\"auth\":{\"mode\":\"none\",\"required\":false},\"preview\":{\"dryRun\":true,\"maxItems\":50,\"maxTextBytes\":65536},\"safety\":{\"localOnly\":true,\"networkAccess\":false,\"durableWrites\":false,\"untrustedByDefault\":true}},\"resource\":{\"uri\":\"sovereignops://ingest/connectors/local.files\",\"name\":\"Ingest Connector: Local Files\",\"description\":\"Previews caller-provided local file content for normalization, indexing, and search.\",\"mimeType\":\"application/json\"}}"
+          }
+        }
+      },
+      "expectedChecks": {
+        "schemaVersion": "ingest-connector-mcp-resource/v1",
+        "localOnly": true,
+        "connectorId": "local.files"
+      }
+    },
+    {
+      "id": "mcp_ingest_connector_preview_local_files",
+      "title": "Replay connector id preview without content",
+      "method": "POST",
+      "path": "/v1/ingest/connectors/mcp/preview",
+      "headers": {
+        "accept": "application/json",
+        "content-type": "application/json"
+      },
+      "body": {
+        "connectorId": "local.files",
+        "includeContent": false
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "schemaVersion": "ingest-connector-mcp-preview/v1",
+        "localOnly": true,
+        "noNetwork": true,
+        "durableWrites": false,
+        "dryRun": true,
+        "metadata": {
+          "localOnly": true,
+          "noNetwork": true,
+          "durableWrites": false
+        },
+        "connectorId": "local.files",
+        "resource": {
+          "schemaVersion": "ingest-connector-mcp-resource/v1",
+          "localOnly": true,
+          "noNetwork": true,
+          "durableWrites": false,
+          "metadata": {
+            "localOnly": true,
+            "noNetwork": true,
+            "durableWrites": false
+          },
+          "connectorId": "local.files",
+          "resource": {
+            "uri": "sovereignops://ingest/connectors/local.files",
+            "name": "Ingest Connector: Local Files",
+            "description": "Previews caller-provided local file content for normalization, indexing, and search.",
+            "mimeType": "application/json"
+          },
+          "connector": {
+            "id": "local.files",
+            "label": "Local Files",
+            "description": "Previews caller-provided local file content for normalization, indexing, and search.",
+            "transport": "in-process",
+            "capabilities": [
+              "ingest.normalize",
+              "ingest.structured",
+              "repository.scan",
+              "search.query",
+              "quarantine.preview"
+            ],
+            "mediaTypes": [
+              "text/plain",
+              "text/markdown",
+              "text/csv",
+              "application/json"
+            ],
+            "auth": {
+              "mode": "none",
+              "required": false
+            },
+            "preview": {
+              "dryRun": true,
+              "maxItems": 50,
+              "maxTextBytes": 65536
+            },
+            "safety": {
+              "localOnly": true,
+              "networkAccess": false,
+              "durableWrites": false,
+              "untrustedByDefault": true
+            }
+          },
+          "content": {
+            "uri": "sovereignops://ingest/connectors/local.files",
+            "mimeType": "application/json",
+            "text": ""
+          }
+        },
+        "preview": {
+          "accepted": true,
+          "sideEffects": false,
+          "durableWrites": false,
+          "contentIncluded": false,
+          "contentBytes": 0
+        }
+      },
+      "expectedChecks": {
+        "schemaVersion": "ingest-connector-mcp-preview/v1",
+        "localOnly": true,
+        "connectorId": "local.files",
+        "contentIncluded": false
+      }
+    },
+    {
+      "id": "mcp_ingest_connector_preview_workspace_index_manifest_uri",
+      "title": "Replay resource URI preview with manifest alias",
+      "method": "POST",
+      "path": "/v1/ingest/connectors/mcp/preview",
+      "headers": {
+        "accept": "application/json",
+        "content-type": "application/json"
+      },
+      "body": {
+        "resourceUri": "sovereignops://ingest/connectors/local.workspace-index/manifest",
+        "includeContent": true
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "schemaVersion": "ingest-connector-mcp-preview/v1",
+        "localOnly": true,
+        "noNetwork": true,
+        "durableWrites": false,
+        "dryRun": true,
+        "metadata": {
+          "localOnly": true,
+          "noNetwork": true,
+          "durableWrites": false
+        },
+        "connectorId": "local.workspace-index",
+        "resource": {
+          "schemaVersion": "ingest-connector-mcp-resource/v1",
+          "localOnly": true,
+          "noNetwork": true,
+          "durableWrites": false,
+          "metadata": {
+            "localOnly": true,
+            "noNetwork": true,
+            "durableWrites": false
+          },
+          "connectorId": "local.workspace-index",
+          "resource": {
+            "uri": "sovereignops://ingest/connectors/local.workspace-index",
+            "name": "Ingest Connector: Workspace Index",
+            "description": "Queries the in-process local search index without contacting external services.",
+            "mimeType": "application/json"
+          },
+          "connector": {
+            "id": "local.workspace-index",
+            "label": "Workspace Index",
+            "description": "Queries the in-process local search index without contacting external services.",
+            "transport": "in-process",
+            "capabilities": [
+              "search.query",
+              "quarantine.preview"
+            ],
+            "mediaTypes": [
+              "text/plain",
+              "text/markdown",
+              "text/csv",
+              "application/json"
+            ],
+            "auth": {
+              "mode": "none",
+              "required": false
+            },
+            "preview": {
+              "dryRun": true,
+              "maxItems": 100,
+              "maxTextBytes": 16384
+            },
+            "safety": {
+              "localOnly": true,
+              "networkAccess": false,
+              "durableWrites": false,
+              "untrustedByDefault": false
+            }
+          },
+          "content": {
+            "uri": "sovereignops://ingest/connectors/local.workspace-index",
+            "mimeType": "application/json",
+            "text": "{\"schemaVersion\":\"ingest-connector-mcp-resource-content/v1\",\"localOnly\":true,\"noNetwork\":true,\"durableWrites\":false,\"connector\":{\"id\":\"local.workspace-index\",\"label\":\"Workspace Index\",\"description\":\"Queries the in-process local search index without contacting external services.\",\"transport\":\"in-process\",\"capabilities\":[\"search.query\",\"quarantine.preview\"],\"mediaTypes\":[\"text/plain\",\"text/markdown\",\"text/csv\",\"application/json\"],\"auth\":{\"mode\":\"none\",\"required\":false},\"preview\":{\"dryRun\":true,\"maxItems\":100,\"maxTextBytes\":16384},\"safety\":{\"localOnly\":true,\"networkAccess\":false,\"durableWrites\":false,\"untrustedByDefault\":false}},\"resource\":{\"uri\":\"sovereignops://ingest/connectors/local.workspace-index\",\"name\":\"Ingest Connector: Workspace Index\",\"description\":\"Queries the in-process local search index without contacting external services.\",\"mimeType\":\"application/json\"}}"
+          }
+        },
+        "preview": {
+          "accepted": true,
+          "sideEffects": false,
+          "durableWrites": false,
+          "contentIncluded": true,
+          "contentBytes": 879
+        }
+      },
+      "expectedChecks": {
+        "schemaVersion": "ingest-connector-mcp-preview/v1",
+        "localOnly": true,
+        "connectorId": "local.workspace-index",
+        "contentIncluded": true
+      }
+    },
+    {
+      "id": "mcp_ingest_connector_missing_resource",
+      "title": "Replay missing MCP resource error",
+      "method": "GET",
+      "path": "/v1/ingest/connectors/mcp/resources/local.unknown",
+      "headers": {
+        "accept": "application/json"
+      },
+      "expectedStatus": 404,
+      "expectedBody": {
+        "error": {
+          "code": "ingest_connector_mcp_resource_not_found",
+          "message": "Ingest connector MCP resource was not found.",
+          "details": {
+            "connectorId": "local.unknown"
+          }
+        }
+      },
+      "expectedChecks": {
+        "errorCode": "ingest_connector_mcp_resource_not_found"
+      }
+    },
+    {
+      "id": "mcp_ingest_connector_bad_preview_body",
+      "title": "Replay preview validation error for unknown field",
+      "method": "POST",
+      "path": "/v1/ingest/connectors/mcp/preview",
+      "headers": {
+        "accept": "application/json",
+        "content-type": "application/json"
+      },
+      "body": {
+        "connectorId": "local.files",
+        "includeContent": true,
+        "extraField": "fixture-extra-field"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": {
+          "code": "validation_failed",
+          "message": "Request body contains an unknown field.",
+          "details": {
+            "path": "body.extraField"
+          }
+        }
+      },
+      "expectedChecks": {
+        "errorCode": "validation_failed"
+      }
+    }
+  ]
+}

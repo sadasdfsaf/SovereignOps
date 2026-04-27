@@ -110,6 +110,59 @@ test("previews connector MCP resources as a dry run without side effects", async
   assertNoUnsafeText(response.body);
 });
 
+test("previews MCP resources by resourceUri manifest alias when canonical URI omits it", async () => {
+  const router = createApiRouter(createIngestConnectorMcpRoutes(undefined, {
+    gatewayHelper(input) {
+      const connectors = Array.isArray(input?.connectors)
+        ? input.connectors
+        : input?.manifest?.connectors;
+      if (!Array.isArray(connectors)) {
+        return undefined;
+      }
+
+      return {
+        resources: connectors.map((connector) => ({
+          connectorId: connector.id,
+          uri: `sovereignops://ingest/connectors/${connector.id}`,
+          name: `Alias ${connector.label}`,
+          description: connector.description,
+        })),
+      };
+    },
+  }));
+
+  const byUri = await router.dispatch({
+    method: "POST",
+    path: "/v1/ingest/connectors/mcp/preview",
+    body: {
+      resourceUri: "sovereignops://ingest/connectors/local.workspace-index/manifest",
+      includeContent: false,
+    },
+  });
+  assertJsonResponse(byUri, 200);
+  assert.equal(byUri.body.connectorId, "local.workspace-index");
+  assert.equal(byUri.body.resource.resource.uri, "sovereignops://ingest/connectors/local.workspace-index");
+  assert.equal(byUri.body.preview.contentIncluded, false);
+
+  const byConnectorAndUri = await router.dispatch({
+    method: "POST",
+    path: "/v1/ingest/connectors/mcp/preview",
+    body: {
+      connectorId: "local.workspace-index",
+      resourceUri: "sovereignops://ingest/connectors/local.workspace-index/manifest",
+      includeContent: false,
+    },
+  });
+  assertJsonResponse(byConnectorAndUri, 200);
+  assert.equal(byConnectorAndUri.body.connectorId, "local.workspace-index");
+  assert.equal(
+    byConnectorAndUri.body.resource.resource.uri,
+    "sovereignops://ingest/connectors/local.workspace-index",
+  );
+  assertNoUnsafeText(byUri.body);
+  assertNoUnsafeText(byConnectorAndUri.body);
+});
+
 test("preview validation never echoes raw paths, secrets, or private markers", async () => {
   const router = createApiRouter(createIngestConnectorMcpRoutes(undefined, { gatewayHelper: null }));
   const unsafePath = [["C:", "Users", "DELL"].join("\\"), "connectors.json"].join("\\");

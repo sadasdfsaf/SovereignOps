@@ -52,6 +52,7 @@ EXPECTED_MCP_CONNECTOR_VALUES = (
     "`buildIngestConnectorMcpSections`",
     "`buildIngestConnectorMcpEmptyState`",
     "`getIngestConnectorMcpStatusLabel`",
+    "`examples/ingest-search/connector-mcp-api-requests.json`",
     "`localOnly: true`",
     "`networkAccess: false`",
     "`durableWrites: false`",
@@ -60,6 +61,8 @@ EXPECTED_MCP_CONNECTOR_VALUES = (
 
 EXPECTED_COMMANDS = (
     "node packages\\cli\\src\\index.ts ingest connectors mcp preview --connector markdown-structured --format json",
+    "node packages\\cli\\src\\index.ts ingest connectors mcp api replay --fixture examples\\ingest-search\\connector-mcp-api-requests.json",
+    "node packages\\cli\\src\\index.ts ingest-connector-mcp-api replay --fixture examples\\ingest-search\\connector-mcp-api-requests.json --id mcp_ingest_connector_resources",
 )
 
 
@@ -95,6 +98,10 @@ class AgentGuideDocsTests(unittest.TestCase):
             "emit audit detail",
             "redacted source uri",
             "no-network flag",
+            "mcp api replay fixture",
+            "sdk injected fixture fetch",
+            "web fixture state",
+            "e2e parity",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, self.normalized_lower_text)

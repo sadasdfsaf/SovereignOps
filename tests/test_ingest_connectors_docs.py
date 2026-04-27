@@ -97,6 +97,7 @@ EXPECTED_FILES = (
     "examples/ingest-search/quarantine.json",
     "examples/ingest-search/api-requests.json",
     "examples/ingest-search/connector-api-requests.json",
+    "examples/ingest-search/connector-mcp-api-requests.json",
     "examples/ingest-search/client-session.json",
 )
 
@@ -304,6 +305,8 @@ EXPECTED_COMMANDS = (
     r"node packages\cli\src\index.ts ingest-connector-api replay --fixture examples\ingest-search\connector-api-requests.json --id api_ingest_connectors_manifest",
     r"node packages\cli\src\index.ts ingest connectors mcp preview --connector markdown-structured --format json",
     r"node packages\cli\src\index.ts ingest-connector-mcp preview --connector json-structured --fixture packages\schemas\fixtures\ingest-connector-api-manifest.valid.json --format json",
+    r"node packages\cli\src\index.ts ingest connectors mcp api replay --fixture examples\ingest-search\connector-mcp-api-requests.json",
+    r"node packages\cli\src\index.ts ingest-connector-mcp-api replay --fixture examples\ingest-search\connector-mcp-api-requests.json --id mcp_ingest_connector_resources",
     r"node apps\api\tests\ingest-connector-fixture-replay.test.mjs",
     r"node apps\api\tests\ingest-connector-schema-alignment.test.mjs",
     r"node apps\api\tests\ingest-fixture-services.test.mjs",
@@ -440,6 +443,11 @@ class IngestConnectorDocsTests(unittest.TestCase):
             "approval request for a later durable import",
             "redacted source uri",
             "audit records should include",
+            "ingest-connector-mcp-api-requests.v1",
+            "sdk injected fixture fetch",
+            "web fixture state",
+            "mcp api replay fixture",
+            "e2e parity",
         )
         for phrase in phrases:
             with self.subTest(phrase=phrase):

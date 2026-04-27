@@ -282,6 +282,7 @@ MCP_INGEST_CONNECTOR_RESOURCE_REQUIRED_PATHS: tuple[str, ...] = (
     "packages/sdk-js/tests/ingest-connector-mcp-client.test.mjs",
     "apps/web/src/ingestConnectorMcpState.ts",
     "apps/web/tests/ingest-connector-mcp-state.test.mjs",
+    "examples/ingest-search/connector-mcp-api-requests.json",
 )
 
 INGEST_CONNECTOR_REQUIRED_PATHS: tuple[str, ...] = (
@@ -841,7 +842,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
     ),
     CheckSpec(
         name="ingest-connector-docs",
-        description="Validate ingest connector docs, MCP connector resource parity, MCP API routes, SDK connector fixture harness, connector API E2E parity, OpenAPI/schema alignment, API schema fixtures, Web ingest dashboard state, agent guidance, and local-only release guidance.",
+        description="Validate ingest connector docs, MCP connector resource parity, MCP API routes, MCP API fixture fetch, MCP CLI replay, MCP Web fixture state, MCP E2E parity, SDK connector fixture harness, connector API E2E parity, OpenAPI/schema alignment, API schema fixtures, Web ingest dashboard state, agent guidance, and local-only release guidance.",
         command=(
             PYTHON,
             "-m",

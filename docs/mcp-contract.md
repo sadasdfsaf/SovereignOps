@@ -56,6 +56,16 @@ Preview surfaces share the same public contract:
 
 The preview path is local-only and dry-run by default. Fixture input must be a repository-local JSON file, and resource payloads may only describe `fixture://`, `file://`, `stdin://`, `workspace://`, or `local://` source URIs. The path must not open remote URLs, must not require remote credentials, and must report `localOnly: true`, `networkAccess: false`, `durableWrites: false`, and `dryRun: true` when preview status is present. Preview output is untrusted by default, so rendered content keeps the untrusted markers and callers must not convert preview rows into durable records without a separate approval step.
 
+The route replay fixture for this surface is
+`examples/ingest-search/connector-mcp-api-requests.json`. It uses
+`ingest-connector-mcp-api-requests.v1` and captures local JSON requests for
+`GET /v1/ingest/connectors/mcp/resources`,
+`GET /v1/ingest/connectors/mcp/resources/{connectorId}`, and
+`POST /v1/ingest/connectors/mcp/preview`. SDK fixture fetches, CLI replay,
+Web fixture state, and E2E parity checks should consume that same fixture so
+resource, preview, and validation-error envelopes stay aligned. The resource
+list request id is `mcp_ingest_connector_resources`.
+
 Resource reads and preview calls run through the policy gate with stable metadata such as `metadata.operation: "resources.read"` or `metadata.operation: "ingest.connector.preview"`, `metadata.registryKind: "resource"`, `metadata.connectorId`, `metadata.resourceUri`, and `metadata.dryRun: true`. `require_approval` and `deny` stop before connector execution. Audit rows must include the connector id, resource URI, redacted source URI when supplied, dry-run flag, local-only flag, no-network flag, and the terminal decision.
 
 ## Safe Local Tools
@@ -175,6 +185,8 @@ Fixture replay stays local and deterministic:
 python scripts\validate_mcp_gateway_fixtures.py
 node packages\cli\src\index.ts mcp api replay --fixture examples\mcp-gateway\api-requests.json
 node packages\cli\src\index.ts mcp api replay --fixture examples\mcp-gateway\api-requests.json --method POST --route /v1/mcp/tools/call
+node packages\cli\src\index.ts ingest connectors mcp api replay --fixture examples\ingest-search\connector-mcp-api-requests.json
+node packages\cli\src\index.ts ingest-connector-mcp-api replay --fixture examples\ingest-search\connector-mcp-api-requests.json --id mcp_ingest_connector_resources
 node packages\cli\src\index.ts mcp demo tool --name create_task_proposal --args-json "{\"title\":\"Review untrusted partner note\",\"description\":\"Create a local review task from marked untrusted content.\"}"
 node packages\cli\src\index.ts mcp demo tool --name draft_document_patch --args-json "{\"targetPath\":\"docs/public-note-summary.md\",\"summary\":\"Draft patch from marked untrusted content\",\"patch\":\"Record the requested note summary as a reviewed draft.\"}" --policy-mode require-approval
 node --input-type=module -e "import { createMcpGatewayRuntime } from './services/mcp-gateway/src/index.ts'; const gateway = createMcpGatewayRuntime(); console.log(gateway.listTools().value.tools.map((tool) => tool.name));"

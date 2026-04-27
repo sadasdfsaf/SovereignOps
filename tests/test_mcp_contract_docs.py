@@ -116,6 +116,8 @@ EXPECTED_COMMANDS = (
     "node packages\\cli\\src\\index.ts mcp demo read --uri sovereignops://docs/operator-guide",
     "node packages\\cli\\src\\index.ts mcp demo read --uri sovereignops://audit/policy-trace --policy-mode deny-resource-read --deny-uri sovereignops://audit/policy-trace",
     "node packages\\cli\\src\\index.ts mcp api replay --fixture examples\\mcp-gateway\\api-requests.json --method POST --route /v1/mcp/tools/call",
+    "node packages\\cli\\src\\index.ts ingest connectors mcp api replay --fixture examples\\ingest-search\\connector-mcp-api-requests.json",
+    "node packages\\cli\\src\\index.ts ingest-connector-mcp-api replay --fixture examples\\ingest-search\\connector-mcp-api-requests.json --id mcp_ingest_connector_resources",
     "node packages\\cli\\src\\index.ts mcp demo tool --name create_task_proposal",
     "node packages\\cli\\src\\index.ts mcp demo tool --name create_task_proposal --args-json \"{\\\"title\\\":\\\"Prepare local note summary\\\"}\" --policy-mode require-approval",
     "node packages\\cli\\src\\index.ts mcp api resources --base-url http://127.0.0.1:3000",
@@ -193,6 +195,11 @@ class McpContractDocsTests(unittest.TestCase):
             "approval step",
             "redacted source URI",
             "terminal decision",
+            "`examples/ingest-search/connector-mcp-api-requests.json`",
+            "`ingest-connector-mcp-api-requests.v1`",
+            "`mcp_ingest_connector_resources`",
+            "SDK fixture fetches, CLI replay",
+            "Web fixture state, and E2E parity checks",
         ):
             with self.subTest(value=value):
                 self.assertIn(value, self.text)

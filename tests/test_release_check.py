@@ -618,6 +618,7 @@ class ReleaseCheckTests(unittest.TestCase):
             "packages/schemas/fixtures/ingest-search.valid.json",
             "packages/schemas/fixtures/ingest-search.invalid.json",
             "examples/ingest-search/connector-api-requests.json",
+            "examples/ingest-search/connector-mcp-api-requests.json",
             "docs/openapi.yaml",
             "docs/schema-alignment.md",
             "scripts/validate_openapi.py",
@@ -651,6 +652,10 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("SDK connector fixture harness", docs_check.description)
         self.assertIn("MCP connector resource parity", docs_check.description)
         self.assertIn("MCP API routes", docs_check.description)
+        self.assertIn("MCP API fixture fetch", docs_check.description)
+        self.assertIn("MCP CLI replay", docs_check.description)
+        self.assertIn("MCP Web fixture state", docs_check.description)
+        self.assertIn("MCP E2E parity", docs_check.description)
         self.assertIn("connector API E2E parity", docs_check.description)
         self.assertIn("OpenAPI/schema alignment", docs_check.description)
         self.assertIn("API schema fixtures", docs_check.description)
@@ -678,6 +683,7 @@ class ReleaseCheckTests(unittest.TestCase):
             "packages/sdk-js/tests/ingest-connector-mcp-client.test.mjs",
             "apps/web/src/ingestConnectorMcpState.ts",
             "apps/web/tests/ingest-connector-mcp-state.test.mjs",
+            "examples/ingest-search/connector-mcp-api-requests.json",
         }
         self.assertEqual(expected, required)
         self.assertLessEqual(expected, set(release_check.INGEST_CONNECTOR_REQUIRED_PATHS))
@@ -689,6 +695,10 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("tests.test_validate_openapi_ingest_connector_mcp", docs_check.command)
         self.assertIn("MCP connector resource parity", docs_check.description)
         self.assertIn("MCP API routes", docs_check.description)
+        self.assertIn("MCP API fixture fetch", docs_check.description)
+        self.assertIn("MCP CLI replay", docs_check.description)
+        self.assertIn("MCP Web fixture state", docs_check.description)
+        self.assertIn("MCP E2E parity", docs_check.description)
 
     def test_missing_tools_are_skipped_when_running_available_checks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

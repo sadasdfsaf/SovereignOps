@@ -476,7 +476,7 @@ function findPreviewResource(
       return { ok: false, error: connectorNotFound(request.connectorId) };
     }
 
-    if (request.resourceUri !== undefined && request.resourceUri !== byConnector.resource.uri) {
+    if (request.resourceUri !== undefined && !resourceUriMatchesConnector(request.resourceUri, byConnector)) {
       return {
         ok: false,
         error: validationError("Preview resourceUri does not match connectorId.", {
@@ -488,7 +488,9 @@ function findPreviewResource(
     return { ok: true, value: byConnector };
   }
 
-  const byUri = resources.find((resource) => resource.resource.uri === request.resourceUri);
+  const byUri = resources.find((resource) =>
+    request.resourceUri !== undefined && resourceUriMatchesConnector(request.resourceUri, resource)
+  );
   if (!byUri) {
     return {
       ok: false,
@@ -497,6 +499,17 @@ function findPreviewResource(
   }
 
   return { ok: true, value: byUri };
+}
+
+function resourceUriMatchesConnector(
+  resourceUri: string,
+  resource: IngestConnectorMcpResourceManifest,
+): boolean {
+  if (resourceUri === resource.resource.uri) {
+    return true;
+  }
+
+  return connectorIdFromCandidate({ uri: resourceUri }) === resource.connectorId;
 }
 
 function toPreviewRequest(

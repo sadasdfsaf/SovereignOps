@@ -57,11 +57,15 @@ console.log(workspace.describe(), plan.dryRun);
   `packages/sdk-js/src/ingestConnectorClient.ts`
 - Ingest connector API fixture fetch and harness:
   `packages/sdk-js/src/ingestConnectorFixtureFetch.ts`
+- Ingest connector MCP API client:
+  `packages/sdk-js/src/ingestConnectorMcpClient.ts`
 - Ingest connector guide: `docs/ingest-connectors.md`
 - Ingest API replay fixture:
   `examples/ingest-search/api-requests.json`
 - Ingest connector API replay fixture:
   `examples/ingest-search/connector-api-requests.json`
+- Ingest connector MCP API replay fixture:
+  `examples/ingest-search/connector-mcp-api-requests.json`
 - Focused ingest/search API client test:
   `packages/sdk-js/tests/client-ingest-search.test.mjs`
 - Focused ingest/search fixture fetch test:
@@ -74,6 +78,8 @@ console.log(workspace.describe(), plan.dryRun);
   `packages/sdk-js/tests/ingest-connector-client.test.mjs`
 - Focused connector API fixture fetch test:
   `packages/sdk-js/tests/ingest-connector-fixture-fetch.test.mjs`
+- Focused connector MCP API client test:
+  `packages/sdk-js/tests/ingest-connector-mcp-client.test.mjs`
 - Workspace session retention cleanup API client:
   `packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupApiClient.ts`
 - Workspace session retention cleanup inventory API client:
@@ -258,6 +264,40 @@ manifest helpers, redacts unsafe values in errors, and keeps connector profiles
 untrusted by default. It must not fall back to global fetch or perform live
 network requests.
 
+## Ingest Connector MCP API Client
+
+Use `createIngestConnectorMcpClient` from
+`packages/sdk-js/src/ingestConnectorMcpClient.ts` when callers need the MCP API
+route shape for connector resources and dry-run previews. The client requires
+an injected fetch and exposes `listResources`, `listConnectorResources`,
+`listMcpConnectorResources`, `readResource`, `readConnectorResource`,
+`readMcpConnectorResource`, `preview`, `previewOutput`, and
+`previewManifestResources`.
+
+The MCP fixture fetch for parity tests should replay
+`examples/ingest-search/connector-mcp-api-requests.json` in memory. It should
+match method, route path, and JSON body; record calls for assertions; return
+JSON-only fixture errors for drift; and never fall back to global fetch. The
+same fixture feeds CLI replay, Web fixture state, and E2E parity checks.
+
+```ts
+import { createIngestConnectorMcpClient } from "@sovereignops/sdk-js";
+
+const mcpClient = createIngestConnectorMcpClient({
+  baseUrl: "local://api/v1",
+  apiKey: "[REDACTED]",
+  fetch: connectorMcpFixtureFetch,
+});
+
+const resources = await mcpClient.listResources();
+const preview = await mcpClient.preview({
+  connectorId: "local.files",
+  includeContent: false,
+});
+
+console.log(resources.localOnly, preview.dryRun);
+```
+
 ## Ingest API Fixture Client
 
 Use `packages/sdk-js/src/ingestFixtureFetch.ts` when tests need the SDK API
@@ -306,6 +346,11 @@ Connector manifest replay uses
 `examples/ingest-search/connector-api-requests.json` through the connector API
 client, CLI/API replay tests, and the connector-specific SDK fixture harness in
 `packages/sdk-js/src/ingestConnectorFixtureFetch.ts`.
+
+Connector MCP API replay uses
+`examples/ingest-search/connector-mcp-api-requests.json` through
+`createIngestConnectorMcpClient`, an injected MCP fixture fetch, CLI replay,
+and the Web fixture state builder in `apps/web/src/ingestConnectorMcpState.ts`.
 
 Connector fixture helper names:
 
@@ -665,6 +710,7 @@ node packages\sdk-js\tests\local-ingest.test.mjs
 node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs
 node packages\sdk-js\tests\ingest-connector-client.test.mjs
 node packages\sdk-js\tests\ingest-connector-fixture-fetch.test.mjs
+node packages\sdk-js\tests\ingest-connector-mcp-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention.test.mjs

@@ -132,6 +132,16 @@ Agent-facing preview surfaces:
   `buildIngestConnectorMcpEmptyState`, and
   `getIngestConnectorMcpStatusLabel`.
 
+Fixture replay:
+
+- Use `examples/ingest-search/connector-mcp-api-requests.json` as the shared
+  MCP API replay fixture for route dispatch, CLI replay, SDK injected fixture
+  fetch, Web fixture state, and E2E parity.
+- Run `node packages\cli\src\index.ts ingest connectors mcp api replay --fixture examples\ingest-search\connector-mcp-api-requests.json`
+  for the local replay surface.
+- Run `node packages\cli\src\index.ts ingest-connector-mcp-api replay --fixture examples\ingest-search\connector-mcp-api-requests.json --id mcp_ingest_connector_resources`
+  when checking the resource-list fixture case.
+
 Preview rules:
 
 - Keep the preview local-only, no-network, and dry-run.
