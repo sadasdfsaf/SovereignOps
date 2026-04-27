@@ -28,6 +28,7 @@ export interface SyncRouteHandlers {
 
 export interface SyncRoutesOptions {
   basePath?: string;
+  pathStyle?: "legacy" | "openapi";
 }
 
 export function createSyncRoutes(
@@ -35,32 +36,33 @@ export function createSyncRoutes(
   options: SyncRoutesOptions = {},
 ): readonly ApiRoute[] {
   const basePath = normalizeBasePath(options.basePath ?? "/sync");
+  const paths = syncRoutePaths(options.pathStyle ?? "legacy");
 
   return [
     {
       method: "GET",
-      path: joinPath(basePath, "health"),
+      path: joinPath(basePath, paths.health),
       description: "Reports sync service readiness.",
       handler: async ({ request }) =>
         toApiResponse(await handlers.health(toSyncRequest(request.body, request.headers))),
     },
     {
       method: "POST",
-      path: joinPath(basePath, "upload"),
+      path: joinPath(basePath, paths.upload),
       description: "Accepts a sync upload bundle.",
       handler: async ({ request }) =>
         toApiResponse(await handlers.uploadBundle(toSyncRequest(request.body, request.headers))),
     },
     {
       method: "POST",
-      path: joinPath(basePath, "download"),
+      path: joinPath(basePath, paths.download),
       description: "Returns a sync download window.",
       handler: async ({ request }) =>
         toApiResponse(await handlers.downloadBundle(toSyncRequest(request.body, request.headers))),
     },
     {
       method: "POST",
-      path: joinPath(basePath, "cursor"),
+      path: joinPath(basePath, paths.cursorStatus),
       description: "Reports sync cursor status.",
       handler: async ({ request }) =>
         toApiResponse(await handlers.cursorStatus(toSyncRequest(request.body, request.headers))),
@@ -112,4 +114,27 @@ function normalizeBasePath(path: string): string {
 
 function joinPath(basePath: string, suffix: string): string {
   return `${basePath}/${suffix}`;
+}
+
+function syncRoutePaths(style: "legacy" | "openapi"): {
+  health: string;
+  upload: string;
+  download: string;
+  cursorStatus: string;
+} {
+  if (style === "openapi") {
+    return {
+      health: "health",
+      upload: "bundles",
+      download: "download",
+      cursorStatus: "cursor-status",
+    };
+  }
+
+  return {
+    health: "health",
+    upload: "upload",
+    download: "download",
+    cursorStatus: "cursor",
+  };
 }

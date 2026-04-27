@@ -1,6 +1,7 @@
 export type ToolAuditEventType =
   | "tool_call_requested"
   | "tool_call_approved"
+  | "tool_call_approval_required"
   | "tool_call_denied"
   | "tool_call_executed";
 
@@ -50,6 +51,7 @@ const DEFAULT_SENSITIVE_NAMES = [
 ];
 
 const DEFAULT_SENSITIVE_VALUES = [
+  /\b[A-Za-z0-9_-]*(?:password|passphrase|secret|token|api[-_]?key|access[-_]?key|credential|authorization|cookie|session|private[-_]?key)[A-Za-z0-9_-]*\s*[:=]\s*\S+/i,
   /-----BEGIN [A-Z ]*PRIVATE KEY-----/,
   /\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{8,}\b/i,
   /\bsk-[A-Za-z0-9_-]{8,}\b/i,

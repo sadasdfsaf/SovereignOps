@@ -22,6 +22,7 @@ def make_release_root(root: Path) -> None:
         "scripts/validate_openapi.py",
         "scripts/node-check.mjs",
         "docs/openapi.yaml",
+        "docs/local-data-lifecycle.md",
         "docs/security-checklist.md",
         "docs/dependency-review.md",
         "docs/fuzzing.md",
@@ -37,13 +38,14 @@ class ReleaseCheckTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             make_release_root(root)
-            available = {"node": "node-bin", "cargo": "cargo-bin"}
+            available = {"node": "node-bin", "npm": "npm-bin", "cargo": "cargo-bin"}
 
             checks = release_check.discover_checks(root, available.get)
 
         by_name = {check.spec.name: check for check in checks}
         self.assertTrue(by_name["python-tests"].available)
         self.assertTrue(by_name["node-package-baseline"].available)
+        self.assertTrue(by_name["npm-workspace-check"].available)
         self.assertTrue(by_name["cargo-check"].available)
         self.assertFalse(by_name["pnpm-workspace-check"].available)
         self.assertEqual(by_name["pnpm-workspace-check"].missing_tool, "pnpm")
@@ -115,6 +117,7 @@ class ReleaseCheckTests(unittest.TestCase):
         called_names = {command[0] for command in calls}
         self.assertEqual(exit_code, 0)
         self.assertNotIn("node", called_names)
+        self.assertNotIn("npm", called_names)
         self.assertNotIn("cargo", called_names)
         self.assertNotIn("pnpm", called_names)
         self.assertIn("[skip] node-package-baseline: missing tool: node", output.getvalue())

@@ -177,9 +177,52 @@ export function jsonError(
   message: string,
   details?: Readonly<Record<string, unknown>>,
 ): ApiResponse<ApiErrorBody> {
+  const redactedMessage = redactSensitiveValue(message) as string;
+  const redactedDetails = details === undefined
+    ? undefined
+    : redactSensitiveValue(details) as Readonly<Record<string, unknown>>;
+
   return jsonResponse(status, {
-    error: details === undefined ? { code, message } : { code, message, details },
+    error: redactedDetails === undefined
+      ? { code, message: redactedMessage }
+      : { code, message: redactedMessage, details: redactedDetails },
   });
+}
+
+const SENSITIVE_FIELD_PATTERN = /(?:authorization|api[-_]?key|apikey|credential|password|passphrase|secret|session|token)/i;
+const SENSITIVE_TEXT_PATTERNS = [
+  /\b((?:api[-_]?key|apikey|authorization|credential|password|passphrase|secret|session|token)\s*[:=]\s*)[^\s,;]+/gi,
+  /\b(?:sk|pk|tok|pat)_[A-Za-z0-9_-]{8,}\b/g,
+];
+
+function redactSensitiveValue(value: unknown, key?: string): unknown {
+  if (key && SENSITIVE_FIELD_PATTERN.test(key)) {
+    return "[REDACTED]";
+  }
+
+  if (typeof value === "string") {
+    return SENSITIVE_TEXT_PATTERNS.reduce(
+      (redacted, pattern) => redacted.replace(pattern, (match, prefix) =>
+        typeof prefix === "string" ? `${prefix}[REDACTED]` : "[REDACTED]",
+      ),
+      value,
+    );
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => redactSensitiveValue(item));
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([entryKey, entryValue]) => [
+        entryKey,
+        redactSensitiveValue(entryValue, entryKey),
+      ]),
+    );
+  }
+
+  return value;
 }
 
 function normalizeRoute(route: ApiRoute): RegisteredRoute {

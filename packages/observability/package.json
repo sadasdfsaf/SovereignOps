@@ -1,0 +1,11 @@
+{
+  "name": "@sovereignops/observability",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "check": "node ../../scripts/node-check.mjs --package && node tests/observability.test.mjs",
+    "test": "node tests/observability.test.mjs"
+  }
+}

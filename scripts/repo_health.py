@@ -43,12 +43,21 @@ REQUIRED_PATHS = [
     "docs/plugin-development.md",
     "docs/desktop-architecture.md",
     "docs/example-workspace.md",
+    "docs/local-data-lifecycle.md",
     "docs/security-checklist.md",
     "docs/dependency-review.md",
     "docs/fuzzing.md",
     "docs/adr/000-template.md",
     "docs/adr/001-local-first-event-model.md",
     "scripts/validate_openapi.py",
+    "benchmarks/harness.py",
+    "benchmarks/cases.py",
+    "packages/workspace-store/package.json",
+    "packages/workspace-store/src/index.ts",
+    "packages/workspace-backup/package.json",
+    "packages/workspace-backup/src/index.ts",
+    "packages/observability/package.json",
+    "packages/observability/src/index.ts",
 ]
 
 OPTIONAL_COMMANDS = {

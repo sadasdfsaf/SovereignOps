@@ -84,6 +84,7 @@ export interface McpRouteDependencies {
 
 export interface McpRoutesOptions {
   basePath?: string;
+  pathStyle?: "legacy" | "openapi";
 }
 
 export function createMcpRoutes(
@@ -91,11 +92,12 @@ export function createMcpRoutes(
   options: McpRoutesOptions = {},
 ): readonly ApiRoute[] {
   const basePath = normalizeBasePath(options.basePath ?? "/mcp");
+  const paths = mcpRoutePaths(options.pathStyle ?? "legacy");
 
   return [
     {
       method: "GET",
-      path: joinPath(basePath, "resources"),
+      path: joinPath(basePath, paths.resources),
       description: "Lists MCP resources allowed by injected access rules.",
       handler: async ({ request }) => {
         const context = toRouteContext(request.body, request.actorId);
@@ -110,7 +112,7 @@ export function createMcpRoutes(
     },
     {
       method: "POST",
-      path: joinPath(basePath, "resources/read"),
+      path: joinPath(basePath, paths.resourceRead),
       description: "Reads an MCP resource through injected access rules.",
       handler: async ({ request }) => {
         const body = asRecord(request.body);
@@ -135,7 +137,7 @@ export function createMcpRoutes(
     },
     {
       method: "POST",
-      path: joinPath(basePath, "tools/execute-preview"),
+      path: joinPath(basePath, paths.toolExecute),
       description: "Previews safe local tool execution.",
       handler: async ({ request }) => {
         const previewRequest = toToolPreviewRequest(request.body, request.actorId);
@@ -399,6 +401,26 @@ function normalizeBasePath(path: string): string {
 
 function joinPath(basePath: string, suffix: string): string {
   return `${basePath}/${suffix}`;
+}
+
+function mcpRoutePaths(style: "legacy" | "openapi"): {
+  resources: string;
+  resourceRead: string;
+  toolExecute: string;
+} {
+  if (style === "openapi") {
+    return {
+      resources: "resources",
+      resourceRead: "resources/read",
+      toolExecute: "tools/execute",
+    };
+  }
+
+  return {
+    resources: "resources",
+    resourceRead: "resources/read",
+    toolExecute: "tools/execute-preview",
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

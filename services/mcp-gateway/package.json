@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package && node tests/gateway.test.mjs && node tests/resources-adapter.test.mjs && node tests/tools-audit.test.mjs && node tests/security-contracts.test.mjs",
-    "test": "node tests/gateway.test.mjs && node tests/resources-adapter.test.mjs && node tests/tools-audit.test.mjs && node tests/security-contracts.test.mjs"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/gateway.test.mjs && node tests/resources-adapter.test.mjs && node tests/tools-audit.test.mjs && node tests/security-contracts.test.mjs && node tests/prompt-injection-fixtures.test.mjs",
+    "test": "node tests/gateway.test.mjs && node tests/resources-adapter.test.mjs && node tests/tools-audit.test.mjs && node tests/security-contracts.test.mjs && node tests/prompt-injection-fixtures.test.mjs"
   }
 }

@@ -1,0 +1,11 @@
+{
+  "name": "@sovereignops/workspace-store",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "check": "node ../../scripts/node-check.mjs --package && node tests/migrations.test.mjs",
+    "test": "node tests/migrations.test.mjs"
+  }
+}

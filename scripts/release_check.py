@@ -55,6 +55,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
         command=(PYTHON, "scripts/repo_health.py", "--json"),
         required_paths=(
             "scripts/repo_health.py",
+            "docs/local-data-lifecycle.md",
             "docs/security-checklist.md",
             "docs/dependency-review.md",
             "docs/fuzzing.md",
@@ -92,6 +93,13 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
         tool_candidates=("node",),
     ),
     CheckSpec(
+        name="npm-workspace-check",
+        description="Run workspace package checks with npm when it is installed.",
+        command=("npm", "run", "check", "--workspaces", "--if-present"),
+        required_paths=("package.json",),
+        tool_candidates=("npm", "npm.cmd"),
+    ),
+    CheckSpec(
         name="cargo-check",
         description="Run Rust workspace type and lint checks when Cargo is installed.",
         command=("cargo", "check", "--workspace"),
@@ -126,12 +134,21 @@ def discover_checks(root: Path, tool_resolver: ToolResolver = which) -> list[Dis
     for spec in CHECK_SPECS:
         missing_paths = tuple(path for path in spec.required_paths if not (root / path).exists())
         missing_tool = None
-        if spec.tool_candidates and not any(tool_resolver(candidate) for candidate in spec.tool_candidates):
-            missing_tool = spec.tool_candidates[0]
+        resolved_tool = None
+        if spec.tool_candidates:
+            resolved_tool = next(
+                (resolved for candidate in spec.tool_candidates if (resolved := tool_resolver(candidate))),
+                None,
+            )
+            if resolved_tool is None:
+                missing_tool = spec.tool_candidates[0]
+        command = _resolve_command(spec.command)
+        if resolved_tool is not None and command[0] in spec.tool_candidates:
+            command = (resolved_tool, *command[1:])
         checks.append(
             DiscoveredCheck(
                 spec=spec,
-                command=_resolve_command(spec.command),
+                command=command,
                 missing_paths=missing_paths,
                 missing_tool=missing_tool,
             )
