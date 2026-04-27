@@ -14,6 +14,7 @@ tags:
   - name: sync
   - name: mcp
   - name: lifecycle
+  - name: local-events
   - name: observability
   - name: ingest
   - name: search
@@ -713,6 +714,299 @@ paths:
           $ref: "#/components/responses/IngestEvidenceError"
         default:
           $ref: "#/components/responses/IngestEvidenceError"
+  /v1/local-events/catalog:
+    get:
+      tags:
+        - local-events
+      summary: Return a canonical local event catalog.
+      description: Local-only catalog preview. Callers may provide an inline catalog or a workspace-local JSON catalog path; the route does not call network services.
+      operationId: getLocalEventCatalog
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocalEventCatalogRequest"
+            examples:
+              workspaceCatalog:
+                summary: Read the default workspace fixture catalog.
+                value:
+                  catalogPath: packages/schemas/fixtures/canonical-events.valid.json
+      responses:
+        "200":
+          description: Canonical local event catalog.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanonicalLocalEventCatalog"
+              examples:
+                catalog:
+                  value:
+                    schemaVersion: canonical-local-event-catalog/v1
+                    generatedAt: "2026-04-27T12:30:00.000Z"
+                    workspaceId: wsp_local_catalog
+                    localOnly: true
+                    events:
+                      - schemaVersion: canonical-local-event/v1
+                        id: evt_catalog_001
+                        workspaceId: wsp_local_catalog
+                        actorId: act_local_author
+                        sequence: 1
+                        occurredAt: "2026-04-27T12:00:00.000Z"
+                        recordedAt: "2026-04-27T12:00:01.000Z"
+                        localOnly: true
+                        operation: append
+                        payload:
+                          schemaKind: docs
+                          recordId: doc_support_handoff
+                          summary: Create support handoff note.
+                          afterDigest: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                        payloadDigest: 52cadbd6440da90efd2e528ac78ab86dc071b86df9be93df23ed9fa9c5d8bf0a
+                        previousDigest: null
+                        redactionMetadata:
+                          redacted: true
+                          redactedFieldCount: 1
+                          redactedPaths:
+                            - payload.after.body
+                          retainedMetadataKeys:
+                            - operation
+                            - recordId
+                            - schemaKind
+        "400":
+          $ref: "#/components/responses/ApiError"
+        default:
+          $ref: "#/components/responses/ApiError"
+  /v1/local-events/summary:
+    get:
+      tags:
+        - local-events
+      summary: Summarize a canonical local event catalog.
+      description: Local-only summary preview for an inline catalog or workspace-local JSON catalog path.
+      operationId: summarizeLocalEventCatalog
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocalEventCatalogRequest"
+            examples:
+              workspaceCatalog:
+                value:
+                  catalogPath: packages/schemas/fixtures/canonical-events.valid.json
+      responses:
+        "200":
+          description: Local event catalog counts and replay selectors.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalEventCatalogSummary"
+              examples:
+                summary:
+                  value:
+                    workspaceId: wsp_local_catalog
+                    generatedAt: "2026-04-27T12:30:00.000Z"
+                    eventCount: 5
+                    firstSequence: 1
+                    lastSequence: 5
+                    firstRecordedAt: "2026-04-27T12:00:01.000Z"
+                    lastRecordedAt: "2026-04-27T12:20:01.000Z"
+                    redactedEventCount: 3
+                    redactedFieldCount: 3
+                    operations:
+                      append: 2
+                      update: 1
+                      delete: 0
+                      approval_requested: 1
+                      approval_approved: 0
+                      approval_rejected: 1
+                    schemaKinds:
+                      docs: 2
+                      projects: 0
+                      incidents: 0
+                      comments: 1
+                      attachments: 0
+                      approvals: 2
+                    operationSchemaKinds:
+                      - operation: append
+                        schemaKind: docs
+                        count: 1
+                    actorIds:
+                      - act_local_author
+                      - act_local_reviewer
+                    recordIds:
+                      - apv_support_handoff
+                      - cmt_support_review
+                      - doc_support_handoff
+        "400":
+          $ref: "#/components/responses/ApiError"
+        default:
+          $ref: "#/components/responses/ApiError"
+  /v1/local-events/replay-batches:
+    get:
+      tags:
+        - local-events
+      summary: Build deterministic replay batches for a local event catalog.
+      description: Local-only replay batch preview. Replay options may be supplied at the request root or under the replay object.
+      operationId: getLocalEventReplayBatches
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocalEventReplayBatchesRequest"
+            examples:
+              filteredReplay:
+                value:
+                  catalogPath: packages/schemas/fixtures/canonical-events.valid.json
+                  batchSize: 2
+                  schemaKinds:
+                    - docs
+      responses:
+        "200":
+          description: Deterministic replay batches with canonical event bodies.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalEventReplayBatchesResponse"
+              examples:
+                replayBatches:
+                  value:
+                    batches:
+                      - batchId: local_event_replay_001_4_5_00abc12
+                        batchIndex: 1
+                        eventCount: 2
+                        firstSequence: 4
+                        lastSequence: 5
+                        firstEventId: evt_catalog_004
+                        lastEventId: evt_catalog_005
+                        previousDigest: be28b6c6252aeefd3759593dcdea5adc72a1b0cace659c66bffd4cd5d42efa35
+                        finalDigest: a875d09c6cb2a44dd60c1becda474949418e9275e4901d1649958fa78c72c0cf
+                        operations:
+                          append: 0
+                          update: 0
+                          delete: 0
+                          approval_requested: 1
+                          approval_approved: 0
+                          approval_rejected: 1
+                        schemaKinds:
+                          docs: 0
+                          projects: 0
+                          incidents: 0
+                          comments: 0
+                          attachments: 0
+                          approvals: 2
+                        events:
+                          - schemaVersion: canonical-local-event/v1
+                            id: evt_catalog_004
+                            workspaceId: wsp_local_catalog
+                            actorId: act_local_author
+                            sequence: 4
+                            occurredAt: "2026-04-27T12:15:00.000Z"
+                            recordedAt: "2026-04-27T12:15:01.000Z"
+                            localOnly: true
+                            operation: approval_requested
+                            payload:
+                              schemaKind: approvals
+                              recordId: apv_support_handoff
+                              targetId: doc_support_handoff
+                              summary: Request approval for support handoff.
+                              approvalId: apv_support_handoff
+                              approvalStatus: requested
+                              afterDigest: dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+                            payloadDigest: 1267bcd39fdffa627bd7d92cdfbcf04ac17b691ac27315afad59499c7da0da48
+                            previousDigest: be28b6c6252aeefd3759593dcdea5adc72a1b0cace659c66bffd4cd5d42efa35
+                            redactionMetadata:
+                              redacted: false
+                              redactedFieldCount: 0
+                              redactedPaths: []
+                              retainedMetadataKeys:
+                                - approvalStatus
+                                - operation
+                                - recordId
+                                - schemaKind
+        "400":
+          $ref: "#/components/responses/ApiError"
+        default:
+          $ref: "#/components/responses/ApiError"
+  /v1/local-events/replay-export:
+    post:
+      tags:
+        - local-events
+      summary: Preview a local event replay export.
+      description: Local preview shape derived from the catalog replay export package; callers provide an inline catalog or workspace-local catalog path.
+      operationId: exportLocalEventReplay
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocalEventReplayExportRequest"
+            examples:
+              packageExport:
+                value:
+                  format: package
+                  catalogPath: examples/local-events/catalog.json
+                  replay:
+                    batchSize: 3
+                    startSequence: 1
+                    endSequence: 5
+      responses:
+        "200":
+          description: Replay export content with manifest metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalEventReplayExportResponse"
+              examples:
+                packageExport:
+                  value:
+                    format: package
+                    mediaType: application/json
+                    content: "{\"kind\":\"local-events.catalog-replay-export.package\",\"version\":1}\n"
+                    descriptor:
+                      mediaType: application/json
+                      bytes: 68
+                      fingerprint: local_replay_descriptor_digest_001
+                      packageFingerprint: local_replay_package_digest_001
+                    manifest:
+                      kind: local-events.catalog-replay-export.manifest
+                      version: 1
+                      format: package
+                      generatedAt: "2026-04-27T12:31:00.000Z"
+                      workspaceId: wsp_local_catalog
+                      source:
+                        catalogPath: examples/local-events/catalog.json
+                      filters: {}
+                      totalEvents: 5
+                      replayedEvents: 5
+                      recordCount: 5
+                      terminalDigest: a875d09c6cb2a44dd60c1becda474949418e9275e4901d1649958fa78c72c0cf
+                      firstSequence: 1
+                      lastSequence: 5
+                      operations:
+                        append: 2
+                        update: 1
+                        delete: 0
+                        approval_requested: 1
+                        approval_approved: 0
+                        approval_rejected: 1
+                      schemaKinds:
+                        docs: 2
+                        projects: 0
+                        incidents: 0
+                        comments: 1
+                        attachments: 0
+                        approvals: 2
+                      redactedEvents: 3
+                      content:
+                        mediaType: application/json
+                        bytes: 68
+                        fingerprint: local_replay_descriptor_digest_001
+                      fingerprint: local_replay_manifest_digest_001
+        "400":
+          $ref: "#/components/responses/ApiError"
+        default:
+          $ref: "#/components/responses/ApiError"
   /v1/search/query:
     post:
       tags:
@@ -1086,6 +1380,21 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/IngestEvidenceErrorResponse"
+    ApiError:
+      description: Standard API error envelope.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+          examples:
+            badRequest:
+              value:
+                schemaVersion: api-error/v1
+                error:
+                  code: bad_request
+                  status: 400
+                  message: Request body must be an object.
+                  requestId: req_local_events_00000001
   schemas:
     WorkspaceId:
       type: string
@@ -3798,6 +4107,633 @@ components:
         error:
           $ref: "#/components/schemas/IngestEvidenceErrorBody"
       additionalProperties: false
+    LocalEventOperation:
+      type: string
+      enum:
+        - append
+        - update
+        - delete
+        - approval_requested
+        - approval_approved
+        - approval_rejected
+    LocalEventSchemaKind:
+      type: string
+      enum:
+        - docs
+        - projects
+        - incidents
+        - comments
+        - attachments
+        - approvals
+    LocalEventApprovalStatus:
+      type: string
+      enum:
+        - requested
+        - approved
+        - rejected
+    LocalEventApprovalDecision:
+      type: string
+      enum:
+        - approved
+        - rejected
+    LocalEventSha256Digest:
+      type: string
+      pattern: "^[a-f0-9]{64}$"
+    LocalEventNullableSha256Digest:
+      type:
+        - string
+        - "null"
+      pattern: "^[a-f0-9]{64}$"
+    LocalEventSharedRecordId:
+      type: string
+      pattern: "^(?:doc|prj|inc|cmt|att|apv)_[A-Za-z0-9_-]{1,88}$"
+    LocalEventPathRef:
+      type: string
+      minLength: 1
+      pattern: "^[A-Za-z][A-Za-z0-9_.\\[\\]-]{0,191}$"
+    LocalEventOperationSelector:
+      oneOf:
+        - $ref: "#/components/schemas/LocalEventOperation"
+        - type: array
+          items:
+            $ref: "#/components/schemas/LocalEventOperation"
+    LocalEventSchemaKindSelector:
+      oneOf:
+        - $ref: "#/components/schemas/LocalEventSchemaKind"
+        - type: array
+          items:
+            $ref: "#/components/schemas/LocalEventSchemaKind"
+    CanonicalLocalEventPayload:
+      type: object
+      required:
+        - schemaKind
+        - recordId
+        - summary
+      properties:
+        schemaKind:
+          $ref: "#/components/schemas/LocalEventSchemaKind"
+        recordId:
+          $ref: "#/components/schemas/LocalEventSharedRecordId"
+        targetId:
+          $ref: "#/components/schemas/LocalEventSharedRecordId"
+        summary:
+          type: string
+          minLength: 1
+        beforeDigest:
+          $ref: "#/components/schemas/LocalEventSha256Digest"
+        afterDigest:
+          $ref: "#/components/schemas/LocalEventSha256Digest"
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocalEventPathRef"
+        approvalId:
+          type: string
+          pattern: "^apv_[A-Za-z0-9_-]{1,88}$"
+        approvalStatus:
+          $ref: "#/components/schemas/LocalEventApprovalStatus"
+        decision:
+          $ref: "#/components/schemas/LocalEventApprovalDecision"
+      additionalProperties: false
+    CanonicalLocalEventRedactionMetadata:
+      type: object
+      required:
+        - redacted
+        - redactedFieldCount
+        - redactedPaths
+        - retainedMetadataKeys
+      properties:
+        redacted:
+          type: boolean
+        redactedFieldCount:
+          type: integer
+          minimum: 0
+        redactedPaths:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocalEventPathRef"
+        retainedMetadataKeys:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            pattern: "^[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+      additionalProperties: false
+    CanonicalLocalEvent:
+      type: object
+      required:
+        - schemaVersion
+        - id
+        - workspaceId
+        - actorId
+        - sequence
+        - occurredAt
+        - recordedAt
+        - localOnly
+        - operation
+        - payload
+        - payloadDigest
+        - previousDigest
+        - redactionMetadata
+      properties:
+        schemaVersion:
+          type: string
+          const: canonical-local-event/v1
+        id:
+          type: string
+          pattern: "^evt_[A-Za-z0-9_-]{1,88}$"
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        actorId:
+          $ref: "#/components/schemas/ActorId"
+        sequence:
+          type: integer
+          minimum: 1
+        occurredAt:
+          type: string
+          format: date-time
+        recordedAt:
+          type: string
+          format: date-time
+        localOnly:
+          type: boolean
+          const: true
+        operation:
+          $ref: "#/components/schemas/LocalEventOperation"
+        payload:
+          $ref: "#/components/schemas/CanonicalLocalEventPayload"
+        payloadDigest:
+          $ref: "#/components/schemas/LocalEventSha256Digest"
+        previousDigest:
+          $ref: "#/components/schemas/LocalEventNullableSha256Digest"
+        redactionMetadata:
+          $ref: "#/components/schemas/CanonicalLocalEventRedactionMetadata"
+      additionalProperties: false
+    CanonicalLocalEventCatalog:
+      type: object
+      required:
+        - schemaVersion
+        - generatedAt
+        - workspaceId
+        - localOnly
+        - events
+      properties:
+        schemaVersion:
+          type: string
+          const: canonical-local-event-catalog/v1
+        generatedAt:
+          type: string
+          format: date-time
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        localOnly:
+          type: boolean
+          const: true
+        events:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CanonicalLocalEvent"
+      additionalProperties: false
+    LocalEventCatalogInput:
+      oneOf:
+        - $ref: "#/components/schemas/CanonicalLocalEventCatalog"
+        - type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CanonicalLocalEvent"
+    LocalEventCatalogRequest:
+      type: object
+      properties:
+        catalog:
+          $ref: "#/components/schemas/LocalEventCatalogInput"
+        catalogPath:
+          type: string
+          minLength: 1
+          description: Workspace-local JSON path for a canonical local event catalog.
+      additionalProperties: true
+    LocalEventReplayOptions:
+      type: object
+      properties:
+        batchSize:
+          type: integer
+          minimum: 1
+        startSequence:
+          type: integer
+          minimum: 1
+        endSequence:
+          type: integer
+          minimum: 1
+        operation:
+          $ref: "#/components/schemas/LocalEventOperationSelector"
+        operations:
+          $ref: "#/components/schemas/LocalEventOperationSelector"
+        schemaKind:
+          $ref: "#/components/schemas/LocalEventSchemaKindSelector"
+        schemaKinds:
+          $ref: "#/components/schemas/LocalEventSchemaKindSelector"
+      additionalProperties: true
+    LocalEventReplayBatchesRequest:
+      type: object
+      properties:
+        catalog:
+          $ref: "#/components/schemas/LocalEventCatalogInput"
+        catalogPath:
+          type: string
+          minLength: 1
+        replay:
+          $ref: "#/components/schemas/LocalEventReplayOptions"
+        batchSize:
+          type: integer
+          minimum: 1
+        startSequence:
+          type: integer
+          minimum: 1
+        endSequence:
+          type: integer
+          minimum: 1
+        operation:
+          $ref: "#/components/schemas/LocalEventOperationSelector"
+        operations:
+          $ref: "#/components/schemas/LocalEventOperationSelector"
+        schemaKind:
+          $ref: "#/components/schemas/LocalEventSchemaKindSelector"
+        schemaKinds:
+          $ref: "#/components/schemas/LocalEventSchemaKindSelector"
+      additionalProperties: true
+    LocalEventOperationCounts:
+      type: object
+      required:
+        - append
+        - update
+        - delete
+        - approval_requested
+        - approval_approved
+        - approval_rejected
+      properties:
+        append:
+          type: integer
+          minimum: 0
+        update:
+          type: integer
+          minimum: 0
+        delete:
+          type: integer
+          minimum: 0
+        approval_requested:
+          type: integer
+          minimum: 0
+        approval_approved:
+          type: integer
+          minimum: 0
+        approval_rejected:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    LocalEventSchemaKindCounts:
+      type: object
+      required:
+        - docs
+        - projects
+        - incidents
+        - comments
+        - attachments
+        - approvals
+      properties:
+        docs:
+          type: integer
+          minimum: 0
+        projects:
+          type: integer
+          minimum: 0
+        incidents:
+          type: integer
+          minimum: 0
+        comments:
+          type: integer
+          minimum: 0
+        attachments:
+          type: integer
+          minimum: 0
+        approvals:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    LocalEventOperationSchemaKindSummary:
+      type: object
+      required:
+        - operation
+        - schemaKind
+        - count
+      properties:
+        operation:
+          $ref: "#/components/schemas/LocalEventOperation"
+        schemaKind:
+          $ref: "#/components/schemas/LocalEventSchemaKind"
+        count:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    LocalEventCatalogSummary:
+      type: object
+      required:
+        - eventCount
+        - redactedEventCount
+        - redactedFieldCount
+        - operations
+        - schemaKinds
+        - operationSchemaKinds
+        - actorIds
+        - recordIds
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        generatedAt:
+          type: string
+          format: date-time
+        eventCount:
+          type: integer
+          minimum: 0
+        firstSequence:
+          type: integer
+          minimum: 1
+        lastSequence:
+          type: integer
+          minimum: 1
+        firstRecordedAt:
+          type: string
+          format: date-time
+        lastRecordedAt:
+          type: string
+          format: date-time
+        redactedEventCount:
+          type: integer
+          minimum: 0
+        redactedFieldCount:
+          type: integer
+          minimum: 0
+        operations:
+          $ref: "#/components/schemas/LocalEventOperationCounts"
+        schemaKinds:
+          $ref: "#/components/schemas/LocalEventSchemaKindCounts"
+        operationSchemaKinds:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocalEventOperationSchemaKindSummary"
+        actorIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActorId"
+        recordIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocalEventSharedRecordId"
+      additionalProperties: false
+    LocalEventReplayBatch:
+      type: object
+      required:
+        - batchId
+        - batchIndex
+        - eventCount
+        - firstSequence
+        - lastSequence
+        - firstEventId
+        - lastEventId
+        - previousDigest
+        - finalDigest
+        - operations
+        - schemaKinds
+        - events
+      properties:
+        batchId:
+          type: string
+          pattern: "^local_event_replay_[0-9]{3}_[0-9]+_[0-9]+_[a-z0-9]+$"
+        batchIndex:
+          type: integer
+          minimum: 1
+        eventCount:
+          type: integer
+          minimum: 1
+        firstSequence:
+          type: integer
+          minimum: 1
+        lastSequence:
+          type: integer
+          minimum: 1
+        firstEventId:
+          type: string
+          pattern: "^evt_[A-Za-z0-9_-]{1,88}$"
+        lastEventId:
+          type: string
+          pattern: "^evt_[A-Za-z0-9_-]{1,88}$"
+        previousDigest:
+          $ref: "#/components/schemas/LocalEventNullableSha256Digest"
+        finalDigest:
+          $ref: "#/components/schemas/LocalEventSha256Digest"
+        operations:
+          $ref: "#/components/schemas/LocalEventOperationCounts"
+        schemaKinds:
+          $ref: "#/components/schemas/LocalEventSchemaKindCounts"
+        events:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CanonicalLocalEvent"
+      additionalProperties: false
+    LocalEventReplayBatchesResponse:
+      type: object
+      required:
+        - batches
+      properties:
+        batches:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocalEventReplayBatch"
+      additionalProperties: false
+    LocalEventReplayExportFormat:
+      type: string
+      enum:
+        - jsonl
+        - csv
+        - package
+      default: package
+    LocalEventReplayExportFilters:
+      type: object
+      properties:
+        actorId:
+          $ref: "#/components/schemas/ActorId"
+        recordId:
+          $ref: "#/components/schemas/LocalEventSharedRecordId"
+        operation:
+          $ref: "#/components/schemas/LocalEventOperationSelector"
+        schemaKind:
+          $ref: "#/components/schemas/LocalEventSchemaKindSelector"
+        fromSequence:
+          type: integer
+          minimum: 1
+        toSequence:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+      additionalProperties: true
+    LocalEventReplayExportRequest:
+      type: object
+      required:
+        - format
+      properties:
+        format:
+          $ref: "#/components/schemas/LocalEventReplayExportFormat"
+        catalog:
+          $ref: "#/components/schemas/LocalEventCatalogInput"
+        catalogPath:
+          type: string
+          minLength: 1
+        replay:
+          $ref: "#/components/schemas/LocalEventReplayOptions"
+        filters:
+          $ref: "#/components/schemas/LocalEventReplayExportFilters"
+        createdAt:
+          type: string
+          format: date-time
+        exportId:
+          type: string
+          minLength: 1
+      additionalProperties: true
+    LocalEventReplayExportContentDescriptor:
+      type: object
+      required:
+        - mediaType
+        - bytes
+        - fingerprint
+      properties:
+        mediaType:
+          type: string
+          enum:
+            - application/json
+            - application/jsonl
+            - text/csv
+        bytes:
+          type: integer
+          minimum: 0
+        fingerprint:
+          type: string
+          pattern: "^[A-Za-z0-9:_-]{1,96}$"
+        lines:
+          type: integer
+          minimum: 0
+        rows:
+          type: integer
+          minimum: 0
+        columns:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        packageFingerprint:
+          type: string
+          pattern: "^[A-Za-z0-9:_-]{1,96}$"
+      additionalProperties: true
+    LocalEventReplayExportManifest:
+      type: object
+      required:
+        - kind
+        - version
+        - format
+        - generatedAt
+        - workspaceId
+        - source
+        - filters
+        - totalEvents
+        - replayedEvents
+        - recordCount
+        - terminalDigest
+        - firstSequence
+        - lastSequence
+        - operations
+        - schemaKinds
+        - redactedEvents
+        - content
+        - fingerprint
+      properties:
+        kind:
+          type: string
+          const: local-events.catalog-replay-export.manifest
+        version:
+          type: integer
+          const: 1
+        format:
+          $ref: "#/components/schemas/LocalEventReplayExportFormat"
+        generatedAt:
+          type: string
+          format: date-time
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        source:
+          type: object
+          additionalProperties: true
+        filters:
+          type: object
+          additionalProperties: true
+        totalEvents:
+          type: integer
+          minimum: 0
+        replayedEvents:
+          type: integer
+          minimum: 0
+        recordCount:
+          type: integer
+          minimum: 0
+        terminalDigest:
+          $ref: "#/components/schemas/LocalEventNullableSha256Digest"
+        firstSequence:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+        lastSequence:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+        operations:
+          $ref: "#/components/schemas/LocalEventOperationCounts"
+        schemaKinds:
+          $ref: "#/components/schemas/LocalEventSchemaKindCounts"
+        redactedEvents:
+          type: integer
+          minimum: 0
+        content:
+          $ref: "#/components/schemas/LocalEventReplayExportContentDescriptor"
+        fingerprint:
+          type: string
+          pattern: "^[A-Za-z0-9:_-]{1,96}$"
+      additionalProperties: false
+    LocalEventReplayExportResponse:
+      type: object
+      required:
+        - format
+        - mediaType
+        - content
+        - descriptor
+        - manifest
+      properties:
+        format:
+          $ref: "#/components/schemas/LocalEventReplayExportFormat"
+        mediaType:
+          type: string
+          enum:
+            - application/json
+            - application/jsonl
+            - text/csv
+        content:
+          type: string
+        descriptor:
+          $ref: "#/components/schemas/LocalEventReplayExportContentDescriptor"
+        manifest:
+          $ref: "#/components/schemas/LocalEventReplayExportManifest"
+      additionalProperties: false
     SearchFilters:
       type: object
       properties:
@@ -4146,6 +5082,128 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ValidationIssue"
+      additionalProperties: false
+    ApiErrorCode:
+      type: string
+      enum:
+        - bad_request
+        - unauthenticated
+        - forbidden
+        - not_found
+        - conflict
+        - validation_failed
+        - rate_limited
+        - internal_error
+        - service_unavailable
+    ApiErrorStatus:
+      type: integer
+      enum:
+        - 400
+        - 401
+        - 403
+        - 404
+        - 409
+        - 422
+        - 429
+        - 500
+        - 503
+    ApiErrorValidationIssueCode:
+      type: string
+      enum:
+        - required
+        - invalid_type
+        - invalid_format
+        - invalid_value
+        - too_small
+        - too_large
+        - not_allowed
+        - duplicate
+        - not_sorted
+    ApiErrorValidationIssueExpectation:
+      type: string
+      enum:
+        - array
+        - boolean
+        - integer
+        - number
+        - object
+        - string
+        - non_empty_string
+        - safe_identifier
+        - safe_path
+        - timestamp
+        - allowed_value
+        - present
+        - absent
+    ApiErrorValidationIssueReceivedType:
+      type: string
+      enum:
+        - array
+        - boolean
+        - integer
+        - number
+        - object
+        - string
+        - "null"
+        - missing
+        - unknown
+    ApiErrorValidationIssue:
+      type: object
+      required:
+        - code
+        - path
+        - message
+      properties:
+        code:
+          $ref: "#/components/schemas/ApiErrorValidationIssueCode"
+        path:
+          type: string
+          pattern: "^(?:\\$|[A-Za-z][A-Za-z0-9_-]*(?:\\[[0-9]+\\])?(?:\\.[A-Za-z][A-Za-z0-9_-]*(?:\\[[0-9]+\\])?)*)$"
+        message:
+          type: string
+          minLength: 1
+          maxLength: 200
+        expected:
+          $ref: "#/components/schemas/ApiErrorValidationIssueExpectation"
+        received:
+          $ref: "#/components/schemas/ApiErrorValidationIssueReceivedType"
+      additionalProperties: false
+    ApiErrorBody:
+      type: object
+      required:
+        - code
+        - status
+        - message
+        - requestId
+      properties:
+        code:
+          $ref: "#/components/schemas/ApiErrorCode"
+        status:
+          $ref: "#/components/schemas/ApiErrorStatus"
+        message:
+          type: string
+          minLength: 1
+          maxLength: 200
+        requestId:
+          type: string
+          pattern: "^req_[A-Za-z0-9_-]{8,96}$"
+        issues:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ApiErrorValidationIssue"
+      additionalProperties: false
+    ApiErrorResponse:
+      type: object
+      required:
+        - schemaVersion
+        - error
+      properties:
+        schemaVersion:
+          type: string
+          const: api-error/v1
+        error:
+          $ref: "#/components/schemas/ApiErrorBody"
       additionalProperties: false
     PluginReviewArtifactPreviewRequest:
       type: object

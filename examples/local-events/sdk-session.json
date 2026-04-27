@@ -1,0 +1,228 @@
+{
+  "schemaVersion": "local-event-sdk-session/v1",
+  "generatedAt": "2026-04-27T12:34:00.000Z",
+  "workspaceId": "wsp_local_catalog",
+  "deviceId": "dev_local_catalog",
+  "localOnly": true,
+  "catalog": {
+    "path": "examples/local-events/catalog.json",
+    "schemaVersion": "canonical-local-event-catalog/v1",
+    "eventCount": 5,
+    "eventIds": [
+      "evt_catalog_001",
+      "evt_catalog_002",
+      "evt_catalog_003",
+      "evt_catalog_004",
+      "evt_catalog_005"
+    ],
+    "lastEventDigest": "a875d09c6cb2a44dd60c1becda474949418e9275e4901d1649958fa78c72c0cf"
+  },
+  "apiClient": {
+    "apiBase": "http://127.0.0.1:7317",
+    "routes": [
+      "GET /v1/local-events/catalog",
+      "GET /v1/local-events/summary",
+      "GET /v1/local-events/replay-batches"
+    ],
+    "requestFixture": "examples/local-events/api-requests.json"
+  },
+  "sdk": {
+    "package": "packages/sdk-js",
+    "module": "packages/sdk-js/src/localEvents.ts",
+    "entrypoints": [
+      "loadLocalEventCatalogFixture",
+      "validateLocalEventCatalogFixture",
+      "summarizeLocalEventCatalog",
+      "createLocalEventReplayBatches",
+      "createLocalEventCatalogFixtureFetch"
+    ],
+    "flow": [
+      {
+        "step": "load_catalog_fixture",
+        "call": "loadLocalEventCatalogFixture",
+        "sourcePath": "examples/local-events/catalog.json",
+        "returns": {
+          "workspaceId": "wsp_local_catalog",
+          "eventCount": 5
+        }
+      },
+      {
+        "step": "summarize_catalog",
+        "call": "summarizeLocalEventCatalog",
+        "returns": {
+          "eventCount": 5,
+          "redactedEventCount": 3,
+          "redactedFieldCount": 3
+        }
+      },
+      {
+        "step": "create_replay_batches",
+        "call": "createLocalEventReplayBatches",
+        "options": {
+          "batchSize": 3,
+          "startSequence": 1,
+          "endSequence": 5
+        },
+        "returns": {
+          "batchCount": 2,
+          "firstBatchRef": "apiRequests.requests[2].response.body.batches[0]"
+        }
+      },
+      {
+        "step": "create_fixture_fetch",
+        "call": "createLocalEventCatalogFixtureFetch",
+        "basePath": "/v1/local-events",
+        "returns": {
+          "fetchLike": true,
+          "recordsCalls": true
+        }
+      }
+    ],
+    "fixtureFetchCalls": [
+      {
+        "method": "GET",
+        "path": "/v1/local-events/catalog",
+        "route": "catalog",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/v1/local-events/summary",
+        "route": "summary",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/v1/local-events/replay-batches?batchSize=3",
+        "route": "replayBatches",
+        "status": 200
+      }
+    ]
+  },
+  "cli": {
+    "package": "packages/cli",
+    "exportModule": "packages/cli/src/localEventExports.ts",
+    "replayModule": "packages/cli/src/localEvents.ts",
+    "exportPlan": {
+      "formats": [
+        "jsonl",
+        "csv",
+        "package"
+      ],
+      "commands": [
+        "node packages\\cli\\src\\index.ts local-events catalog export jsonl --input-path examples\\local-events\\catalog.json",
+        "node packages\\cli\\src\\index.ts local-events catalog replay export csv --input-path examples\\local-events\\catalog.json --record-id doc_support_handoff",
+        "node packages\\cli\\src\\index.ts local-event-catalog-export package --input-path examples\\local-events\\catalog.json"
+      ],
+      "stdoutOnly": true,
+      "writesOnlyWithOutputPath": true
+    },
+    "importPlan": {
+      "sourcePath": "examples/local-events/import-plan.json",
+      "sourceExportPath": "examples/local-events/export-session.json",
+      "strategy": "stage-then-apply",
+      "dryRun": true,
+      "preflightCheckIds": [
+        "load_export_session",
+        "load_catalog",
+        "verify_digest_chain",
+        "verify_cursor_window",
+        "verify_ciphertext_payload"
+      ],
+      "integrityFailureMode": "block_import",
+      "duplicateEventHandling": "skip_when_digest_matches"
+    }
+  },
+  "web": {
+    "package": "apps/web",
+    "module": "apps/web/src/localEventCatalog.ts",
+    "stateBuilder": "buildLocalEventCatalogState",
+    "filterHelpers": [
+      "filterCanonicalLocalEvents",
+      "summarizeLocalEvents"
+    ],
+    "state": {
+      "id": "local_event_catalog",
+      "status": "attention",
+      "totalCount": 5,
+      "visibleCount": 2,
+      "visibleEventIds": [
+        "evt_catalog_002",
+        "evt_catalog_004"
+      ],
+      "redactions": {
+        "total": 3,
+        "open": 3,
+        "resolved": 0
+      }
+    }
+  },
+  "sync": {
+    "service": "services/sync/src/replay.ts",
+    "reconciliation": {
+      "afterCursor": "cur_v1:0000000000000000:origin",
+      "nextCursor": "cur_v1:0000000000000005:evt_catalog_005",
+      "hasMore": false,
+      "acceptedEventIds": [
+        "evt_catalog_001",
+        "evt_catalog_002",
+        "evt_catalog_003",
+        "evt_catalog_004",
+        "evt_catalog_005"
+      ],
+      "integrity": {
+        "status": "ok",
+        "issueCount": 0,
+        "blockingCount": 0,
+        "warningCount": 0,
+        "codes": []
+      },
+      "audit": {
+        "eventCount": 5,
+        "redactsIdentifiers": true,
+        "retainedFields": [
+          "eventId",
+          "cursor",
+          "deviceId",
+          "sequence",
+          "type"
+        ]
+      }
+    }
+  },
+  "auditExport": {
+    "module": "packages/cli/src/localEventExports.ts",
+    "packageKind": "local-events.catalog-replay-export.package",
+    "manifestKind": "local-events.catalog-replay-export.manifest",
+    "formats": [
+      "jsonl",
+      "csv",
+      "package"
+    ],
+    "retainedFields": [
+      "sequence",
+      "eventId",
+      "recordedAt",
+      "occurredAt",
+      "operation",
+      "schemaKind",
+      "recordId",
+      "targetId",
+      "actorId",
+      "approvalId",
+      "approvalStatus",
+      "decision",
+      "beforeDigest",
+      "afterDigest",
+      "previousDigest",
+      "eventDigest",
+      "redacted",
+      "summary"
+    ]
+  },
+  "validationCommands": [
+    "python -m json.tool examples\\local-events\\api-requests.json",
+    "python -m json.tool examples\\local-events\\sdk-session.json",
+    "python -m unittest tests.test_local_event_api_docs"
+  ]
+}

@@ -10,6 +10,7 @@ export * from "./ingestApiReplay.ts";
 export * from "./ingestApiVerify.ts";
 export * from "./ingestSearch.ts";
 export * from "./localEventExports.ts";
+export * from "./localEventImports.ts";
 export * from "./localEvents.ts";
 export * from "./mcpClient.ts";
 export * from "./mcpDemo.ts";
@@ -29,6 +30,7 @@ import { runIngestApiVerifyCli } from "./ingestApiVerify.ts";
 import { runIngestSearchCli } from "./ingestSearch.ts";
 import { runLifecycleCli } from "./lifecycle.ts";
 import { runLocalEventExportsCli } from "./localEventExports.ts";
+import { runLocalEventImportsCli } from "./localEventImports.ts";
 import { runLocalEventsCli } from "./localEvents.ts";
 import { runMcpApiCli } from "./mcpClient.ts";
 import { runMcpApprovalEvidenceRecordsReplayCli } from "./mcpApprovalEvidenceRecordsReplay.ts";
@@ -50,6 +52,7 @@ export async function runCli(
     Parameters<typeof runIngestApiVerifyCli>[1] &
     Parameters<typeof runIngestSearchCli>[1] &
     Parameters<typeof runLocalEventExportsCli>[1] &
+    Parameters<typeof runLocalEventImportsCli>[1] &
     Parameters<typeof runLocalEventsCli>[1] &
     Parameters<typeof runMcpApprovalEvidenceRecordsReplayCli>[1] &
     Parameters<typeof runMcpApprovalEvidenceReplayCli>[1] &
@@ -71,6 +74,7 @@ export async function runCli(
     (await runIngestApiVerifyCli(argv, options)) ??
     (await runIngestSearchCli(argv, options)) ??
     (await runLocalEventExportsCli(argv, options)) ??
+    (await runLocalEventImportsCli(argv, options)) ??
     (await runLocalEventsCli(argv, options)) ??
     (await runMcpApprovalEvidenceRecordsReplayCli(argv, options)) ??
     (await runMcpApprovalEvidenceReplayCli(argv, options)) ??

@@ -1,0 +1,167 @@
+{
+  "schemaVersion": "local-event-api-requests/v1",
+  "generatedAt": "2026-04-27T12:33:00.000Z",
+  "apiBase": "http://127.0.0.1:7317",
+  "localOnly": true,
+  "catalog": {
+    "path": "examples/local-events/catalog.json",
+    "schemaVersion": "canonical-local-event-catalog/v1",
+    "workspaceId": "wsp_local_catalog",
+    "eventCount": 5,
+    "eventIds": [
+      "evt_catalog_001",
+      "evt_catalog_002",
+      "evt_catalog_003",
+      "evt_catalog_004",
+      "evt_catalog_005"
+    ],
+    "lastEventDigest": "a875d09c6cb2a44dd60c1becda474949418e9275e4901d1649958fa78c72c0cf"
+  },
+  "requests": [
+    {
+      "id": "local_event_catalog_get",
+      "route": {
+        "method": "GET",
+        "path": "/v1/local-events/catalog"
+      },
+      "request": {
+        "body": {
+          "catalogPath": "examples/local-events/catalog.json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "schemaVersion": "canonical-local-event-catalog/v1",
+          "workspaceId": "wsp_local_catalog",
+          "localOnly": true,
+          "eventCount": 5,
+          "eventIds": [
+            "evt_catalog_001",
+            "evt_catalog_002",
+            "evt_catalog_003",
+            "evt_catalog_004",
+            "evt_catalog_005"
+          ],
+          "eventsRef": "examples/local-events/catalog.json#events"
+        }
+      }
+    },
+    {
+      "id": "local_event_summary_get",
+      "route": {
+        "method": "GET",
+        "path": "/v1/local-events/summary"
+      },
+      "request": {
+        "body": {
+          "catalogPath": "examples/local-events/catalog.json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "workspaceId": "wsp_local_catalog",
+          "eventCount": 5,
+          "firstSequence": 1,
+          "lastSequence": 5,
+          "redactedEventCount": 3,
+          "redactedFieldCount": 3,
+          "operations": {
+            "append": 2,
+            "update": 1,
+            "delete": 0,
+            "approval_requested": 1,
+            "approval_approved": 0,
+            "approval_rejected": 1
+          },
+          "schemaKinds": {
+            "docs": 2,
+            "projects": 0,
+            "incidents": 0,
+            "comments": 1,
+            "attachments": 0,
+            "approvals": 2
+          },
+          "actorIds": [
+            "act_local_author",
+            "act_local_reviewer"
+          ],
+          "recordIds": [
+            "apv_support_handoff",
+            "cmt_support_review",
+            "doc_support_handoff"
+          ]
+        }
+      }
+    },
+    {
+      "id": "local_event_replay_batches_get",
+      "route": {
+        "method": "GET",
+        "path": "/v1/local-events/replay-batches"
+      },
+      "request": {
+        "body": {
+          "catalogPath": "examples/local-events/catalog.json",
+          "replay": {
+            "batchSize": 3,
+            "startSequence": 1,
+            "endSequence": 5
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "batchCount": 2,
+          "batches": [
+            {
+              "batchIndex": 1,
+              "eventCount": 3,
+              "firstSequence": 1,
+              "lastSequence": 3,
+              "firstEventId": "evt_catalog_001",
+              "lastEventId": "evt_catalog_003",
+              "previousDigest": null,
+              "finalDigest": "be28b6c6252aeefd3759593dcdea5adc72a1b0cace659c66bffd4cd5d42efa35",
+              "eventRefs": [
+                "catalog.events[0]",
+                "catalog.events[1]",
+                "catalog.events[2]"
+              ],
+              "payloadDigests": [
+                "52cadbd6440da90efd2e528ac78ab86dc071b86df9be93df23ed9fa9c5d8bf0a",
+                "f21ce56c9bbe144740cdd7a82e93df806fc4a29bfaf0167847a807018bcad4d6",
+                "7d7465b3af5f874c0817d346d25107dd00eba47d830aef1044450cc0fd5057aa"
+              ]
+            },
+            {
+              "batchIndex": 2,
+              "eventCount": 2,
+              "firstSequence": 4,
+              "lastSequence": 5,
+              "firstEventId": "evt_catalog_004",
+              "lastEventId": "evt_catalog_005",
+              "previousDigest": "be28b6c6252aeefd3759593dcdea5adc72a1b0cace659c66bffd4cd5d42efa35",
+              "finalDigest": "a875d09c6cb2a44dd60c1becda474949418e9275e4901d1649958fa78c72c0cf",
+              "eventRefs": [
+                "catalog.events[3]",
+                "catalog.events[4]"
+              ],
+              "payloadDigests": [
+                "1267bcd39fdffa627bd7d92cdfbcf04ac17b691ac27315afad59499c7da0da48",
+                "37664abee453139e6cd75b23dce5219b98210777ca782603062452ab412e61c7"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "validationCommands": [
+    "python -m json.tool examples\\local-events\\api-requests.json",
+    "python -m json.tool examples\\local-events\\sdk-session.json",
+    "python -m unittest tests.test_local_event_api_docs"
+  ]
+}
