@@ -1,0 +1,302 @@
+{
+  "schemaVersion": "local-workspace-session-snapshot-retention/v1",
+  "kind": "workspace-session.snapshot-retention-cleanup.dry-run",
+  "generatedAt": "2026-04-28T04:00:00.000Z",
+  "localOnly": true,
+  "dryRun": true,
+  "durableWrites": false,
+  "rawRequestBodyRetained": false,
+  "redaction": {
+    "redacted": true,
+    "replacement": "[REDACTED]",
+    "fields": [
+      "storagePath",
+      "displayPath",
+      "lockToken",
+      "sessionId",
+      "rootKey"
+    ],
+    "rawPathsStored": false,
+    "rawTokensStored": false,
+    "rawSessionIdsStored": false,
+    "rawRootKeysStored": false,
+    "rawRequestBodyRetained": false
+  },
+  "integration": {
+    "sdk": {
+      "module": "packages/sdk-js/src/localWorkspaceSessionSnapshotRetention.ts",
+      "schemaConstant": "LOCAL_WORKSPACE_SESSION_SNAPSHOT_RETENTION_SCHEMA_VERSION",
+      "errorClass": "LocalWorkspaceSessionSnapshotRetentionError",
+      "inputType": "LocalWorkspaceSessionSnapshotRetentionCleanupInput",
+      "planType": "LocalWorkspaceSessionSnapshotRetentionCleanupPlan",
+      "actionType": "LocalWorkspaceSessionSnapshotRetentionCleanupAction",
+      "summaryType": "LocalWorkspaceSessionSnapshotRetentionCleanupSummary",
+      "issueType": "LocalWorkspaceSessionSnapshotRetentionCleanupIssue",
+      "helpers": [
+        "planLocalWorkspaceSessionSnapshotRetentionCleanup",
+        "planFileBackedLocalWorkspaceSessionSnapshotRetentionCleanup",
+        "planSnapshotRetentionCleanupDryRun"
+      ]
+    }
+  },
+  "commandContracts": {
+    "sdkHelperCalls": [
+      "planLocalWorkspaceSessionSnapshotRetentionCleanup(<input>)",
+      "planFileBackedLocalWorkspaceSessionSnapshotRetentionCleanup(<input>)",
+      "planSnapshotRetentionCleanupDryRun(<input>)"
+    ],
+    "cliPreview": [
+      "sovereignops workspace-session snapshot retention-cleanup preview --fixture <path>",
+      "sovereignops workspace-session-snapshot-retention-cleanup preview --fixture <path>"
+    ],
+    "apiPreviewRoute": "POST /v1/workspace-session/snapshot-retention-cleanup/preview",
+    "webStateModule": "apps/web/src/workspaceSessionSnapshotRetentionCleanupState.ts",
+    "fixturePath": "examples\\workspace-session\\snapshot-retention-cleanup.json"
+  },
+  "input": {
+    "sourceKind": "snapshot-record-summary",
+    "maxCount": 2,
+    "maxAgeMs": 86400000,
+    "now": "2026-04-28T04:00:00.000Z",
+    "records": [
+      {
+        "sourceIndex": 0,
+        "sourceKind": "snapshot-record-summary",
+        "snapshotRef": "[redacted:snapshot:latest]",
+        "workspaceRef": "[redacted:workspace:alpha]",
+        "deviceRef": "[redacted:device:portable]",
+        "sessionRef": "[redacted:session:latest]",
+        "rootKeyRef": "[redacted:rootKey:alpha]",
+        "storagePathRef": "[redacted:path:latest]",
+        "lockTokenRef": "[redacted:lockToken:latest]",
+        "createdAt": "2026-04-28T03:50:00.000Z",
+        "updatedAt": "2026-04-28T03:55:00.000Z",
+        "operationCount": 12,
+        "sizeBytes": 12288,
+        "fingerprint": "sha256:2454f452781be27615732696a1e0f40cb2d14533088be4cbd08f327e25cfc4da",
+        "auditSafe": true,
+        "redacted": true
+      },
+      {
+        "sourceIndex": 1,
+        "sourceKind": "snapshot-record-summary",
+        "snapshotRef": "[redacted:snapshot:previous]",
+        "workspaceRef": "[redacted:workspace:alpha]",
+        "deviceRef": "[redacted:device:portable]",
+        "sessionRef": "[redacted:session:previous]",
+        "rootKeyRef": "[redacted:rootKey:alpha]",
+        "storagePathRef": "[redacted:path:previous]",
+        "lockTokenRef": "[redacted:lockToken:previous]",
+        "createdAt": "2026-04-28T03:00:00.000Z",
+        "updatedAt": "2026-04-28T03:05:00.000Z",
+        "operationCount": 10,
+        "sizeBytes": 10240,
+        "fingerprint": "sha256:52b711219a7ad531c670d7ca0431bfebf51c2f06ae5fc4515b56e0517e181bad",
+        "auditSafe": true,
+        "redacted": true
+      },
+      {
+        "sourceIndex": 2,
+        "sourceKind": "snapshot-record-summary",
+        "snapshotRef": "[redacted:snapshot:stale]",
+        "workspaceRef": "[redacted:workspace:alpha]",
+        "deviceRef": "[redacted:device:portable]",
+        "sessionRef": "[redacted:session:stale]",
+        "rootKeyRef": "[redacted:rootKey:alpha]",
+        "storagePathRef": "[redacted:path:stale]",
+        "lockTokenRef": "[redacted:lockToken:stale]",
+        "createdAt": "2026-04-26T02:00:00.000Z",
+        "updatedAt": "2026-04-26T02:05:00.000Z",
+        "operationCount": 7,
+        "sizeBytes": 8192,
+        "fingerprint": "sha256:a6899e092fdf7490948d4440b60166857f03ed954e0b8af51d694870be2c0b0f",
+        "auditSafe": true,
+        "redacted": true
+      },
+      {
+        "sourceIndex": 3,
+        "sourceKind": "snapshot-record-summary",
+        "snapshotRef": "[redacted:snapshot:review]",
+        "workspaceRef": "[redacted:workspace:alpha]",
+        "deviceRef": "[redacted:device:portable]",
+        "sessionRef": "[redacted:session:review]",
+        "rootKeyRef": "[redacted:rootKey:alpha]",
+        "storagePathRef": "[redacted:path:review]",
+        "lockTokenRef": "[redacted:lockToken:review]",
+        "operationCount": 4,
+        "sizeBytes": 4096,
+        "fingerprint": "sha256:ba3d14c8b26465d9cbf4f880ff7b5317fb99615f5e96584d187f8d913dd6c08c",
+        "auditSafe": true,
+        "redacted": true
+      }
+    ]
+  },
+  "cleanupPlan": {
+    "kind": "localWorkspaceSessionSnapshotRetentionCleanupPlan",
+    "schemaVersion": "local-workspace-session-snapshot-retention/v1",
+    "localOnly": true,
+    "dryRun": true,
+    "durableWrites": false,
+    "thresholds": {
+      "maxCount": 2,
+      "maxAgeMs": 86400000,
+      "now": "2026-04-28T04:00:00.000Z",
+      "cutoffAt": "2026-04-27T04:00:00.000Z"
+    },
+    "entryCount": 4,
+    "keepCount": 2,
+    "deleteCount": 1,
+    "reviewCount": 1,
+    "actions": [
+      {
+        "kind": "localWorkspaceSessionSnapshotRetentionCleanupAction",
+        "rowId": "cleanup_row_001",
+        "action": "keep",
+        "reasons": [
+          "within-max-count",
+          "within-max-age"
+        ],
+        "sourceIndex": 0,
+        "rank": 1,
+        "dryRun": true,
+        "advisoryOnly": true,
+        "applied": false,
+        "summary": {
+          "kind": "localWorkspaceSessionSnapshotRetentionCleanupSummary",
+          "sourceKind": "snapshot-record-summary",
+          "auditSafe": true,
+          "redacted": true,
+          "snapshotRef": "[redacted:snapshot:latest]",
+          "workspaceRef": "[redacted:workspace:alpha]",
+          "deviceRef": "[redacted:device:portable]",
+          "sessionRef": "[redacted:session:latest]",
+          "rootKeyRef": "[redacted:rootKey:alpha]",
+          "storagePathRef": "[redacted:path:latest]",
+          "lockTokenRef": "[redacted:lockToken:latest]",
+          "createdAt": "2026-04-28T03:50:00.000Z",
+          "updatedAt": "2026-04-28T03:55:00.000Z",
+          "operationCount": 12,
+          "sizeBytes": 12288,
+          "fingerprint": "sha256:2454f452781be27615732696a1e0f40cb2d14533088be4cbd08f327e25cfc4da"
+        },
+        "issues": []
+      },
+      {
+        "kind": "localWorkspaceSessionSnapshotRetentionCleanupAction",
+        "rowId": "cleanup_row_002",
+        "action": "keep",
+        "reasons": [
+          "within-max-count",
+          "within-max-age"
+        ],
+        "sourceIndex": 1,
+        "rank": 2,
+        "dryRun": true,
+        "advisoryOnly": true,
+        "applied": false,
+        "summary": {
+          "kind": "localWorkspaceSessionSnapshotRetentionCleanupSummary",
+          "sourceKind": "snapshot-record-summary",
+          "auditSafe": true,
+          "redacted": true,
+          "snapshotRef": "[redacted:snapshot:previous]",
+          "workspaceRef": "[redacted:workspace:alpha]",
+          "deviceRef": "[redacted:device:portable]",
+          "sessionRef": "[redacted:session:previous]",
+          "rootKeyRef": "[redacted:rootKey:alpha]",
+          "storagePathRef": "[redacted:path:previous]",
+          "lockTokenRef": "[redacted:lockToken:previous]",
+          "createdAt": "2026-04-28T03:00:00.000Z",
+          "updatedAt": "2026-04-28T03:05:00.000Z",
+          "operationCount": 10,
+          "sizeBytes": 10240,
+          "fingerprint": "sha256:52b711219a7ad531c670d7ca0431bfebf51c2f06ae5fc4515b56e0517e181bad"
+        },
+        "issues": []
+      },
+      {
+        "kind": "localWorkspaceSessionSnapshotRetentionCleanupAction",
+        "rowId": "cleanup_row_003",
+        "action": "delete",
+        "reasons": [
+          "exceeds-max-count",
+          "exceeds-max-age"
+        ],
+        "sourceIndex": 2,
+        "rank": 3,
+        "dryRun": true,
+        "advisoryOnly": true,
+        "applied": false,
+        "summary": {
+          "kind": "localWorkspaceSessionSnapshotRetentionCleanupSummary",
+          "sourceKind": "snapshot-record-summary",
+          "auditSafe": true,
+          "redacted": true,
+          "snapshotRef": "[redacted:snapshot:stale]",
+          "workspaceRef": "[redacted:workspace:alpha]",
+          "deviceRef": "[redacted:device:portable]",
+          "sessionRef": "[redacted:session:stale]",
+          "rootKeyRef": "[redacted:rootKey:alpha]",
+          "storagePathRef": "[redacted:path:stale]",
+          "lockTokenRef": "[redacted:lockToken:stale]",
+          "createdAt": "2026-04-26T02:00:00.000Z",
+          "updatedAt": "2026-04-26T02:05:00.000Z",
+          "operationCount": 7,
+          "sizeBytes": 8192,
+          "fingerprint": "sha256:a6899e092fdf7490948d4440b60166857f03ed954e0b8af51d694870be2c0b0f"
+        },
+        "issues": []
+      },
+      {
+        "kind": "localWorkspaceSessionSnapshotRetentionCleanupAction",
+        "rowId": "cleanup_row_004",
+        "action": "review",
+        "reasons": [
+          "missing-created-at",
+          "requires-review"
+        ],
+        "sourceIndex": 3,
+        "dryRun": true,
+        "advisoryOnly": true,
+        "applied": false,
+        "summary": {
+          "kind": "localWorkspaceSessionSnapshotRetentionCleanupSummary",
+          "sourceKind": "snapshot-record-summary",
+          "auditSafe": true,
+          "redacted": true,
+          "snapshotRef": "[redacted:snapshot:review]",
+          "workspaceRef": "[redacted:workspace:alpha]",
+          "deviceRef": "[redacted:device:portable]",
+          "sessionRef": "[redacted:session:review]",
+          "rootKeyRef": "[redacted:rootKey:alpha]",
+          "storagePathRef": "[redacted:path:review]",
+          "lockTokenRef": "[redacted:lockToken:review]",
+          "operationCount": 4,
+          "sizeBytes": 4096,
+          "fingerprint": "sha256:ba3d14c8b26465d9cbf4f880ff7b5317fb99615f5e96584d187f8d913dd6c08c"
+        },
+        "issues": [
+          {
+            "kind": "localWorkspaceSessionSnapshotRetentionCleanupIssue",
+            "issueKind": "missing-created-at",
+            "path": "$.input.records[3].createdAt",
+            "reason": "missing-created-at",
+            "message": "cleanup entry must include a redacted createdAt value before any cleanup step"
+          }
+        ]
+      }
+    ],
+    "summary": {
+      "entryCount": 4,
+      "keepCount": 2,
+      "deleteCount": 1,
+      "reviewCount": 1,
+      "appliedCount": 0
+    }
+  },
+  "validationCommands": [
+    "python -m json.tool examples\\workspace-session\\snapshot-retention-cleanup.json",
+    "python -m unittest tests.test_workspace_session_snapshot_retention_cleanup_docs",
+    "python -m unittest tests.test_workspace_session_snapshot_retention_cleanup_alignment"
+  ]
+}

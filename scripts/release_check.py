@@ -208,6 +208,31 @@ WORKSPACE_SESSION_SNAPSHOT_REVIEW_REQUIRED_PATHS: tuple[str, ...] = (
     "apps/web/tests/workspace-session-snapshot-review-state.test.mjs",
 )
 
+WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS: tuple[str, ...] = (
+    "docs/workspace-session-snapshot-retention-cleanup.md",
+    "docs/openapi.yaml",
+    "examples/workspace-session/snapshot-retention-cleanup.json",
+    "tests/test_workspace_session_snapshot_retention_cleanup_docs.py",
+    "tests/test_workspace_session_snapshot_retention_cleanup_alignment.py",
+    "tests/test_validate_openapi_workspace_session_snapshot_retention_cleanup.py",
+    "tests/security/workspace_session_snapshot_retention_cleanup_threats.test.mjs",
+    "packages/sdk-js/src/index.ts",
+    "packages/sdk-js/src/localWorkspaceSessionSnapshotRetention.ts",
+    "packages/sdk-js/tests/local-workspace-session-snapshot-retention.test.mjs",
+    "apps/api/package.json",
+    "apps/api/src/index.ts",
+    "apps/api/src/workspaceSessionSnapshotRetentionCleanupRoutes.ts",
+    "apps/api/tests/workspace-session-snapshot-retention-cleanup-routes.test.mjs",
+    "packages/cli/package.json",
+    "packages/cli/src/index.ts",
+    "packages/cli/src/workspaceSessionSnapshotRetentionCleanup.ts",
+    "packages/cli/tests/workspace-session-snapshot-retention-cleanup.test.mjs",
+    "apps/web/package.json",
+    "apps/web/src/main.ts",
+    "apps/web/src/workspaceSessionSnapshotRetentionCleanupState.ts",
+    "apps/web/tests/workspace-session-snapshot-retention-cleanup-state.test.mjs",
+)
+
 
 @dataclass(frozen=True)
 class CheckSpec:
@@ -257,6 +282,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             *WORKSPACE_SESSION_PERSISTENCE_REQUIRED_PATHS,
             *WORKSPACE_SESSION_FILE_STORE_REQUIRED_PATHS,
             *WORKSPACE_SESSION_SNAPSHOT_REVIEW_REQUIRED_PATHS,
+            *WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS,
             "docs/local-data-lifecycle.md",
             "docs/maintainership.md",
             "docs/security-checklist.md",
@@ -592,6 +618,30 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "tests.test_validate_openapi_workspace_session_snapshot_review",
         ),
         required_paths=WORKSPACE_SESSION_SNAPSHOT_REVIEW_REQUIRED_PATHS,
+    ),
+    CheckSpec(
+        name="workspace-session-snapshot-retention-cleanup-security",
+        description="Validate workspace session snapshot retention cleanup redaction, path safety, and dry-run controls.",
+        command=(
+            "node",
+            "--test",
+            "tests/security/workspace_session_snapshot_retention_cleanup_threats.test.mjs",
+        ),
+        required_paths=WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS,
+        tool_candidates=("node",),
+    ),
+    CheckSpec(
+        name="workspace-session-snapshot-retention-cleanup-alignment",
+        description="Validate workspace session snapshot retention cleanup docs, fixture, OpenAPI, CLI, API, and Web wiring.",
+        command=(
+            PYTHON,
+            "-m",
+            "unittest",
+            "tests.test_workspace_session_snapshot_retention_cleanup_docs",
+            "tests.test_workspace_session_snapshot_retention_cleanup_alignment",
+            "tests.test_validate_openapi_workspace_session_snapshot_retention_cleanup",
+        ),
+        required_paths=WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS,
     ),
     CheckSpec(
         name="mcp-gateway-fixtures",

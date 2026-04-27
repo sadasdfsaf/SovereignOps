@@ -1161,6 +1161,28 @@ paths:
                 $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionPreviewResponse"
         default:
           $ref: "#/components/responses/Error"
+  /v1/workspace-session/snapshot-retention-cleanup/preview:
+    post:
+      tags:
+        - workspace-session
+      summary: Preview workspace session snapshot retention cleanup.
+      description: Builds a local dry-run cleanup plan over redacted snapshot retention inputs without durable writes, deletions, or request body retention.
+      operationId: previewWorkspaceSessionSnapshotRetentionCleanup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupPreviewRequest"
+      responses:
+        "200":
+          description: Redacted local-only retention cleanup preview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupPreviewResponse"
+        default:
+          $ref: "#/components/responses/Error"
   /v1/plugins/review-artifacts/preview:
     post:
       tags:
@@ -6296,6 +6318,311 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionDecision"
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionCleanupInputEntry:
+      type: object
+      properties:
+        snapshotId:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotId"
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/WorkspaceSessionDeviceId"
+        sessionId:
+          $ref: "#/components/schemas/WorkspaceSessionId"
+        label:
+          type: string
+          minLength: 1
+          maxLength: 80
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        sizeBytes:
+          type: integer
+          minimum: 0
+        fingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+        snapshotFingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+        operationCount:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionCleanupPreviewRequest:
+      type: object
+      oneOf:
+        - required:
+            - entries
+        - required:
+            - files
+        - required:
+            - records
+      properties:
+        entries:
+          type: array
+          maxItems: 1000
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupInputEntry"
+        files:
+          type: array
+          maxItems: 1000
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupInputEntry"
+        records:
+          type: array
+          maxItems: 1000
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRecord"
+        maxCount:
+          type: integer
+          minimum: 0
+        maxAgeMs:
+          type: integer
+          minimum: 0
+        now:
+          type: string
+          format: date-time
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionCleanupThresholds:
+      type: object
+      properties:
+        maxCount:
+          type: integer
+          minimum: 0
+        maxAgeMs:
+          type: integer
+          minimum: 0
+        now:
+          type: string
+          format: date-time
+        cutoffAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionCleanupSummary:
+      type: object
+      required:
+        - kind
+        - sourceKind
+        - auditSafe
+        - redacted
+      properties:
+        kind:
+          type: string
+          const: localWorkspaceSessionSnapshotRetentionCleanupSummary
+        sourceKind:
+          type: string
+          enum:
+            - file-metadata
+            - snapshot-record
+            - snapshot-record-summary
+            - unknown
+        auditSafe:
+          type: boolean
+          const: true
+        redacted:
+          type: boolean
+          const: true
+        snapshotId:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotId"
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/WorkspaceSessionDeviceId"
+        sessionId:
+          $ref: "#/components/schemas/WorkspaceSessionId"
+        label:
+          type: string
+          minLength: 1
+          maxLength: 80
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        ageMs:
+          type: integer
+        fileRef:
+          type: string
+          pattern: '^\[redacted:path:[a-f0-9]{12}\]$'
+        filePathKind:
+          type: string
+          enum:
+            - absolute
+            - relative
+        sizeBytes:
+          type: integer
+          minimum: 0
+        fingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+        snapshotFingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+        operationCount:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionCleanupIssue:
+      type: object
+      required:
+        - kind
+        - issueKind
+        - path
+        - reason
+        - message
+      properties:
+        kind:
+          type: string
+          const: localWorkspaceSessionSnapshotRetentionCleanupIssue
+        issueKind:
+          type: string
+          enum:
+            - duplicate-snapshot-id
+            - invalid-created-at
+            - invalid-metadata
+            - invalid-snapshot-id
+            - missing-created-at
+            - missing-snapshot-id
+            - path-traversal
+            - raw-lock-token
+            - raw-secret
+            - unsafe-absolute-path
+        path:
+          type: string
+          minLength: 1
+        reason:
+          type: string
+          enum:
+            - duplicate-snapshot-id
+            - invalid-metadata
+            - missing-created-at
+            - missing-snapshot-id
+            - path-traversal
+            - raw-lock-token
+            - raw-secret
+            - requires-review
+            - unsafe-absolute-path
+        message:
+          type: string
+          minLength: 1
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionCleanupAction:
+      type: object
+      required:
+        - kind
+        - action
+        - reasons
+        - sourceIndex
+        - summary
+        - issues
+      properties:
+        kind:
+          type: string
+          const: localWorkspaceSessionSnapshotRetentionCleanupAction
+        action:
+          type: string
+          enum:
+            - delete
+            - keep
+            - review
+        reasons:
+          type: array
+          items:
+            type: string
+            enum:
+              - duplicate-snapshot-id
+              - exceeds-max-age
+              - exceeds-max-count
+              - invalid-metadata
+              - missing-created-at
+              - missing-snapshot-id
+              - path-traversal
+              - raw-lock-token
+              - raw-secret
+              - requires-review
+              - unsafe-absolute-path
+              - within-max-age
+              - within-max-count
+              - within-policy
+        sourceIndex:
+          type: integer
+          minimum: 0
+        rank:
+          type: integer
+          minimum: 1
+        summary:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupSummary"
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupIssue"
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionCleanupPreviewResponse:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - localOnly
+        - dryRun
+        - durableWrites
+        - thresholds
+        - entryCount
+        - keepCount
+        - deleteCount
+        - reviewCount
+        - actions
+        - keepActions
+        - deleteActions
+        - reviewActions
+      properties:
+        kind:
+          type: string
+          const: localWorkspaceSessionSnapshotRetentionCleanupPlan
+        schemaVersion:
+          type: string
+          const: local-workspace-session-snapshot-retention/v1
+        localOnly:
+          type: boolean
+          const: true
+        dryRun:
+          type: boolean
+          const: true
+        durableWrites:
+          type: boolean
+          const: false
+        thresholds:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupThresholds"
+        entryCount:
+          type: integer
+          minimum: 0
+        keepCount:
+          type: integer
+          minimum: 0
+        deleteCount:
+          type: integer
+          minimum: 0
+        reviewCount:
+          type: integer
+          minimum: 0
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupAction"
+        keepActions:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupAction"
+        deleteActions:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupAction"
+        reviewActions:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupAction"
       additionalProperties: false
     PluginReviewArtifactPreviewRequest:
       type: object
