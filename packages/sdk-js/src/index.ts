@@ -34,6 +34,8 @@ export * from "./localMcp.ts";
 export * from "./localMcpProtocol.ts";
 export * from "./localWorkspaceSession.ts";
 export * from "./localWorkspaceSessionApiClient.ts";
+export * from "./localWorkspaceSessionFileStore.ts";
+export * from "./localWorkspaceSessionSnapshotApiClient.ts";
 export * from "./localWorkspaceSessionStore.ts";
 export * from "./mcpApprovalEvidenceClient.ts";
 export * from "./mcpApprovalEvidenceRecordClient.ts";

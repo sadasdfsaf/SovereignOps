@@ -158,6 +158,28 @@ WORKSPACE_SESSION_PERSISTENCE_REQUIRED_PATHS: tuple[str, ...] = (
     "apps/web/src/workspaceSessionState.ts",
 )
 
+WORKSPACE_SESSION_FILE_STORE_REQUIRED_PATHS: tuple[str, ...] = (
+    "docs/workspace-session-file-store.md",
+    "examples/workspace-session/file-store-adapter.json",
+    "tests/test_workspace_session_file_store_docs.py",
+    "tests/test_workspace_session_file_store_alignment.py",
+    "tests/security/workspace_session_file_store_threats.test.mjs",
+    "packages/sdk-js/src/index.ts",
+    "packages/sdk-js/src/localWorkspaceSessionFileStore.ts",
+    "packages/sdk-js/src/localWorkspaceSessionSnapshotApiClient.ts",
+    "packages/sdk-js/tests/local-workspace-session-file-store.test.mjs",
+    "packages/sdk-js/tests/local-workspace-session-snapshot-api-client.test.mjs",
+    "apps/api/src/index.ts",
+    "apps/api/src/workspaceSessionStoreFileAdapter.ts",
+    "apps/api/tests/workspace-session-store-file-adapter.test.mjs",
+    "packages/cli/src/index.ts",
+    "packages/cli/src/workspaceSessionSnapshotStore.ts",
+    "packages/cli/tests/workspace-session-snapshot-store.test.mjs",
+    "apps/web/src/main.ts",
+    "apps/web/src/workspaceSessionSnapshotState.ts",
+    "apps/web/tests/workspace-session-snapshot-state.test.mjs",
+)
+
 
 @dataclass(frozen=True)
 class CheckSpec:
@@ -205,6 +227,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             *WORKSPACE_SESSION_REQUIRED_PATHS,
             *WORKSPACE_SESSION_API_REQUIRED_PATHS,
             *WORKSPACE_SESSION_PERSISTENCE_REQUIRED_PATHS,
+            *WORKSPACE_SESSION_FILE_STORE_REQUIRED_PATHS,
             "docs/local-data-lifecycle.md",
             "docs/maintainership.md",
             "docs/security-checklist.md",
@@ -491,6 +514,29 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "tests.test_workspace_session_persistence_alignment",
         ),
         required_paths=WORKSPACE_SESSION_PERSISTENCE_REQUIRED_PATHS,
+    ),
+    CheckSpec(
+        name="workspace-session-file-store-security",
+        description="Validate workspace session file-store path, lock, redaction, and raw-retention controls.",
+        command=(
+            "node",
+            "--test",
+            "tests/security/workspace_session_file_store_threats.test.mjs",
+        ),
+        required_paths=WORKSPACE_SESSION_FILE_STORE_REQUIRED_PATHS,
+        tool_candidates=("node",),
+    ),
+    CheckSpec(
+        name="workspace-session-file-store-alignment",
+        description="Validate workspace session file-store docs, examples, SDK/API/CLI/Web wiring, and release readiness.",
+        command=(
+            PYTHON,
+            "-m",
+            "unittest",
+            "tests.test_workspace_session_file_store_docs",
+            "tests.test_workspace_session_file_store_alignment",
+        ),
+        required_paths=WORKSPACE_SESSION_FILE_STORE_REQUIRED_PATHS,
     ),
     CheckSpec(
         name="mcp-gateway-fixtures",

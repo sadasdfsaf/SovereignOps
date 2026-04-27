@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "workspace-session-file-store-adapter/v1",
+  "kind": "workspace-session.file-store-adapter",
+  "generatedAt": "2026-04-28T02:40:00.000Z",
+  "localOnly": true,
+  "adapter": {
+    "name": "root-scoped-file-store",
+    "module": "packages/sdk-js/src/localWorkspaceSessionFileStore.ts",
+    "className": "LocalWorkspaceSessionFileStore",
+    "factory": "createLocalWorkspaceSessionFileStore",
+    "alias": "FileBackedLocalWorkspaceSessionStore",
+    "aliasFactory": "createFileBackedLocalWorkspaceSessionStore",
+    "rootScope": "workspace",
+    "rootRef": "workspace://wsp_session_alpha",
+    "baseDir": "workspaces/wsp_session_alpha/sessions",
+    "pathRules": {
+      "normalizedRelativePaths": true,
+      "allowParentTraversal": false,
+      "allowAbsolutePaths": false,
+      "allowedExtensions": [
+        ".json"
+      ],
+      "maxPathSegments": 8
+    },
+    "durableWrites": true,
+    "rawBodyRetained": false,
+    "rawPathsStored": false,
+    "rawLockMaterialStored": false
+  },
+  "apiFileAdapter": {
+    "module": "apps/api/src/workspaceSessionStoreFileAdapter.ts",
+    "factory": "createWorkspaceSessionStoreFileAdapter",
+    "aliases": [
+      "createFileBackedWorkspaceSessionSnapshotStore",
+      "createWorkspaceSessionSnapshotFileStore"
+    ],
+    "defaultLockFile": "DEFAULT_WORKSPACE_SESSION_SNAPSHOT_FILE_STORE_LOCK_FILE",
+    "useLockFile": true
+  },
+  "atomicWrite": {
+    "enabled": true,
+    "strategy": "write-temp-fsync-rename",
+    "writer": "writeLocalWorkspaceSessionStoreBundleFile",
+    "targetPath": "workspaces/wsp_session_alpha/sessions/sess_alpha_laptop_001.json",
+    "tempPathPattern": "workspaces/wsp_session_alpha/sessions/.sess_alpha_laptop_001.json.tmp",
+    "commit": "rename",
+    "flush": [
+      "temp-file",
+      "directory"
+    ],
+    "partialWritesVisible": false,
+    "recovery": "ignore-temp-and-read-last-committed"
+  },
+  "lockGuard": {
+    "enabled": true,
+    "guard": "useLockFile",
+    "mode": "advisory-file-lock",
+    "lockFile": "workspaces/wsp_session_alpha/sessions/.session-store.lock",
+    "ownerDeviceId": "dev_laptop_alpha",
+    "ownerSessionId": "sess_alpha_laptop_001",
+    "staleAfterMs": 300000,
+    "lockTokenRef": "[redacted:lockToken:141f13t]",
+    "rawLockMaterialStored": false
+  },
+  "api": {
+    "module": "apps/api/src/workspaceSessionStoreRoutes.ts",
+    "basePath": "/v1/workspace-session/snapshots",
+    "factory": "createWorkspaceSessionStoreRoutes",
+    "mount": "mountWorkspaceSessionStoreRoutes",
+    "defaultBasePath": "DEFAULT_WORKSPACE_SESSION_STORE_ROUTE_BASE_PATH",
+    "routes": [
+      {
+        "id": "workspace_session_snapshot_preview",
+        "method": "POST",
+        "path": "/v1/workspace-session/snapshots/preview",
+        "responseKind": "workspace-session.snapshot-preview",
+        "durableWrites": false
+      },
+      {
+        "id": "workspace_session_snapshot_create",
+        "method": "POST",
+        "path": "/v1/workspace-session/snapshots",
+        "responseKind": "workspace-session.snapshot-record.created",
+        "durableWrites": false
+      },
+      {
+        "id": "workspace_session_snapshot_list",
+        "method": "GET",
+        "path": "/v1/workspace-session/snapshots",
+        "responseKind": "workspace-session.snapshot-record.list",
+        "durableWrites": false
+      },
+      {
+        "id": "workspace_session_snapshot_read",
+        "method": "GET",
+        "path": "/v1/workspace-session/snapshots/:snapshotId",
+        "responseKind": "workspace-session.snapshot-record.read",
+        "durableWrites": false
+      }
+    ]
+  },
+  "sdk": {
+    "clientModule": "packages/sdk-js/src/localWorkspaceSessionSnapshotApiClient.ts",
+    "clientClass": "LocalWorkspaceSessionSnapshotApiClient",
+    "clientFactory": "createLocalWorkspaceSessionSnapshotApiClient",
+    "methods": [
+      "previewSnapshot",
+      "createSnapshot",
+      "listSnapshots",
+      "getSnapshot"
+    ],
+    "fileStoreModule": "packages/sdk-js/src/localWorkspaceSessionFileStore.ts",
+    "fileStoreClass": "LocalWorkspaceSessionFileStore",
+    "fileStoreFactory": "createLocalWorkspaceSessionFileStore",
+    "fileStoreAlias": "FileBackedLocalWorkspaceSessionStore",
+    "fileStoreAliasFactory": "createFileBackedLocalWorkspaceSessionStore"
+  },
+  "cli": {
+    "module": "packages/cli/src/workspaceSessionSnapshotStore.ts",
+    "command": "workspace-session snapshot inspect",
+    "runner": "runWorkspaceSessionSnapshotStoreCli",
+    "loader": "loadWorkspaceSessionSnapshotStore",
+    "detector": "isWorkspaceSessionSnapshotStoreCommand",
+    "redactedOutput": true
+  },
+  "web": {
+    "module": "apps/web/src/workspaceSessionSnapshotState.ts",
+    "stateId": "workspace_session_snapshot",
+    "stateBuilder": "buildWorkspaceSessionSnapshotState",
+    "summaryBuilder": "buildWorkspaceSessionSnapshotSummaryCards",
+    "redactor": "redactWorkspaceSessionSnapshotDisplayValue",
+    "rawBodyRetained": false
+  },
+  "sampleRecord": {
+    "kind": "workspace-session.snapshot-record",
+    "schemaVersion": "workspace-session-store/v1",
+    "localOnly": true,
+    "durableWrites": false,
+    "redacted": true,
+    "snapshotId": "wssnap_alpha_laptop_file_001",
+    "createdAt": "2026-04-28T02:41:00.000Z",
+    "updatedAt": "2026-04-28T02:41:00.000Z",
+    "fingerprint": "sha256:4fd3334fb83707820f457d97c4a838d2b2f01e7221cd6a142e6f58fda8bd3e68",
+    "snapshotFingerprint": "sha256:ca13b115d8b4c5a050b6b75d19f8cbe99ce8a5c6b1b663fd8ca9d83308e75d6a",
+    "storage": {
+      "path": "[redacted:path:0bszbz7]",
+      "displayPath": ".../sess_alpha_laptop_001.json [path:67c48faed741]",
+      "pathRedacted": true
+    },
+    "summary": {
+      "workspaceId": "wsp_session_alpha",
+      "deviceId": "dev_laptop_alpha",
+      "sessionId": "sess_alpha_laptop_001",
+      "operations": [
+        "open",
+        "lock"
+      ],
+      "eventCount": 2,
+      "auditRecordCount": 2
+    },
+    "redaction": {
+      "redacted": true,
+      "fields": [
+        "storage.path",
+        "lock.lockTokenRef"
+      ],
+      "rawPathsStored": false,
+      "rawLockMaterialStored": false,
+      "rawBodyRetained": false
+    }
+  },
+  "validationCommands": [
+    "python -m json.tool examples\\workspace-session\\file-store-adapter.json",
+    "python -m unittest tests.test_workspace_session_file_store_docs tests.test_workspace_session_file_store_alignment",
+    "node --test tests/security/workspace_session_file_store_threats.test.mjs"
+  ]
+}
