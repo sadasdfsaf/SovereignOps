@@ -66,6 +66,7 @@ def make_release_root(root: Path) -> None:
         *release_check.WORKSPACE_SESSION_API_REQUIRED_PATHS,
         *release_check.WORKSPACE_SESSION_PERSISTENCE_REQUIRED_PATHS,
         *release_check.WORKSPACE_SESSION_FILE_STORE_REQUIRED_PATHS,
+        *release_check.WORKSPACE_SESSION_SNAPSHOT_REVIEW_REQUIRED_PATHS,
         "docs/openapi.yaml",
         "docs/schema-alignment.md",
         "docs/local-data-lifecycle.md",
@@ -312,6 +313,8 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertTrue(by_name["workspace-session-persistence-alignment"].available)
         self.assertTrue(by_name["workspace-session-file-store-security"].available)
         self.assertTrue(by_name["workspace-session-file-store-alignment"].available)
+        self.assertTrue(by_name["workspace-session-snapshot-review-security"].available)
+        self.assertTrue(by_name["workspace-session-snapshot-review-alignment"].available)
         self.assertTrue(by_name["plugin-automation-alignment"].available)
         self.assertTrue(by_name["mcp-approval-evidence-api-alignment"].available)
         self.assertTrue(by_name["mcp-approval-evidence-records-api-alignment"].available)
@@ -381,6 +384,8 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("RUN workspace-session-persistence-alignment: python -m unittest tests.test_workspace_session_persistence_docs tests.test_workspace_session_persistence_alignment", output.getvalue())
         self.assertIn("SKIP workspace-session-file-store-security: missing tool: node", output.getvalue())
         self.assertIn("RUN workspace-session-file-store-alignment: python -m unittest tests.test_workspace_session_file_store_docs tests.test_workspace_session_file_store_alignment", output.getvalue())
+        self.assertIn("SKIP workspace-session-snapshot-review-security: missing tool: node", output.getvalue())
+        self.assertIn("RUN workspace-session-snapshot-review-alignment: python -m unittest tests.test_workspace_session_snapshot_review_docs tests.test_workspace_session_snapshot_review_alignment", output.getvalue())
         self.assertIn("SKIP release-notes-smoke:", output.getvalue())
         self.assertIn("SKIP cargo-check: missing tool: cargo", output.getvalue())
 

@@ -21,6 +21,7 @@ export * from "./pluginReviewArtifact.ts";
 export * from "./pluginReviewArtifactApiReplay.ts";
 export * from "./pluginReviewArtifactRecordsReplay.ts";
 export * from "./workspaceSessionApiReplay.ts";
+export * from "./workspaceSessionSnapshotReview.ts";
 export * from "./workspaceSessionSnapshotStore.ts";
 
 import { runAuditExportCli } from "./auditExport.ts";
@@ -43,6 +44,7 @@ import { runPluginReviewArtifactApiReplayCli } from "./pluginReviewArtifactApiRe
 import { runPluginReviewArtifactRecordsReplayCli } from "./pluginReviewArtifactRecordsReplay.ts";
 import { runPluginReviewArtifactCli } from "./pluginReviewArtifact.ts";
 import { runWorkspaceSessionApiReplayCli } from "./workspaceSessionApiReplay.ts";
+import { runWorkspaceSessionSnapshotReviewCli } from "./workspaceSessionSnapshotReview.ts";
 import { runWorkspaceSessionSnapshotStoreCli } from "./workspaceSessionSnapshotStore.ts";
 
 export async function runCli(
@@ -67,10 +69,12 @@ export async function runCli(
     Parameters<typeof runPluginReviewArtifactRecordsReplayCli>[1] &
     Parameters<typeof runPluginReviewArtifactCli>[1] &
     Parameters<typeof runWorkspaceSessionApiReplayCli>[1] &
+    Parameters<typeof runWorkspaceSessionSnapshotReviewCli>[1] &
     Parameters<typeof runWorkspaceSessionSnapshotStoreCli>[1] = {},
 ): ReturnType<typeof runCoreCli> {
   return (
     (await runAuditExportCli(argv, options)) ??
+    (await runWorkspaceSessionSnapshotReviewCli(argv, options)) ??
     (await runWorkspaceSessionSnapshotStoreCli(argv, options)) ??
     (await runWorkspaceSessionApiReplayCli(argv, options)) ??
     (await runPluginReviewArtifactRecordsReplayCli(argv, options)) ??

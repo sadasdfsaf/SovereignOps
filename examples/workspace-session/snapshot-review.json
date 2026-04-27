@@ -1,0 +1,272 @@
+{
+  "schemaVersion": "workspace-session-snapshot-review/v1",
+  "kind": "workspace-session.snapshot-review",
+  "generatedAt": "2026-04-28T03:10:00.000Z",
+  "localOnly": true,
+  "rawRequestBodyRetained": false,
+  "network": {
+    "mode": "disabled",
+    "allowedUriPrefixes": [
+      "local://",
+      "workspace://"
+    ]
+  },
+  "redaction": {
+    "redacted": true,
+    "replacement": "[REDACTED]",
+    "fields": [
+      "storagePath",
+      "displayPath",
+      "lockToken",
+      "sessionId",
+      "rootKey"
+    ],
+    "rawPathsStored": false,
+    "rawTokensStored": false,
+    "rawSessionIdsStored": false,
+    "rawRootKeysStored": false,
+    "rawRequestBodyRetained": false
+  },
+  "api": {
+    "module": "apps/api/src/workspaceSessionSnapshotReviewRoutes.ts",
+    "basePath": "/v1/workspace-session/snapshot-review",
+    "factory": "createWorkspaceSessionSnapshotReviewRoutes",
+    "mount": "mountWorkspaceSessionSnapshotReviewRoutes",
+    "defaultBasePath": "DEFAULT_WORKSPACE_SESSION_SNAPSHOT_REVIEW_ROUTE_BASE_PATH",
+    "routes": [
+      {
+        "id": "workspace_session_snapshot_review_compare",
+        "method": "POST",
+        "path": "/v1/workspace-session/snapshot-review/compare",
+        "responseKind": "workspace-session.snapshot-review.compare",
+        "durableWrites": false,
+        "requestBodyRetained": false
+      },
+      {
+        "id": "workspace_session_snapshot_retention_preview",
+        "method": "POST",
+        "path": "/v1/workspace-session/snapshot-review/retention-preview",
+        "responseKind": "workspace-session.snapshot-review.retention-preview",
+        "durableWrites": false,
+        "dryRunOnly": true,
+        "requestBodyRetained": false
+      }
+    ]
+  },
+  "sdk": {
+    "module": "packages/sdk-js/src/localWorkspaceSessionSnapshotReview.ts",
+    "helpers": [
+      "compareLocalWorkspaceSessionSnapshots",
+      "previewLocalWorkspaceSessionSnapshotRetention"
+    ],
+    "methods": [
+      "compareSnapshots",
+      "previewSnapshotRetention"
+    ]
+  },
+  "cli": {
+    "module": "packages/cli/src/workspaceSessionSnapshotReview.ts",
+    "commands": [
+      "workspace-session snapshot-review compare",
+      "workspace-session snapshot-review retention-preview"
+    ],
+    "runner": "runWorkspaceSessionSnapshotReviewCli",
+    "loader": "loadWorkspaceSessionSnapshotReviewFixture",
+    "detector": "isWorkspaceSessionSnapshotReviewCommand",
+    "redactedOutput": true
+  },
+  "snapshots": {
+    "baseline": {
+      "role": "baseline",
+      "snapshotRef": "wssnap_review_baseline_001",
+      "createdAt": "2026-04-28T03:00:00.000Z",
+      "fingerprint": "sha256:8b6f1eb0cf2f558d4f8ec42453721a9569ad8f8dcb9d9eaa572a84fd0dba9f12",
+      "workspaceRef": "[redacted:workspace:alpha]",
+      "deviceRef": "[redacted:device:laptop]",
+      "sessionIdRef": "[redacted:session:baseline]",
+      "rootKeyRef": "[redacted:rootKey:alpha]",
+      "storagePathRef": "[redacted:path:0bszbz7]",
+      "lockTokenRef": "[redacted:lockToken:141f13t]",
+      "snapshotVersion": 3,
+      "operationCount": 2,
+      "lastCursorRef": "[redacted:cursor:0002]",
+      "gateway": {
+        "transport": "stdio"
+      },
+      "redaction": {
+        "redacted": true,
+        "rawPathsStored": false,
+        "rawTokensStored": false,
+        "rawSessionIdsStored": false,
+        "rawRootKeysStored": false,
+        "rawRequestBodyRetained": false
+      }
+    },
+    "candidate": {
+      "role": "candidate",
+      "snapshotRef": "wssnap_review_candidate_001",
+      "createdAt": "2026-04-28T03:05:00.000Z",
+      "fingerprint": "sha256:2af65ec19d55f343b9b7d42b18d8f42b1b602a91549325dbcd43d015ad32f2c0",
+      "workspaceRef": "[redacted:workspace:alpha]",
+      "deviceRef": "[redacted:device:laptop]",
+      "sessionIdRef": "[redacted:session:candidate]",
+      "rootKeyRef": "[redacted:rootKey:alpha]",
+      "storagePathRef": "[redacted:path:58muj2k]",
+      "lockTokenRef": "[redacted:lockToken:7k2m9v0]",
+      "snapshotVersion": 4,
+      "operationCount": 3,
+      "lastCursorRef": "[redacted:cursor:0003]",
+      "gateway": {
+        "transport": "stdio"
+      },
+      "redaction": {
+        "redacted": true,
+        "rawPathsStored": false,
+        "rawTokensStored": false,
+        "rawSessionIdsStored": false,
+        "rawRootKeysStored": false,
+        "rawRequestBodyRetained": false
+      }
+    }
+  },
+  "compare": {
+    "routeId": "workspace_session_snapshot_review_compare",
+    "mode": "local-only",
+    "requestShape": {
+      "required": [
+        "baselineSnapshot",
+        "candidateSnapshot"
+      ],
+      "rawRequestBodyRetained": false,
+      "sensitiveFieldsRedacted": [
+        "storagePath",
+        "lockToken",
+        "sessionId",
+        "rootKey"
+      ]
+    },
+    "response": {
+      "kind": "workspace-session.snapshot-review.compare",
+      "schemaVersion": "workspace-session-snapshot-review/v1",
+      "comparisonId": "cmp_snapshot_review_001",
+      "comparedAt": "2026-04-28T03:06:00.000Z",
+      "localOnly": true,
+      "durableWrites": false,
+      "rawRequestBodyRetained": false,
+      "baselineSnapshotRef": "wssnap_review_baseline_001",
+      "candidateSnapshotRef": "wssnap_review_candidate_001",
+      "result": {
+        "status": "changed",
+        "changedFields": [
+          "snapshotVersion",
+          "operationCount",
+          "lastCursorRef"
+        ],
+        "unchangedFields": [
+          "workspaceRef",
+          "deviceRef",
+          "gateway.transport",
+          "redaction.rawPathsStored"
+        ]
+      },
+      "redaction": {
+        "redacted": true,
+        "fields": [
+          "storagePath",
+          "lockToken",
+          "sessionId",
+          "rootKey"
+        ],
+        "rawPathsStored": false,
+        "rawTokensStored": false,
+        "rawSessionIdsStored": false,
+        "rawRootKeysStored": false
+      }
+    }
+  },
+  "retentionPreview": {
+    "routeId": "workspace_session_snapshot_retention_preview",
+    "mode": "dry-run",
+    "requestShape": {
+      "required": [
+        "snapshots",
+        "policy"
+      ],
+      "policyName": "keep-latest-two",
+      "rawRequestBodyRetained": false,
+      "sensitiveFieldsRedacted": [
+        "storagePath",
+        "lockToken",
+        "sessionId",
+        "rootKey"
+      ]
+    },
+    "response": {
+      "kind": "workspace-session.snapshot-review.retention-preview",
+      "schemaVersion": "workspace-session-snapshot-review/v1",
+      "previewId": "ret_snapshot_review_001",
+      "previewedAt": "2026-04-28T03:07:00.000Z",
+      "retentionCutoff": "2026-04-28T03:04:00.000Z",
+      "policyName": "keep-latest-two",
+      "localOnly": true,
+      "durableWrites": false,
+      "dryRun": true,
+      "rawRequestBodyRetained": false,
+      "records": [
+        {
+          "recordId": "retrec_snapshot_review_001",
+          "snapshotRef": "wssnap_review_candidate_001",
+          "createdAt": "2026-04-28T03:07:00.000Z",
+          "observedAt": "2026-04-28T03:05:00.000Z",
+          "plannedAction": "retain",
+          "reason": "latest candidate snapshot",
+          "dryRun": true,
+          "applied": false,
+          "storagePathRef": "[redacted:path:58muj2k]",
+          "sessionIdRef": "[redacted:session:candidate]",
+          "rootKeyRef": "[redacted:rootKey:alpha]",
+          "redaction": {
+            "redacted": true,
+            "fields": [
+              "storagePath",
+              "sessionId",
+              "rootKey"
+            ]
+          }
+        },
+        {
+          "recordId": "retrec_snapshot_review_002",
+          "snapshotRef": "wssnap_review_baseline_001",
+          "createdAt": "2026-04-28T03:07:00.000Z",
+          "observedAt": "2026-04-28T03:00:00.000Z",
+          "plannedAction": "prune",
+          "reason": "older than preview cutoff",
+          "dryRun": true,
+          "applied": false,
+          "storagePathRef": "[redacted:path:0bszbz7]",
+          "sessionIdRef": "[redacted:session:baseline]",
+          "rootKeyRef": "[redacted:rootKey:alpha]",
+          "redaction": {
+            "redacted": true,
+            "fields": [
+              "storagePath",
+              "sessionId",
+              "rootKey"
+            ]
+          }
+        }
+      ],
+      "summary": {
+        "recordCount": 2,
+        "wouldRetain": 1,
+        "wouldPrune": 1,
+        "applied": 0
+      }
+    }
+  },
+  "validationCommands": [
+    "python -m json.tool examples\\workspace-session\\snapshot-review.json",
+    "python -m unittest tests.test_workspace_session_snapshot_review_docs",
+    "python -m unittest tests.test_workspace_session_snapshot_review_alignment"
+  ]
+}

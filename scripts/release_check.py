@@ -180,6 +180,26 @@ WORKSPACE_SESSION_FILE_STORE_REQUIRED_PATHS: tuple[str, ...] = (
     "apps/web/tests/workspace-session-snapshot-state.test.mjs",
 )
 
+WORKSPACE_SESSION_SNAPSHOT_REVIEW_REQUIRED_PATHS: tuple[str, ...] = (
+    "docs/workspace-session-snapshot-review.md",
+    "examples/workspace-session/snapshot-review.json",
+    "tests/test_workspace_session_snapshot_review_docs.py",
+    "tests/test_workspace_session_snapshot_review_alignment.py",
+    "tests/security/workspace_session_snapshot_review_threats.test.mjs",
+    "packages/sdk-js/src/index.ts",
+    "packages/sdk-js/src/localWorkspaceSessionSnapshotReview.ts",
+    "packages/sdk-js/tests/local-workspace-session-snapshot-review.test.mjs",
+    "apps/api/src/index.ts",
+    "apps/api/src/workspaceSessionSnapshotReviewRoutes.ts",
+    "apps/api/tests/workspace-session-snapshot-review-routes.test.mjs",
+    "packages/cli/src/index.ts",
+    "packages/cli/src/workspaceSessionSnapshotReview.ts",
+    "packages/cli/tests/workspace-session-snapshot-review.test.mjs",
+    "apps/web/src/main.ts",
+    "apps/web/src/workspaceSessionSnapshotReviewState.ts",
+    "apps/web/tests/workspace-session-snapshot-review-state.test.mjs",
+)
+
 
 @dataclass(frozen=True)
 class CheckSpec:
@@ -228,6 +248,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             *WORKSPACE_SESSION_API_REQUIRED_PATHS,
             *WORKSPACE_SESSION_PERSISTENCE_REQUIRED_PATHS,
             *WORKSPACE_SESSION_FILE_STORE_REQUIRED_PATHS,
+            *WORKSPACE_SESSION_SNAPSHOT_REVIEW_REQUIRED_PATHS,
             "docs/local-data-lifecycle.md",
             "docs/maintainership.md",
             "docs/security-checklist.md",
@@ -537,6 +558,29 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "tests.test_workspace_session_file_store_alignment",
         ),
         required_paths=WORKSPACE_SESSION_FILE_STORE_REQUIRED_PATHS,
+    ),
+    CheckSpec(
+        name="workspace-session-snapshot-review-security",
+        description="Validate workspace session snapshot review redaction, path safety, and dry-run retention controls.",
+        command=(
+            "node",
+            "--test",
+            "tests/security/workspace_session_snapshot_review_threats.test.mjs",
+        ),
+        required_paths=WORKSPACE_SESSION_SNAPSHOT_REVIEW_REQUIRED_PATHS,
+        tool_candidates=("node",),
+    ),
+    CheckSpec(
+        name="workspace-session-snapshot-review-alignment",
+        description="Validate workspace session snapshot review docs, examples, SDK/API/CLI/Web wiring, and release readiness.",
+        command=(
+            PYTHON,
+            "-m",
+            "unittest",
+            "tests.test_workspace_session_snapshot_review_docs",
+            "tests.test_workspace_session_snapshot_review_alignment",
+        ),
+        required_paths=WORKSPACE_SESSION_SNAPSHOT_REVIEW_REQUIRED_PATHS,
     ),
     CheckSpec(
         name="mcp-gateway-fixtures",
