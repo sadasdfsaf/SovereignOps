@@ -9,6 +9,7 @@ import {
   jsonError,
   jsonResponse,
 } from "../src/router.ts";
+import { mountMcpApprovalEvidenceRoutes } from "../src/mcpApprovalEvidenceRoutes.ts";
 import { mountMcpRoutes } from "../src/mcpRoutes.ts";
 import { mountPluginReviewArtifactRoutes } from "../src/pluginReviewArtifactRoutes.ts";
 import { mountSyncRoutes } from "../src/syncRoutes.ts";
@@ -65,6 +66,11 @@ test("documented OpenAPI sync and MCP operations are mounted by public routes", 
     assert.equal(routeKey(operation), expectedRouteKey);
     assert.ok(routeKeys.has(expectedRouteKey), `${expectedRouteKey} is not mounted`);
   }
+
+  assert.ok(
+    routeKeys.has("POST /v1/mcp/approval-evidence/preview"),
+    "POST /v1/mcp/approval-evidence/preview is not mounted",
+  );
 });
 
 test("JSON errors keep a stable envelope across router, sync, and MCP routes", async () => {
@@ -265,6 +271,73 @@ test("MCP public routes preserve resource and safe tool preview contracts", asyn
   assert.equal(decisionResponse.body.session.decision.reason, "checked");
 });
 
+test("MCP approval evidence public route previews local snapshot payloads", async () => {
+  const router = createPublicContractRouter();
+
+  const response = await router.dispatch({
+    method: "POST",
+    path: "/v1/mcp/approval-evidence/preview",
+    body: {
+      approvalSessions: [
+        {
+          id: "approval-evidence-contract-1",
+          status: "pending",
+          createdAt: "2026-04-27T00:00:00.000Z",
+          updatedAt: "2026-04-27T00:00:00.000Z",
+          request: {
+            toolName: "create_task_proposal",
+            arguments: {
+              title: "Review local notes",
+              apiKey: "sk_contract_evidence_secret_123456",
+            },
+          },
+          actor: { id: "act_local" },
+          metadata: {
+            source: "api-contract-test",
+            token: "tok_contract_evidence_secret_123456",
+          },
+        },
+      ],
+      toolAuditRecords: [
+        {
+          id: "tool-evidence-contract-1",
+          timestamp: "2026-04-27T00:00:01.000Z",
+          type: "tool_call_approval_required",
+          toolName: "create_task_proposal",
+          actorId: "act_local",
+          decision: "require_approval",
+          reason: "contract route review",
+        },
+      ],
+      filters: {
+        statuses: ["approval_required"],
+      },
+    },
+  });
+
+  assertJsonResponse(response, 200);
+  assert.equal(response.body.kind, "mcp-approval-evidence.preview");
+  assert.equal(response.body.localOnly, true);
+  assert.equal(response.body.redacted, true);
+  assert.equal(response.body.summary.returnedEvidenceCount, 2);
+  assert.deepEqual(
+    response.body.evidence.map((entry) => [entry.id, entry.status]),
+    [
+      ["approval-evidence-contract-1", "approval_required"],
+      ["tool-evidence-contract-1", "approval_required"],
+    ],
+  );
+  assert.equal(JSON.stringify(response.body).includes("sk_contract_evidence_secret_123456"), false);
+  assert.equal(JSON.stringify(response.body).includes("tok_contract_evidence_secret_123456"), false);
+});
+
+test("index exports MCP approval evidence route helpers", async () => {
+  const api = await import("../src/index.ts");
+
+  assert.equal(typeof api.createMcpApprovalEvidenceRoutes, "function");
+  assert.equal(typeof api.mountMcpApprovalEvidenceRoutes, "function");
+});
+
 test("router dispatch normalizes requests deterministically without mutating callers", async () => {
   const router = createApiRouter();
   router.register({
@@ -356,6 +429,7 @@ function createPublicContractRouter(options = {}) {
     options.mcpDependencies ?? createMcpDependencies(),
     { basePath: "/v1/mcp", pathStyle: "openapi" },
   );
+  mountMcpApprovalEvidenceRoutes(router);
   mountPluginReviewArtifactRoutes(router);
 
   return router;

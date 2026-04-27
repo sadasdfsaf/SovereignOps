@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sovereignops.local/mcp/approval-evidence.schema.json",
+  "title": "MCP approval evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "generatedAt",
+    "workspaceId",
+    "localOnly",
+    "policyDecision",
+    "approvalStatus",
+    "sessionRefs",
+    "auditEventRefs",
+    "redactionSummary"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "mcp-approval-evidence/v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^mcpae_[A-Za-z0-9_-]{1,88}$"
+    },
+    "generatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$"
+    },
+    "workspaceId": {
+      "type": "string",
+      "pattern": "^wsp_[A-Za-z0-9_-]{1,88}$"
+    },
+    "localOnly": {
+      "type": "boolean",
+      "const": true
+    },
+    "policyDecision": {
+      "type": "string",
+      "enum": [
+        "allow",
+        "require_approval",
+        "deny"
+      ]
+    },
+    "approvalStatus": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "expired"
+      ]
+    },
+    "sessionRefs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "MCP approval session reference",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sessionId",
+          "role",
+          "status"
+        ],
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "pattern": "^approval_[A-Za-z0-9_-]{1,88}$"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "subject",
+              "related"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected",
+              "expired"
+            ]
+          }
+        }
+      }
+    },
+    "auditEventRefs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "MCP approval audit event reference",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "eventId",
+          "type",
+          "occurredAt"
+        ],
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "pattern": "^audit_[A-Za-z0-9_-]{1,88}$"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "policy_decision",
+              "operation_succeeded",
+              "operation_failed"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$"
+          }
+        }
+      }
+    },
+    "redactionSummary": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "MCP approval redaction summary",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "redacted",
+        "redactedFieldCount",
+        "redactedPaths",
+        "retainedMetadataKeys"
+      ],
+      "properties": {
+        "redacted": {
+          "type": "boolean"
+        },
+        "redactedFieldCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "redactedPaths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z][A-Za-z0-9_.\\[\\]-]{0,191}$"
+          }
+        },
+        "retainedMetadataKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!.*(?:[aA][pP][iI][_-]?[kK][eE][yY]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[pP][aA][sS][sS][wW][oO][rR][dD]|[sS][eE][cC][rR][eE][tT]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!.*(?:[aA][pP][iI][_-]?[kK][eE][yY]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[pP][aA][sS][sS][wW][oO][rR][dD]|[sS][eE][cC][rR][eE][tT]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean",
+          "null"
+        ]
+      }
+    }
+  }
+}

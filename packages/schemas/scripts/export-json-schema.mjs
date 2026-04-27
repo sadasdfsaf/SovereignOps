@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { jsonSchemaCatalog, jsonSchemas, schemaKinds } from "../src/jsonSchema.ts";
+import { mcpApprovalEvidenceSchema } from "../src/mcpApprovalEvidence.ts";
 import { pluginReviewArtifactPreviewSchema } from "../src/pluginReviewArtifact.ts";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -14,6 +15,7 @@ const checkOnly = process.argv.includes("--check");
 const outputs = [
   ["schema-catalog.json", jsonSchemaCatalog],
   ...schemaKinds.map((kind) => [`${kind}.schema.json`, jsonSchemas[kind]]),
+  ["mcp-approval-evidence.schema.json", mcpApprovalEvidenceSchema],
   ["plugin-review-artifact-preview.schema.json", pluginReviewArtifactPreviewSchema],
 ];
 

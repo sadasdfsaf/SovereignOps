@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "mcp-approval-evidence.v0",
+  "id": "approval-evidence-local-notes",
+  "generatedAt": "2026-04-27 13:00:00",
+  "workspaceId": "workspace_localReview",
+  "localOnly": false,
+  "policyDecision": "Require Approval",
+  "approvalStatus": "APPROVED",
+  "sessionRefs": [
+    {
+      "sessionId": "approval_zeta",
+      "role": "subject",
+      "status": "approved"
+    },
+    {
+      "sessionId": "approval_alpha",
+      "role": "related",
+      "status": "queued",
+      "extra": true
+    }
+  ],
+  "auditEventRefs": [
+    {
+      "eventId": "audit_0002",
+      "type": "policy_decision",
+      "occurredAt": "2026-04-27T12:59:00.000Z"
+    },
+    {
+      "eventId": "audit_0001",
+      "type": "custom_event",
+      "occurredAt": "2026-04-27 12:58:00"
+    }
+  ],
+  "redactionSummary": {
+    "redacted": false,
+    "redactedFieldCount": 2,
+    "redactedPaths": [
+      "request metadata.note"
+    ],
+    "retainedMetadataKeys": [
+      "clientLabel",
+      "apiKey"
+    ],
+    "rawValue": "visible"
+  },
+  "metadata": {
+    "clientLabel": "local-notes",
+    "accessToken": "not-a-real-token",
+    "nested": {
+      "unsafe": true
+    }
+  },
+  "unexpected": true
+}

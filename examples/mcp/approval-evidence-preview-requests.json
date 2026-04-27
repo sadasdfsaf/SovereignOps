@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "mcp-approval-evidence-preview-requests.v1",
+  "generatedAt": "2026-04-27T12:00:00.000Z",
+  "apiBase": "local://mcp-approval-evidence-preview",
+  "requests": [
+    {
+      "id": "api_mcp_approval_evidence_preview_local_tasks",
+      "title": "Preview MCP approval evidence for local task actions",
+      "route": {
+        "method": "POST",
+        "path": "/v1/mcp/approval-evidence/preview"
+      },
+      "request": {
+        "headers": {
+          "authorization": "Bearer [REDACTED]"
+        },
+        "body": {
+          "generatedAt": "2026-04-27T12:00:00.000Z",
+          "approvalSessions": [
+            {
+              "id": "aps_local_task_export_pending",
+              "status": "pending",
+              "createdAt": "2026-04-27T11:50:00.000Z",
+              "updatedAt": "2026-04-27T11:50:00.000Z",
+              "expiresAt": "2026-04-27T12:50:00.000Z",
+              "actor": {
+                "id": "user_local_operator"
+              },
+              "reason": "Review the local task export before allowing a durable action.",
+              "ruleId": "mcp_local_task_export_requires_approval",
+              "request": {
+                "toolName": "export_local_task_bundle",
+                "arguments": {
+                  "workspaceId": "wsp_local_alpha",
+                  "taskListId": "tasks_weekly_review",
+                  "apiToken": "fixture-api-token-001",
+                  "note": "Use Bearer [REDACTED] only for redaction coverage."
+                }
+              },
+              "metadata": {
+                "source": "local_fixture"
+              }
+            },
+            {
+              "id": "aps_local_note_summary_approved",
+              "status": "approved",
+              "createdAt": "2026-04-27T11:35:00.000Z",
+              "updatedAt": "2026-04-27T11:42:00.000Z",
+              "approvedAt": "2026-04-27T11:42:00.000Z",
+              "actor": {
+                "id": "user_local_operator"
+              },
+              "approvedBy": {
+                "id": "user_local_reviewer"
+              },
+              "reason": "Review completed for the local note summary.",
+              "ruleId": "mcp_local_note_summary_requires_approval",
+              "request": {
+                "toolName": "summarize_local_notes",
+                "arguments": {
+                  "workspaceId": "wsp_local_alpha",
+                  "noteSetId": "notes_review_batch"
+                }
+              },
+              "metadata": {
+                "sessionToken": "fixture-session-token-002"
+              },
+              "decision": {
+                "status": "approved",
+                "at": "2026-04-27T11:42:00.000Z",
+                "actor": {
+                  "id": "user_local_reviewer"
+                },
+                "reason": "Approved for preview-only evidence output."
+              }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "kind": "mcp-approval-evidence.preview",
+        "schemaVersion": "mcp-approval-evidence-preview/v1",
+        "approvalSessionCount": 2,
+        "entryCount": 2,
+        "redactionCount": 2,
+        "statuses": {
+          "approved": 1,
+          "pending": 1
+        }
+      }
+    }
+  ]
+}

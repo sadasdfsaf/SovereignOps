@@ -19,6 +19,7 @@ REQUIRED_PATH_OPERATIONS = {
     "/v1/ingest/evidence/export": ("exportIngestEvidence",),
     "/v1/ingest/evidence/package": ("packageIngestEvidence",),
     "/v1/plugins/review-artifacts/preview": ("previewPluginReviewArtifact",),
+    "/v1/mcp/approval-evidence/preview": ("previewMcpApprovalEvidence",),
 }
 REQUIRED_ERROR_FIELDS = ("code", "message", "requestId")
 

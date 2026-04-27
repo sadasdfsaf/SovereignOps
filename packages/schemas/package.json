@@ -5,8 +5,8 @@
   "private": true,
   "main": "src/index.ts",
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package && node scripts/export-json-schema.mjs --check && node tests/schemas.test.mjs && node tests/json-schema.test.mjs && node tests/plugin-review-artifact.test.mjs && node tests/ingest-search.test.mjs && node tests/ingest-evidence.test.mjs && node tests/ingest-evidence-export-alignment.test.mjs",
+    "check": "node ../../scripts/node-check.mjs --package && node scripts/export-json-schema.mjs --check && node tests/schemas.test.mjs && node tests/json-schema.test.mjs && node tests/plugin-review-artifact.test.mjs && node tests/mcp-approval-evidence.test.mjs && node tests/ingest-search.test.mjs && node tests/ingest-evidence.test.mjs && node tests/ingest-evidence-export-alignment.test.mjs",
     "export:json-schema": "node scripts/export-json-schema.mjs",
-    "test": "node tests/schemas.test.mjs && node tests/json-schema.test.mjs && node tests/plugin-review-artifact.test.mjs && node tests/ingest-search.test.mjs && node tests/ingest-evidence.test.mjs && node tests/ingest-evidence-export-alignment.test.mjs"
+    "test": "node tests/schemas.test.mjs && node tests/json-schema.test.mjs && node tests/plugin-review-artifact.test.mjs && node tests/mcp-approval-evidence.test.mjs && node tests/ingest-search.test.mjs && node tests/ingest-evidence.test.mjs && node tests/ingest-evidence-export-alignment.test.mjs"
   }
 }

@@ -50,6 +50,9 @@ paths:
   /v1/plugins/review-artifacts/preview:
     post:
       operationId: previewPluginReviewArtifact
+  /v1/mcp/approval-evidence/preview:
+    post:
+      operationId: previewMcpApprovalEvidence
 components:
   responses:
     Error:

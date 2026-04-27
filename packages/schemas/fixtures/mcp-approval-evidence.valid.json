@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "mcp-approval-evidence/v1",
+  "id": "mcpae_localNotesReview",
+  "generatedAt": "2026-04-27T13:00:00.000Z",
+  "workspaceId": "wsp_localReview",
+  "localOnly": true,
+  "policyDecision": "require_approval",
+  "approvalStatus": "approved",
+  "sessionRefs": [
+    {
+      "sessionId": "approval_localnotes_primary",
+      "role": "subject",
+      "status": "approved"
+    },
+    {
+      "sessionId": "approval_localnotes_related",
+      "role": "related",
+      "status": "expired"
+    }
+  ],
+  "auditEventRefs": [
+    {
+      "eventId": "audit_0001",
+      "type": "policy_decision",
+      "occurredAt": "2026-04-27T12:58:00.000Z"
+    },
+    {
+      "eventId": "audit_0002",
+      "type": "operation_succeeded",
+      "occurredAt": "2026-04-27T12:59:00.000Z"
+    },
+    {
+      "eventId": "audit_0003",
+      "type": "policy_decision",
+      "occurredAt": "2026-04-27T13:00:00.000Z"
+    }
+  ],
+  "redactionSummary": {
+    "redacted": true,
+    "redactedFieldCount": 2,
+    "redactedPaths": [
+      "request.arguments.previewText",
+      "transition.metadata.reviewerNote"
+    ],
+    "retainedMetadataKeys": [
+      "clientLabel",
+      "maskedValue",
+      "workflowId"
+    ]
+  },
+  "metadata": {
+    "clientLabel": "local-notes",
+    "maskedValue": "[REDACTED]",
+    "workflowId": "wf_offline_review",
+    "retryCount": 0
+  }
+}

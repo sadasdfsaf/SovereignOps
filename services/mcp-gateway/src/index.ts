@@ -9,6 +9,7 @@ export function canExecute(gate: GatewayPolicyGate): boolean {
 }
 
 export * from "./adapter.ts";
+export * from "./approvalEvidence.ts";
 export * from "./approvalSessions.ts";
 export { AuditEmitter, createAuditEmitter } from "./audit.ts";
 export type { AuditEvent, AuditEventType, AuditListener, AuditRecord, AuditSink } from "./audit.ts";

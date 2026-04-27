@@ -802,6 +802,30 @@ paths:
           $ref: "#/components/responses/Error"
         default:
           $ref: "#/components/responses/Error"
+  /v1/mcp/approval-evidence/preview:
+    post:
+      tags:
+        - mcp
+      summary: Preview local MCP approval evidence.
+      description: Local preview only; callers provide approval session, policy, and audit snapshots in the request body.
+      operationId: previewMcpApprovalEvidence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/McpApprovalEvidencePreviewRequest"
+      responses:
+        "200":
+          description: Redacted MCP approval evidence preview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpApprovalEvidencePreviewResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
 components:
   parameters:
     WorkspaceId:
@@ -3976,6 +4000,47 @@ components:
             - approval_required
             - denied
         artifact:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+    McpApprovalEvidencePreviewRequest:
+      type: object
+      required:
+        - session
+      properties:
+        session:
+          type: object
+          additionalProperties: true
+        policy:
+          type: object
+          additionalProperties: true
+        auditEvents:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        generatedAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+    McpApprovalEvidencePreviewResponse:
+      type: object
+      required:
+        - kind
+        - localOnly
+        - redacted
+        - evidence
+      properties:
+        kind:
+          type: string
+          const: mcp-approval-evidence.preview
+        localOnly:
+          type: boolean
+          const: true
+        redacted:
+          type: boolean
+          const: true
+        evidence:
           type: object
           additionalProperties: true
       additionalProperties: false
