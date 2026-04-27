@@ -9,6 +9,7 @@ export * from "./ingestEvidenceApiReplay.ts";
 export * from "./ingestEvidence.ts";
 export * from "./ingestApiReplay.ts";
 export * from "./ingestApiVerify.ts";
+export * from "./ingestConnectorMcpPreview.ts";
 export * from "./ingestSearch.ts";
 export * from "./localEventExports.ts";
 export * from "./localEventImports.ts";
@@ -36,6 +37,7 @@ import { runIngestEvidenceApiReplayCli } from "./ingestEvidenceApiReplay.ts";
 import { runIngestEvidenceCli } from "./ingestEvidence.ts";
 import { runIngestApiReplayCli } from "./ingestApiReplay.ts";
 import { runIngestApiVerifyCli } from "./ingestApiVerify.ts";
+import { runIngestConnectorMcpPreviewCli } from "./ingestConnectorMcpPreview.ts";
 import { runIngestSearchCli } from "./ingestSearch.ts";
 import { runLifecycleCli } from "./lifecycle.ts";
 import { runLocalEventExportsCli } from "./localEventExports.ts";
@@ -67,6 +69,7 @@ export async function runCli(
     Parameters<typeof runIngestEvidenceCli>[1] &
     Parameters<typeof runIngestApiReplayCli>[1] &
     Parameters<typeof runIngestApiVerifyCli>[1] &
+    Parameters<typeof runIngestConnectorMcpPreviewCli>[1] &
     Parameters<typeof runIngestSearchCli>[1] &
     Parameters<typeof runLocalEventExportsCli>[1] &
     Parameters<typeof runLocalEventImportsCli>[1] &
@@ -99,6 +102,7 @@ export async function runCli(
     (await runPluginReviewArtifactRecordsReplayCli(argv, options)) ??
     (await runPluginReviewArtifactApiReplayCli(argv, options)) ??
     (await runPluginReviewArtifactCli(argv, options)) ??
+    (await runIngestConnectorMcpPreviewCli(argv, options)) ??
     (await runIngestConnectorApiReplayCli(argv, options)) ??
     (await runIngestEvidenceApiReplayCli(argv, options)) ??
     (await runIngestEvidenceCli(argv, options)) ??

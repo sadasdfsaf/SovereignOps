@@ -17,6 +17,7 @@ EXPECTED_HEADINGS = (
     "## Connector Manifest",
     "## Python CLI",
     "## API Route",
+    "## MCP Resource Preview",
     "## SDK Helper",
     "## Web State",
     "## Schema Contracts",
@@ -97,6 +98,23 @@ EXPECTED_FILES = (
     "examples/ingest-search/api-requests.json",
     "examples/ingest-search/connector-api-requests.json",
     "examples/ingest-search/client-session.json",
+)
+
+EXPECTED_MCP_RESOURCE_FILES = (
+    "services/mcp-gateway/src/ingestConnectorResources.ts",
+    "apps/api/src/ingestConnectorMcpRoutes.ts",
+    "packages/cli/src/ingestConnectorMcpPreview.ts",
+    "packages/sdk-js/src/ingestConnectorMcpClient.ts",
+    "apps/web/src/ingestConnectorMcpState.ts",
+)
+
+EXPECTED_MCP_RESOURCE_URIS_AND_ROUTES = (
+    "sovereignops://ingest/connectors/manifest",
+    "sovereignops://ingest/connectors/{profileId}",
+    "GET /v1/ingest/connectors/mcp/resources",
+    "GET /v1/ingest/connectors/mcp/resources/{connectorId}",
+    "POST /v1/ingest/connectors/mcp/preview",
+    "ingest_connector.preview_manifest",
 )
 
 EXPECTED_CONNECTOR_SYMBOLS = (
@@ -226,6 +244,22 @@ EXPECTED_SDK_AND_WEB_SYMBOLS = (
     "getIngestConnectorReadinessStatusLabel",
     "getIngestConnectorSafetyStateLabel",
     "INGEST_CONNECTOR_API_MANIFEST_SCHEMA_VERSION",
+    "createIngestConnectorMcpClient",
+    "listResources",
+    "listConnectorResources",
+    "listMcpConnectorResources",
+    "readResource",
+    "readConnectorResource",
+    "readMcpConnectorResource",
+    "preview",
+    "previewOutput",
+    "previewManifestResources",
+    "buildIngestConnectorMcpState",
+    "buildIngestConnectorMcpCards",
+    "buildIngestConnectorMcpRows",
+    "buildIngestConnectorMcpSections",
+    "buildIngestConnectorMcpEmptyState",
+    "getIngestConnectorMcpStatusLabel",
     "ingestConnectorApiManifestSchema",
     "ingestConnectorApiProfileSchema",
     "ingestConnectorApiManifestSchemas",
@@ -268,6 +302,8 @@ EXPECTED_COMMANDS = (
     r"node packages\cli\src\index.ts ingest api verify --fixture examples\ingest-search\api-requests.json --openapi docs\openapi.yaml",
     r"node packages\cli\src\index.ts ingest connectors api replay --fixture examples\ingest-search\connector-api-requests.json",
     r"node packages\cli\src\index.ts ingest-connector-api replay --fixture examples\ingest-search\connector-api-requests.json --id api_ingest_connectors_manifest",
+    r"node packages\cli\src\index.ts ingest connectors mcp preview --connector markdown-structured --format json",
+    r"node packages\cli\src\index.ts ingest-connector-mcp preview --connector json-structured --fixture packages\schemas\fixtures\ingest-connector-api-manifest.valid.json --format json",
     r"node apps\api\tests\ingest-connector-fixture-replay.test.mjs",
     r"node apps\api\tests\ingest-connector-schema-alignment.test.mjs",
     r"node apps\api\tests\ingest-fixture-services.test.mjs",
@@ -301,6 +337,13 @@ EXPECTED_COMMANDS = (
     "python -m unittest tests.test_validate_openapi_schema_components",
     "python -m unittest tests.test_schema_alignment_docs",
     "python -m unittest tests.test_validate_openapi_ingest_search",
+    "python -m unittest tests.test_mcp_contract_docs tests.test_ingest_connectors_docs tests.test_agent_guide_docs",
+    "python -m unittest tests.test_validate_openapi_ingest_connector_mcp",
+    r"node services\mcp-gateway\tests\ingest-connector-resources.test.mjs",
+    r"node apps\api\tests\ingest-connector-mcp-routes.test.mjs",
+    r"node packages\cli\tests\ingest-connector-mcp-preview.test.mjs",
+    r"node packages\sdk-js\tests\ingest-connector-mcp-client.test.mjs",
+    r"node apps\web\tests\ingest-connector-mcp-state.test.mjs",
     r"python scripts\release_check.py --dry-run",
 )
 
@@ -331,6 +374,7 @@ class IngestConnectorDocsTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.text = DOC_PATH.read_text(encoding="utf-8")
         cls.lower_text = cls.text.lower()
+        cls.normalized_lower_text = re.sub(r"\s+", " ", cls.lower_text)
 
     def test_document_has_required_sections_files_symbols_and_commands(self) -> None:
         self.assertTrue(DOC_PATH.is_file())
@@ -343,6 +387,14 @@ class IngestConnectorDocsTests(unittest.TestCase):
             with self.subTest(file_path=file_path):
                 self.assertTrue((ROOT / file_path).is_file(), file_path)
                 self.assertIn(f"`{file_path}`", self.text)
+
+        for file_path in EXPECTED_MCP_RESOURCE_FILES:
+            with self.subTest(file_path=file_path):
+                self.assertIn(f"`{file_path}`", self.text)
+
+        for value in EXPECTED_MCP_RESOURCE_URIS_AND_ROUTES:
+            with self.subTest(value=value):
+                self.assertIn(f"`{value}`", self.text)
 
         for symbol in (
             *EXPECTED_CONNECTOR_SYMBOLS,
@@ -377,10 +429,21 @@ class IngestConnectorDocsTests(unittest.TestCase):
             "request-body drift",
             "cross-surface connector api e2e parity",
             "no-network indicators",
+            "mcp ingest connector preview workflow",
+            "read-only mcp resources",
+            "dry-run preview envelopes",
+            "dryrun: true",
+            "must not fall back to global fetch",
+            "never opens a socket by default",
+            "runs through the mcp policy gate",
+            "stop before handlers run",
+            "approval request for a later durable import",
+            "redacted source uri",
+            "audit records should include",
         )
         for phrase in phrases:
             with self.subTest(phrase=phrase):
-                self.assertIn(phrase, self.lower_text)
+                self.assertIn(phrase, self.normalized_lower_text)
 
         for scheme in ("fixture://", "file://", "stdin://", "workspace://", "local://"):
             with self.subTest(scheme=scheme):

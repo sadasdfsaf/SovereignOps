@@ -377,6 +377,9 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("RUN python-tests: python -m unittest discover -s tests", output.getvalue())
         self.assertIn("RUN ingest-python-tests: python -m unittest discover -s services/ingest/tests", output.getvalue())
         self.assertIn("RUN ingest-connector-docs: python -m unittest tests.test_ingest_connectors_docs", output.getvalue())
+        self.assertIn("tests.test_mcp_contract_docs", output.getvalue())
+        self.assertIn("tests.test_agent_guide_docs", output.getvalue())
+        self.assertIn("tests.test_validate_openapi_ingest_connector_mcp", output.getvalue())
         self.assertIn("tests.test_validate_openapi_ingest_search", output.getvalue())
         self.assertIn("tests.test_ingest_connector_api_e2e", output.getvalue())
         self.assertIn("tests.test_ingest_contract_alignment", output.getvalue())
@@ -536,9 +539,14 @@ class ReleaseCheckTests(unittest.TestCase):
             "docs/ingest-connectors.md",
             "docs/ingest-integration.md",
             "docs/sdk-js.md",
+            "docs/mcp-contract.md",
+            "docs/agent-guide.md",
             "tests/test_ingest_connectors_docs.py",
             "tests/test_ingest_integration_docs.py",
             "tests/test_sdk_js_docs.py",
+            "tests/test_mcp_contract_docs.py",
+            "tests/test_agent_guide_docs.py",
+            "tests/test_validate_openapi_ingest_connector_mcp.py",
             "services/ingest/src/sovereignops_ingest/cli.py",
             "services/ingest/src/sovereignops_ingest/connectors.py",
             "services/ingest/src/sovereignops_ingest/connector_manifest.py",
@@ -551,8 +559,10 @@ class ReleaseCheckTests(unittest.TestCase):
             "apps/api/src/ingestConnectorRoutes.ts",
             "apps/api/src/ingestFixtureServices.ts",
             "apps/api/src/ingestOpenApiRoutes.ts",
+            "apps/api/src/ingestConnectorMcpRoutes.ts",
             "apps/api/tests/ingest-connector-routes.test.mjs",
             "apps/api/tests/ingest-connector-fixture-replay.test.mjs",
+            "apps/api/tests/ingest-connector-mcp-routes.test.mjs",
             "apps/api/tests/ingest-connector-schema-alignment.test.mjs",
             "apps/api/tests/ingest-fixture-services.test.mjs",
             "apps/api/tests/ingest-openapi-routes.test.mjs",
@@ -560,18 +570,22 @@ class ReleaseCheckTests(unittest.TestCase):
             "packages/cli/src/ingestApiReplay.ts",
             "packages/cli/src/ingestApiVerify.ts",
             "packages/cli/src/ingestConnectorApiReplay.ts",
+            "packages/cli/src/ingestConnectorMcpPreview.ts",
             "packages/cli/tests/ingest-api-replay.test.mjs",
             "packages/cli/tests/ingest-api-verify.test.mjs",
             "packages/cli/tests/ingest-connector-api-replay.test.mjs",
+            "packages/cli/tests/ingest-connector-mcp-preview.test.mjs",
             "packages/sdk-js/src/index.ts",
             "packages/sdk-js/src/ingestClient.ts",
             "packages/sdk-js/src/ingestConnectorClient.ts",
+            "packages/sdk-js/src/ingestConnectorMcpClient.ts",
             "packages/sdk-js/src/ingestConnectorFixtureFetch.ts",
             "packages/sdk-js/src/ingestFixtureFetch.ts",
             "packages/sdk-js/src/localIngest.ts",
             "packages/sdk-js/src/localIngestConnectorManifest.ts",
             "packages/sdk-js/tests/client-ingest-search.test.mjs",
             "packages/sdk-js/tests/ingest-connector-client.test.mjs",
+            "packages/sdk-js/tests/ingest-connector-mcp-client.test.mjs",
             "packages/sdk-js/tests/ingest-connector-fixture-fetch.test.mjs",
             "packages/sdk-js/tests/ingest-fixture-fetch.test.mjs",
             "packages/sdk-js/tests/local-ingest.test.mjs",
@@ -580,11 +594,13 @@ class ReleaseCheckTests(unittest.TestCase):
             "apps/web/src/ingestSearch.ts",
             "apps/web/src/ingestConnectorApiState.ts",
             "apps/web/src/ingestConnectorState.ts",
+            "apps/web/src/ingestConnectorMcpState.ts",
             "apps/web/src/ingestDashboardState.ts",
             "apps/web/tests/ingest-api-state.test.mjs",
             "apps/web/tests/ingest-search.test.mjs",
             "apps/web/tests/ingest-connector-api-state.test.mjs",
             "apps/web/tests/ingest-connector-state.test.mjs",
+            "apps/web/tests/ingest-connector-mcp-state.test.mjs",
             "packages/schemas/src/index.ts",
             "packages/schemas/src/ingestConnectorApiManifest.ts",
             "packages/schemas/src/ingestConnectorManifest.ts",
@@ -621,6 +637,9 @@ class ReleaseCheckTests(unittest.TestCase):
         docs_check = checks["ingest-connector-docs"]
         repo_health = checks["repo-health"]
         self.assertIn("tests.test_ingest_connectors_docs", docs_check.command)
+        self.assertIn("tests.test_mcp_contract_docs", docs_check.command)
+        self.assertIn("tests.test_agent_guide_docs", docs_check.command)
+        self.assertIn("tests.test_validate_openapi_ingest_connector_mcp", docs_check.command)
         self.assertIn("tests.test_ingest_integration_docs", docs_check.command)
         self.assertIn("tests.test_sdk_js_docs", docs_check.command)
         self.assertIn("tests.test_ingest_connector_api_e2e", docs_check.command)
@@ -630,12 +649,46 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("tests.test_schema_alignment_docs", docs_check.command)
         self.assertIn("tests.test_validate_openapi_ingest_search", docs_check.command)
         self.assertIn("SDK connector fixture harness", docs_check.description)
+        self.assertIn("MCP connector resource parity", docs_check.description)
+        self.assertIn("MCP API routes", docs_check.description)
         self.assertIn("connector API E2E parity", docs_check.description)
         self.assertIn("OpenAPI/schema alignment", docs_check.description)
         self.assertIn("API schema fixtures", docs_check.description)
         self.assertIn("Web ingest dashboard state", docs_check.description)
+        self.assertIn("agent guidance", docs_check.description)
         self.assertIn("local-only release guidance", docs_check.description)
         self.assertLessEqual(expected, set(repo_health.required_paths))
+
+    def test_ingest_connector_release_gate_tracks_mcp_resource_parity_slice(self) -> None:
+        required = set(release_check.MCP_INGEST_CONNECTOR_RESOURCE_REQUIRED_PATHS)
+        expected = {
+            "docs/mcp-contract.md",
+            "docs/agent-guide.md",
+            "docs/openapi.yaml",
+            "tests/test_mcp_contract_docs.py",
+            "tests/test_agent_guide_docs.py",
+            "tests/test_validate_openapi_ingest_connector_mcp.py",
+            "services/mcp-gateway/src/ingestConnectorResources.ts",
+            "services/mcp-gateway/tests/ingest-connector-resources.test.mjs",
+            "apps/api/src/ingestConnectorMcpRoutes.ts",
+            "apps/api/tests/ingest-connector-mcp-routes.test.mjs",
+            "packages/cli/src/ingestConnectorMcpPreview.ts",
+            "packages/cli/tests/ingest-connector-mcp-preview.test.mjs",
+            "packages/sdk-js/src/ingestConnectorMcpClient.ts",
+            "packages/sdk-js/tests/ingest-connector-mcp-client.test.mjs",
+            "apps/web/src/ingestConnectorMcpState.ts",
+            "apps/web/tests/ingest-connector-mcp-state.test.mjs",
+        }
+        self.assertEqual(expected, required)
+        self.assertLessEqual(expected, set(release_check.INGEST_CONNECTOR_REQUIRED_PATHS))
+
+        checks = {spec.name: spec for spec in release_check.CHECK_SPECS}
+        docs_check = checks["ingest-connector-docs"]
+        self.assertIn("tests.test_mcp_contract_docs", docs_check.command)
+        self.assertIn("tests.test_agent_guide_docs", docs_check.command)
+        self.assertIn("tests.test_validate_openapi_ingest_connector_mcp", docs_check.command)
+        self.assertIn("MCP connector resource parity", docs_check.description)
+        self.assertIn("MCP API routes", docs_check.description)
 
     def test_missing_tools_are_skipped_when_running_available_checks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

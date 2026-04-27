@@ -1,5 +1,6 @@
 export * from "./auditExportRoutes.ts";
 export * from "./ingestConnectorRoutes.ts";
+export * from "./ingestConnectorMcpRoutes.ts";
 export * from "./ingestEvidenceRoutes.ts";
 export * from "./ingestFixtureServices.ts";
 export * from "./ingestOpenApiRoutes.ts";

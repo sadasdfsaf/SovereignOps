@@ -16,6 +16,7 @@ export { AuditEmitter, createAuditEmitter } from "./audit.ts";
 export type { AuditEvent, AuditEventType, AuditListener, AuditRecord, AuditSink } from "./audit.ts";
 export * from "./auditEmitter.ts";
 export * from "./auditReplay.ts";
+export * from "./ingestConnectorResources.ts";
 export * from "./protocol.ts";
 export {
   PolicyApprovalRequiredError,

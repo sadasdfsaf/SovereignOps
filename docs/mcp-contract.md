@@ -36,6 +36,28 @@ The adapter also sends policy operation markers `resources.list`, `resources.rea
 
 Unknown URIs return `resource_not_found` before policy or handlers run. Traversal-like URI strings are not normalized into existing resources.
 
+## Ingest Connector Resources
+
+The MCP ingest connector parity surface is resource-first. `services/mcp-gateway/src/ingestConnectorResources.ts` registers connector resources, normalizes preview output, and attaches policy and audit metadata before clients see connector content.
+
+| Resource URI | Capability | Notes |
+| --- | --- | --- |
+| `sovereignops://ingest/connectors/manifest` | `read_object` | Reads the normalized local connector manifest and readiness metadata. |
+| `sovereignops://ingest/connectors/{profileId}` | `read_object` | Reads one connector profile, supported source schemes, preview limits, and safety flags. |
+
+The preview surface is the safe local tool `ingest_connector.preview_manifest`, not a durable resource write. It returns manifest counts, readiness, and an optional connector profile with no side effects.
+
+Preview surfaces share the same public contract:
+
+- CLI: `packages/cli/src/ingestConnectorMcpPreview.ts` provides `node packages\cli\src\index.ts ingest connectors mcp preview --connector markdown-structured --format json`.
+- API: `apps/api/src/ingestConnectorMcpRoutes.ts` documents `GET /v1/ingest/connectors/mcp/resources`, `GET /v1/ingest/connectors/mcp/resources/{connectorId}`, and `POST /v1/ingest/connectors/mcp/preview`.
+- SDK: `packages/sdk-js/src/ingestConnectorMcpClient.ts` exposes `createIngestConnectorMcpClient`, `listResources`, `listConnectorResources`, `listMcpConnectorResources`, `readResource`, `readConnectorResource`, `readMcpConnectorResource`, `preview`, `previewOutput`, and `previewManifestResources`.
+- Web: `apps/web/src/ingestConnectorMcpState.ts` turns the same local preview envelope into connector cards, preview rows, request cards, empty states, dry-run labels, safety status, and audit references.
+
+The preview path is local-only and dry-run by default. Fixture input must be a repository-local JSON file, and resource payloads may only describe `fixture://`, `file://`, `stdin://`, `workspace://`, or `local://` source URIs. The path must not open remote URLs, must not require remote credentials, and must report `localOnly: true`, `networkAccess: false`, `durableWrites: false`, and `dryRun: true` when preview status is present. Preview output is untrusted by default, so rendered content keeps the untrusted markers and callers must not convert preview rows into durable records without a separate approval step.
+
+Resource reads and preview calls run through the policy gate with stable metadata such as `metadata.operation: "resources.read"` or `metadata.operation: "ingest.connector.preview"`, `metadata.registryKind: "resource"`, `metadata.connectorId`, `metadata.resourceUri`, and `metadata.dryRun: true`. `require_approval` and `deny` stop before connector execution. Audit rows must include the connector id, resource URI, redacted source URI when supplied, dry-run flag, local-only flag, no-network flag, and the terminal decision.
+
 ## Safe Local Tools
 
 | Tool | Required input | Output kind |

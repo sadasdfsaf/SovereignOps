@@ -265,11 +265,31 @@ WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS: tuple[str, ...] = (
     "tests/test_workspace_session_snapshot_retention_cleanup_inventory_e2e.py",
 )
 
+MCP_INGEST_CONNECTOR_RESOURCE_REQUIRED_PATHS: tuple[str, ...] = (
+    "docs/mcp-contract.md",
+    "docs/agent-guide.md",
+    "docs/openapi.yaml",
+    "tests/test_mcp_contract_docs.py",
+    "tests/test_agent_guide_docs.py",
+    "tests/test_validate_openapi_ingest_connector_mcp.py",
+    "services/mcp-gateway/src/ingestConnectorResources.ts",
+    "services/mcp-gateway/tests/ingest-connector-resources.test.mjs",
+    "apps/api/src/ingestConnectorMcpRoutes.ts",
+    "apps/api/tests/ingest-connector-mcp-routes.test.mjs",
+    "packages/cli/src/ingestConnectorMcpPreview.ts",
+    "packages/cli/tests/ingest-connector-mcp-preview.test.mjs",
+    "packages/sdk-js/src/ingestConnectorMcpClient.ts",
+    "packages/sdk-js/tests/ingest-connector-mcp-client.test.mjs",
+    "apps/web/src/ingestConnectorMcpState.ts",
+    "apps/web/tests/ingest-connector-mcp-state.test.mjs",
+)
+
 INGEST_CONNECTOR_REQUIRED_PATHS: tuple[str, ...] = (
     "docs/ingest-connectors.md",
     "docs/ingest-integration.md",
     "docs/sdk-js.md",
     "docs/schema-alignment.md",
+    *MCP_INGEST_CONNECTOR_RESOURCE_REQUIRED_PATHS,
     "tests/test_ingest_connectors_docs.py",
     "tests/test_ingest_integration_docs.py",
     "tests/test_sdk_js_docs.py",
@@ -821,12 +841,15 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
     ),
     CheckSpec(
         name="ingest-connector-docs",
-        description="Validate ingest connector docs, SDK connector fixture harness, connector API E2E parity, OpenAPI/schema alignment, API schema fixtures, Web ingest dashboard state, and local-only release guidance.",
+        description="Validate ingest connector docs, MCP connector resource parity, MCP API routes, SDK connector fixture harness, connector API E2E parity, OpenAPI/schema alignment, API schema fixtures, Web ingest dashboard state, agent guidance, and local-only release guidance.",
         command=(
             PYTHON,
             "-m",
             "unittest",
             "tests.test_ingest_connectors_docs",
+            "tests.test_mcp_contract_docs",
+            "tests.test_agent_guide_docs",
+            "tests.test_validate_openapi_ingest_connector_mcp",
             "tests.test_ingest_integration_docs",
             "tests.test_sdk_js_docs",
             "tests.test_ingest_connector_api_e2e",

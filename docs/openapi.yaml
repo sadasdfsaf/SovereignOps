@@ -620,6 +620,73 @@ paths:
                 $ref: "#/components/schemas/IngestConnectorManifest"
         default:
           $ref: "#/components/responses/IngestSearchError"
+  /v1/ingest/connectors/mcp/resources:
+    get:
+      tags:
+        - ingest
+      summary: List local MCP resource manifests for ingest connectors.
+      description: Returns MCP-ready resource manifests from local connector metadata without a server, network access, or durable writes.
+      operationId: listIngestConnectorMcpResources
+      responses:
+        "200":
+          description: Local MCP resource manifests for ingest connectors.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestConnectorMcpResourceListResponse"
+        default:
+          $ref: "#/components/responses/IngestSearchError"
+  /v1/ingest/connectors/mcp/resources/{connectorId}:
+    get:
+      tags:
+        - ingest
+      summary: Read one local MCP resource manifest for an ingest connector.
+      description: Returns one MCP-ready resource manifest from local connector metadata without a server, network access, or durable writes.
+      operationId: getIngestConnectorMcpResource
+      parameters:
+        - name: connectorId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^local\.[A-Za-z0-9_.-]{1,96}$'
+      responses:
+        "200":
+          description: Local MCP resource manifest for one ingest connector.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestConnectorMcpResourceResponse"
+        "404":
+          $ref: "#/components/responses/IngestSearchError"
+        default:
+          $ref: "#/components/responses/IngestSearchError"
+  /v1/ingest/connectors/mcp/preview:
+    post:
+      tags:
+        - ingest
+      summary: Preview an ingest connector MCP resource manifest.
+      description: Validates a local dry-run preview request without network access, durable writes, or side effects.
+      operationId: previewIngestConnectorMcpResource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestConnectorMcpPreviewRequest"
+      responses:
+        "200":
+          description: Dry-run local MCP resource preview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestConnectorMcpPreviewResponse"
+        "400":
+          $ref: "#/components/responses/IngestSearchError"
+        "404":
+          $ref: "#/components/responses/IngestSearchError"
+        default:
+          $ref: "#/components/responses/IngestSearchError"
   /v1/ingest/normalize:
     post:
       tags:
@@ -3718,6 +3785,228 @@ components:
           minItems: 1
           items:
             $ref: "#/components/schemas/IngestConnectorProfile"
+      additionalProperties: false
+    IngestConnectorMcpMetadata:
+      type: object
+      required:
+        - localOnly
+        - noNetwork
+        - durableWrites
+      properties:
+        localOnly:
+          type: boolean
+          const: true
+        noNetwork:
+          type: boolean
+          const: true
+        durableWrites:
+          type: boolean
+          const: false
+      additionalProperties: false
+    IngestConnectorMcpResourceDescriptor:
+      type: object
+      required:
+        - uri
+        - name
+        - description
+        - mimeType
+      properties:
+        uri:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        mimeType:
+          type: string
+          const: application/json
+      additionalProperties: false
+    IngestConnectorMcpResourceContent:
+      type: object
+      required:
+        - uri
+        - mimeType
+        - text
+      properties:
+        uri:
+          type: string
+          minLength: 1
+        mimeType:
+          type: string
+          const: application/json
+        text:
+          type: string
+      additionalProperties: false
+    IngestConnectorMcpResourceManifest:
+      type: object
+      required:
+        - schemaVersion
+        - localOnly
+        - noNetwork
+        - durableWrites
+        - metadata
+        - connectorId
+        - resource
+        - connector
+        - content
+      properties:
+        schemaVersion:
+          type: string
+          const: ingest-connector-mcp-resource/v1
+        localOnly:
+          type: boolean
+          const: true
+        noNetwork:
+          type: boolean
+          const: true
+        durableWrites:
+          type: boolean
+          const: false
+        metadata:
+          $ref: "#/components/schemas/IngestConnectorMcpMetadata"
+        connectorId:
+          type: string
+          pattern: '^local\.[A-Za-z0-9_.-]{1,96}$'
+        resource:
+          $ref: "#/components/schemas/IngestConnectorMcpResourceDescriptor"
+        connector:
+          $ref: "#/components/schemas/IngestConnectorProfile"
+        content:
+          $ref: "#/components/schemas/IngestConnectorMcpResourceContent"
+      additionalProperties: false
+    IngestConnectorMcpResourceListResponse:
+      type: object
+      required:
+        - schemaVersion
+        - localOnly
+        - noNetwork
+        - durableWrites
+        - metadata
+        - resources
+      properties:
+        schemaVersion:
+          type: string
+          const: ingest-connector-mcp-resources/v1
+        localOnly:
+          type: boolean
+          const: true
+        noNetwork:
+          type: boolean
+          const: true
+        durableWrites:
+          type: boolean
+          const: false
+        metadata:
+          $ref: "#/components/schemas/IngestConnectorMcpMetadata"
+        resources:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/IngestConnectorMcpResourceManifest"
+      additionalProperties: false
+    IngestConnectorMcpResourceResponse:
+      type: object
+      required:
+        - schemaVersion
+        - localOnly
+        - noNetwork
+        - durableWrites
+        - metadata
+        - resource
+      properties:
+        schemaVersion:
+          type: string
+          const: ingest-connector-mcp-resource/v1
+        localOnly:
+          type: boolean
+          const: true
+        noNetwork:
+          type: boolean
+          const: true
+        durableWrites:
+          type: boolean
+          const: false
+        metadata:
+          $ref: "#/components/schemas/IngestConnectorMcpMetadata"
+        resource:
+          $ref: "#/components/schemas/IngestConnectorMcpResourceManifest"
+      additionalProperties: false
+    IngestConnectorMcpPreviewRequest:
+      type: object
+      properties:
+        connectorId:
+          type: string
+          pattern: '^local\.[A-Za-z0-9_.-]{1,96}$'
+        resourceUri:
+          type: string
+          minLength: 1
+        includeContent:
+          type: boolean
+      additionalProperties: false
+    IngestConnectorMcpPreviewSummary:
+      type: object
+      required:
+        - accepted
+        - sideEffects
+        - durableWrites
+        - contentIncluded
+        - contentBytes
+      properties:
+        accepted:
+          type: boolean
+          const: true
+        sideEffects:
+          type: boolean
+          const: false
+        durableWrites:
+          type: boolean
+          const: false
+        contentIncluded:
+          type: boolean
+        contentBytes:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    IngestConnectorMcpPreviewResponse:
+      type: object
+      required:
+        - schemaVersion
+        - localOnly
+        - noNetwork
+        - durableWrites
+        - dryRun
+        - metadata
+        - connectorId
+        - resource
+        - preview
+      properties:
+        schemaVersion:
+          type: string
+          const: ingest-connector-mcp-preview/v1
+        localOnly:
+          type: boolean
+          const: true
+        noNetwork:
+          type: boolean
+          const: true
+        durableWrites:
+          type: boolean
+          const: false
+        dryRun:
+          type: boolean
+          const: true
+        metadata:
+          $ref: "#/components/schemas/IngestConnectorMcpMetadata"
+        connectorId:
+          type: string
+          pattern: '^local\.[A-Za-z0-9_.-]{1,96}$'
+        resource:
+          $ref: "#/components/schemas/IngestConnectorMcpResourceManifest"
+        preview:
+          $ref: "#/components/schemas/IngestConnectorMcpPreviewSummary"
       additionalProperties: false
     IngestNormalizeRequest:
       type: object

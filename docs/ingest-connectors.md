@@ -155,6 +155,75 @@ The route state accepts local source URIs, relative repository paths, and
 request JSON. It returns checksums, citations, quarantine items, and
 `untrusted: true` unless `options.trusted` is explicitly true.
 
+## MCP Resource Preview
+
+The MCP ingest connector preview workflow reuses the connector manifest but
+presents it as read-only MCP resources and dry-run preview envelopes.
+`services/mcp-gateway/src/ingestConnectorResources.ts` owns the gateway
+resource definitions and preview tool descriptor.
+
+| Surface | Public path or command | Contract |
+| --- | --- | --- |
+| MCP manifest resource | `sovereignops://ingest/connectors/manifest` | Reads the normalized local connector manifest and readiness metadata. |
+| MCP profile resource | `sovereignops://ingest/connectors/{profileId}` | Reads one connector profile without executing a connector. |
+| MCP preview tool | `ingest_connector.preview_manifest` | Returns manifest counts, readiness, and an optional connector profile with no side effects. |
+| API routes | `apps/api/src/ingestConnectorMcpRoutes.ts` | Lists resources, reads one resource, and runs dry-run previews. |
+| CLI preview | `packages/cli/src/ingestConnectorMcpPreview.ts` | Runs the local preview command and prints a JSON envelope. |
+| SDK client | `packages/sdk-js/src/ingestConnectorMcpClient.ts` | Uses an injected local transport or fetch; it must not fall back to global fetch. |
+| Web state | `apps/web/src/ingestConnectorMcpState.ts` | Builds connector cards, preview rows, approval labels, dry-run labels, and audit references from captured local JSON. |
+
+The CLI preview commands stay local. Preview output reports dry-run safety
+state without needing a write flag:
+
+```powershell
+node packages\cli\src\index.ts ingest connectors mcp preview --connector markdown-structured --format json
+node packages\cli\src\index.ts ingest-connector-mcp preview --connector json-structured --fixture packages\schemas\fixtures\ingest-connector-api-manifest.valid.json --format json
+```
+
+API route docs describe `GET /v1/ingest/connectors/mcp/resources`,
+`GET /v1/ingest/connectors/mcp/resources/{connectorId}`, and
+`POST /v1/ingest/connectors/mcp/preview`. The route contract returns the same
+safety fields as the connector manifest: `localOnly: true`,
+`networkAccess: false`, `durableWrites: false`, `dryRun: true`, and
+untrusted-by-default preview content.
+
+`packages/sdk-js/src/ingestConnectorMcpClient.ts` should expose
+`createIngestConnectorMcpClient`, `listResources`,
+`listConnectorResources`, `listMcpConnectorResources`, `readResource`,
+`readConnectorResource`, `readMcpConnectorResource`, `preview`,
+`previewOutput`, and `previewManifestResources`. The SDK client requires an
+injected fetch for localhost tests, rejects remote URLs, never opens a socket by
+default, and redacts raw local paths and secret-shaped values in errors.
+
+`apps/web/src/ingestConnectorMcpState.ts` should expose
+`buildIngestConnectorMcpState`, `buildIngestConnectorMcpCards`,
+`buildIngestConnectorMcpRows`, `buildIngestConnectorMcpSections`,
+`buildIngestConnectorMcpEmptyState`, and
+`getIngestConnectorMcpStatusLabel`. Web state consumes captured local JSON
+only, labels every preview as dry-run, carries no-network indicators, and
+treats connector output as default untrusted.
+
+Every MCP connector resource read and preview request runs through the MCP
+policy gate before connector execution. `deny` and `require_approval` stop
+before handlers run. A preview may create an approval request for a later
+durable import, but the preview itself must not write durable state. Audit
+records should include the connector id, resource URI, redacted source URI or
+fixture path, decision, `dryRun: true`, `localOnly: true`,
+`networkAccess: false`, and `durableWrites: false`.
+
+Focused MCP connector parity checks:
+
+```powershell
+python -m unittest tests.test_mcp_contract_docs tests.test_ingest_connectors_docs tests.test_agent_guide_docs
+python -m unittest tests.test_validate_openapi_ingest_connector_mcp
+node services\mcp-gateway\tests\ingest-connector-resources.test.mjs
+node apps\api\tests\ingest-connector-mcp-routes.test.mjs
+node packages\cli\tests\ingest-connector-mcp-preview.test.mjs
+node packages\sdk-js\tests\ingest-connector-mcp-client.test.mjs
+node apps\web\tests\ingest-connector-mcp-state.test.mjs
+python scripts\release_check.py --dry-run
+```
+
 Focused API and CLI fixture checks:
 
 These commands cover `apps/api/tests/ingest-fixture-services.test.mjs`,

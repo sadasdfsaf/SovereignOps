@@ -17,6 +17,7 @@ EXPECTED_SECTIONS = (
     "## Protocol Methods",
     "## Adapter Tool Names",
     "## Default Resources",
+    "## Ingest Connector Resources",
     "## Safe Local Tools",
     "## Untrusted Output Contract",
     "## SDK Entry Points",
@@ -51,6 +52,8 @@ EXPECTED_RESOURCES = (
     "`sovereignops://incidents/sync-delay-drill`",
     "`sovereignops://search/workspace-index`",
     "`sovereignops://audit/policy-trace`",
+    "`sovereignops://ingest/connectors/manifest`",
+    "`sovereignops://ingest/connectors/{profileId}`",
 )
 
 EXPECTED_SAFE_TOOLS = (
@@ -99,6 +102,13 @@ EXPECTED_SDK_NAMES = (
     "`callMcpTool`",
     "`listMcpApprovalSessions`",
     "`decideMcpApprovalSession`",
+    "`createIngestConnectorMcpClient`",
+    "`listConnectorResources`",
+    "`listMcpConnectorResources`",
+    "`readConnectorResource`",
+    "`readMcpConnectorResource`",
+    "`previewOutput`",
+    "`previewManifestResources`",
 )
 
 EXPECTED_COMMANDS = (
@@ -114,6 +124,19 @@ EXPECTED_COMMANDS = (
     "node packages\\cli\\src\\index.ts mcp api call --base-url http://127.0.0.1:3000 --tool-name create_task_proposal",
     "node packages\\cli\\src\\index.ts mcp api approvals --base-url http://127.0.0.1:3000",
     "node packages\\cli\\src\\index.ts mcp api approval-decide --base-url http://127.0.0.1:3000 --session-id approval-route-1 --decision approve",
+    "node packages\\cli\\src\\index.ts ingest connectors mcp preview --connector markdown-structured --format json",
+)
+
+EXPECTED_INGEST_MCP_PATHS = (
+    "`services/mcp-gateway/src/ingestConnectorResources.ts`",
+    "`apps/api/src/ingestConnectorMcpRoutes.ts`",
+    "`packages/cli/src/ingestConnectorMcpPreview.ts`",
+    "`packages/sdk-js/src/ingestConnectorMcpClient.ts`",
+    "`apps/web/src/ingestConnectorMcpState.ts`",
+    "`GET /v1/ingest/connectors/mcp/resources`",
+    "`GET /v1/ingest/connectors/mcp/resources/{connectorId}`",
+    "`POST /v1/ingest/connectors/mcp/preview`",
+    "`ingest_connector.preview_manifest`",
 )
 
 EXPECTED_SECURITY_GUARANTEES = (
@@ -125,6 +148,9 @@ EXPECTED_SECURITY_GUARANTEES = (
     "Markers only identify data boundaries.",
     "Tool arguments are redacted recursively for sensitive names and credential-shaped values.",
     "Redaction replaces matching values with `[REDACTED]` while preserving non-sensitive fields.",
+    "The preview path is local-only and dry-run by default.",
+    "Preview output is untrusted by default",
+    "`require_approval` and `deny` stop before connector execution.",
 )
 
 
@@ -146,6 +172,27 @@ class McpContractDocsTests(unittest.TestCase):
             + EXPECTED_RESOURCES
             + EXPECTED_SAFE_TOOLS
             + EXPECTED_SDK_NAMES
+            + EXPECTED_INGEST_MCP_PATHS
+        ):
+            with self.subTest(value=value):
+                self.assertIn(value, self.text)
+
+    def test_documents_ingest_connector_mcp_resource_preview_contract(self) -> None:
+        for value in (
+            "`metadata.operation: \"ingest.connector.preview\"`",
+            "`metadata.registryKind: \"resource\"`",
+            "`metadata.connectorId`",
+            "`metadata.resourceUri`",
+            "`metadata.dryRun: true`",
+            "`localOnly: true`",
+            "`networkAccess: false`",
+            "`durableWrites: false`",
+            "`dryRun: true`",
+            "must not open remote URLs",
+            "must not require remote credentials",
+            "approval step",
+            "redacted source URI",
+            "terminal decision",
         ):
             with self.subTest(value=value):
                 self.assertIn(value, self.text)
