@@ -117,6 +117,31 @@ WORKSPACE_SESSION_REQUIRED_PATHS: tuple[str, ...] = (
     "apps/web/tests/workspace-session-state.test.mjs",
 )
 
+WORKSPACE_SESSION_API_REQUIRED_PATHS: tuple[str, ...] = (
+    "docs/workspace-session-api.md",
+    "examples/workspace-session/api-requests.json",
+    "tests/test_workspace_session_api_docs.py",
+    "tests/test_workspace_session_api_alignment.py",
+    "tests/security/workspace_session_api_threats.test.mjs",
+    "docs/openapi.yaml",
+    "apps/api/package.json",
+    "apps/api/src/index.ts",
+    "apps/api/src/workspaceSessionRoutes.ts",
+    "apps/api/tests/workspace-session-routes.test.mjs",
+    "packages/sdk-js/package.json",
+    "packages/sdk-js/src/index.ts",
+    "packages/sdk-js/src/localWorkspaceSessionApiClient.ts",
+    "packages/sdk-js/tests/local-workspace-session-api-client.test.mjs",
+    "packages/cli/package.json",
+    "packages/cli/src/index.ts",
+    "packages/cli/src/workspaceSessionApiReplay.ts",
+    "packages/cli/tests/workspace-session-api-replay.test.mjs",
+    "apps/web/package.json",
+    "apps/web/src/main.ts",
+    "apps/web/src/workspaceSessionApiState.ts",
+    "apps/web/tests/workspace-session-api-state.test.mjs",
+)
+
 
 @dataclass(frozen=True)
 class CheckSpec:
@@ -162,6 +187,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "scripts/repo_health.py",
             *LOCAL_EVENT_CATALOG_REQUIRED_PATHS,
             *WORKSPACE_SESSION_REQUIRED_PATHS,
+            *WORKSPACE_SESSION_API_REQUIRED_PATHS,
             "docs/local-data-lifecycle.md",
             "docs/maintainership.md",
             "docs/security-checklist.md",
@@ -398,6 +424,33 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "tests.test_workspace_session_isolation_docs",
         ),
         required_paths=WORKSPACE_SESSION_REQUIRED_PATHS,
+    ),
+    CheckSpec(
+        name="workspace-session-api-integration",
+        description="Validate workspace session API routes, SDK client, CLI replay, Web state, and security tests.",
+        command=(
+            "node",
+            "--test",
+            "apps/api/tests/workspace-session-routes.test.mjs",
+            "packages/sdk-js/tests/local-workspace-session-api-client.test.mjs",
+            "packages/cli/tests/workspace-session-api-replay.test.mjs",
+            "apps/web/tests/workspace-session-api-state.test.mjs",
+            "tests/security/workspace_session_api_threats.test.mjs",
+        ),
+        required_paths=WORKSPACE_SESSION_API_REQUIRED_PATHS,
+        tool_candidates=("node",),
+    ),
+    CheckSpec(
+        name="workspace-session-api-alignment",
+        description="Validate workspace session API docs, OpenAPI paths, examples, and package wiring.",
+        command=(
+            PYTHON,
+            "-m",
+            "unittest",
+            "tests.test_workspace_session_api_docs",
+            "tests.test_workspace_session_api_alignment",
+        ),
+        required_paths=WORKSPACE_SESSION_API_REQUIRED_PATHS,
     ),
     CheckSpec(
         name="mcp-gateway-fixtures",

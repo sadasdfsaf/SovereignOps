@@ -28,6 +28,7 @@ export * from "./pluginReviewArtifactRecordState.ts";
 export * from "./pluginReviewArtifactState.ts";
 export * from "./routes.ts";
 export * from "./tasks.ts";
+export * from "./workspaceSessionApiState.ts";
 export type {
   BrowserLocalStore,
   LocalStoreCollection,

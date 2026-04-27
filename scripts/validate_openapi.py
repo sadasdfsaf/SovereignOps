@@ -18,6 +18,8 @@ REQUIRED_PATH_OPERATIONS = {
     "/v1/audit/export/package": ("exportAuditPackage",),
     "/v1/ingest/evidence/export": ("exportIngestEvidence",),
     "/v1/ingest/evidence/package": ("packageIngestEvidence",),
+    "/v1/workspace-session/summary": ("summarizeWorkspaceSession",),
+    "/v1/workspace-session/audit-preview": ("previewWorkspaceSessionAudit",),
     "/v1/plugins/review-artifacts/preview": ("previewPluginReviewArtifact",),
     "/v1/plugins/review-artifacts/records": (
         "listPluginReviewArtifactRecords",

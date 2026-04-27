@@ -1,0 +1,250 @@
+{
+  "schemaVersion": "workspace-session-api-requests/v1",
+  "generatedAt": "2026-04-28T00:10:00.000Z",
+  "apiBase": "local://workspace-session-api",
+  "localOnly": true,
+  "requests": [
+    {
+      "id": "workspace_session_summary",
+      "route": {
+        "method": "POST",
+        "path": "/v1/workspace-session/summary"
+      },
+      "request": {
+        "body": {
+          "localOnly": true,
+          "generatedAt": "2026-04-28T00:10:00.000Z",
+          "workspace": {
+            "id": "wsp_session_alpha",
+            "name": "Alpha Workspace",
+            "open": true,
+            "rootRef": "workspace://wsp_session_alpha"
+          },
+          "session": {
+            "id": "sess_alpha_laptop_001",
+            "workspaceId": "wsp_session_alpha",
+            "isolated": true,
+            "storageMode": "workspace"
+          },
+          "lock": {
+            "locked": true,
+            "ownerSessionId": "sess_alpha_laptop_001",
+            "currentSessionId": "sess_alpha_laptop_001",
+            "mode": "exclusive"
+          },
+          "gateway": {
+            "status": "ready",
+            "connected": true,
+            "transport": "stdio"
+          },
+          "migration": {
+            "ready": true,
+            "required": false,
+            "pendingItemCount": 0,
+            "blockerCount": 0,
+            "schemaVersion": "session-v2"
+          },
+          "backup": {
+            "ready": true,
+            "restorable": true,
+            "encrypted": true,
+            "pendingWrites": 0,
+            "targetRef": "workspace://wsp_session_alpha/backups/latest"
+          },
+          "errors": []
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "kind": "workspace-session.summary",
+          "workspaceId": "wsp_session_alpha",
+          "sessionId": "sess_alpha_laptop_001",
+          "localOnly": true,
+          "status": "ready",
+          "summaryCards": [
+            {
+              "id": "workspace_session.summary.workspace_open",
+              "status": "ready",
+              "value": "Open",
+              "severity": "success"
+            },
+            {
+              "id": "workspace_session.summary.lock_state",
+              "status": "ready",
+              "value": "Locked to session",
+              "severity": "success"
+            },
+            {
+              "id": "workspace_session.summary.approval_gateway",
+              "status": "ready",
+              "value": "Gateway ready",
+              "severity": "success"
+            },
+            {
+              "id": "workspace_session.summary.migration_readiness",
+              "status": "ready",
+              "value": "Not required",
+              "severity": "success"
+            },
+            {
+              "id": "workspace_session.summary.backup_readiness",
+              "status": "ready",
+              "value": "Restorable",
+              "severity": "success"
+            }
+          ],
+          "redaction": {
+            "rawPathsStored": false,
+            "rawLockMaterialStored": false,
+            "replacement": "[REDACTED]"
+          }
+        }
+      }
+    },
+    {
+      "id": "workspace_session_audit_preview",
+      "route": {
+        "method": "POST",
+        "path": "/v1/workspace-session/audit-preview"
+      },
+      "request": {
+        "body": {
+          "localOnly": true,
+          "actor": "sdk-worker-e",
+          "createdAt": "2026-04-28T00:05:00.000Z",
+          "events": [
+            {
+              "eventId": "evt_wsp_session_alpha_open_00000001",
+              "workspaceId": "wsp_session_alpha",
+              "type": "workspace.session.opened",
+              "payload": {
+                "kind": "localWorkspaceSession",
+                "schemaVersion": "local-workspace-session/v1",
+                "operation": "open",
+                "sessionId": "sess_alpha_laptop_001",
+                "localOnly": true,
+                "storagePath": "workspaces/wsp_session_alpha/session.json",
+                "storagePathDisplay": "session.json [path:4fd19b72]",
+                "gateway": {
+                  "transport": "stdio"
+                },
+                "reason": "manual open"
+              },
+              "cursor": "1",
+              "sequence": 1,
+              "deviceId": "dev_laptop_alpha",
+              "createdAt": "2026-04-28T00:01:00.000Z"
+            },
+            {
+              "eventId": "evt_wsp_session_alpha_lock_00000002",
+              "workspaceId": "wsp_session_alpha",
+              "type": "workspace.session.locked",
+              "payload": {
+                "kind": "localWorkspaceSession",
+                "schemaVersion": "local-workspace-session/v1",
+                "operation": "lock",
+                "sessionId": "sess_alpha_laptop_001",
+                "localOnly": true,
+                "storagePath": "workspaces/wsp_session_alpha/session.json",
+                "storagePathDisplay": "session.json [path:4fd19b72]",
+                "gateway": {
+                  "transport": "stdio"
+                },
+                "lock": {
+                  "lockTokenRef": "[redacted:lockToken:1f7a4c22]"
+                },
+                "reason": "idle timeout"
+              },
+              "cursor": "2",
+              "sequence": 2,
+              "deviceId": "dev_laptop_alpha",
+              "createdAt": "2026-04-28T00:02:00.000Z"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "kind": "workspace-session.audit-preview",
+          "workspaceId": "wsp_session_alpha",
+          "localOnly": true,
+          "recordCount": 2,
+          "records": [
+            {
+              "auditId": "aud_wsp_session_alpha_open_00000001",
+              "workspaceId": "wsp_session_alpha",
+              "action": "workspace.session.opened",
+              "actor": "sdk-worker-e",
+              "createdAt": "2026-04-28T00:05:00.000Z",
+              "details": {
+                "kind": "localWorkspaceSessionAuditPreview",
+                "schemaVersion": "local-workspace-session/v1",
+                "eventId": "evt_wsp_session_alpha_open_00000001",
+                "sequence": 1,
+                "sessionId": "sess_alpha_laptop_001",
+                "operation": "open",
+                "localOnly": true,
+                "storagePath": "[redacted:path:4fd19b72]",
+                "storagePathDisplay": "session.json [path:4fd19b72]",
+                "gateway": {
+                  "transport": "stdio"
+                },
+                "reason": "manual open",
+                "redaction": {
+                  "redacted": true,
+                  "fields": [
+                    "storagePath"
+                  ]
+                }
+              }
+            },
+            {
+              "auditId": "aud_wsp_session_alpha_lock_00000002",
+              "workspaceId": "wsp_session_alpha",
+              "action": "workspace.session.locked",
+              "actor": "sdk-worker-e",
+              "createdAt": "2026-04-28T00:05:00.000Z",
+              "details": {
+                "kind": "localWorkspaceSessionAuditPreview",
+                "schemaVersion": "local-workspace-session/v1",
+                "eventId": "evt_wsp_session_alpha_lock_00000002",
+                "sequence": 2,
+                "sessionId": "sess_alpha_laptop_001",
+                "operation": "lock",
+                "localOnly": true,
+                "storagePath": "[redacted:path:4fd19b72]",
+                "storagePathDisplay": "session.json [path:4fd19b72]",
+                "gateway": {
+                  "transport": "stdio"
+                },
+                "lock": {
+                  "lockTokenRef": "[redacted:lockToken:1f7a4c22]"
+                },
+                "reason": "idle timeout",
+                "redaction": {
+                  "redacted": true,
+                  "fields": [
+                    "storagePath",
+                    "lockToken"
+                  ]
+                }
+              }
+            }
+          ],
+          "redaction": {
+            "rawStoragePathsStored": false,
+            "rawLockMaterialStored": false,
+            "replacement": "[REDACTED]"
+          }
+        }
+      }
+    }
+  ],
+  "validationCommands": [
+    "python -m json.tool examples\\workspace-session\\api-requests.json",
+    "python -m unittest tests.test_workspace_session_api_docs"
+  ]
+}
+

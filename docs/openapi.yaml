@@ -20,6 +20,7 @@ tags:
   - name: search
   - name: quarantine
   - name: plugins
+  - name: workspace-session
 paths:
   /health:
     get:
@@ -1072,6 +1073,48 @@ paths:
                 $ref: "#/components/schemas/QuarantineDecisionResponse"
         default:
           $ref: "#/components/responses/IngestSearchError"
+  /v1/workspace-session/summary:
+    post:
+      tags:
+        - workspace-session
+      summary: Summarize a supplied local workspace session snapshot.
+      operationId: summarizeWorkspaceSession
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceSessionSummaryRequest"
+      responses:
+        "200":
+          description: Local-only workspace session summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceSessionSummaryResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/workspace-session/audit-preview:
+    post:
+      tags:
+        - workspace-session
+      summary: Preview redacted local workspace session audit records.
+      operationId: previewWorkspaceSessionAudit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceSessionAuditPreviewRequest"
+      responses:
+        "200":
+          description: Redacted local-only audit preview records.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceSessionAuditPreviewResponse"
+        default:
+          $ref: "#/components/responses/Error"
   /v1/plugins/review-artifacts/preview:
     post:
       tags:
@@ -5205,6 +5248,170 @@ components:
         error:
           $ref: "#/components/schemas/ApiErrorBody"
       additionalProperties: false
+    WorkspaceSessionSummaryRequest:
+      type: object
+      properties:
+        localOnly:
+          type: boolean
+          const: true
+        workspace:
+          type: object
+          additionalProperties: true
+        session:
+          type: object
+          additionalProperties: true
+        lock:
+          type: object
+          additionalProperties: true
+        gateway:
+          type: object
+          additionalProperties: true
+        migration:
+          type: object
+          additionalProperties: true
+        backup:
+          type: object
+          additionalProperties: true
+        generatedAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+    WorkspaceSessionSummaryCard:
+      type: object
+      required:
+        - id
+        - status
+        - value
+        - severity
+      properties:
+        id:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          minLength: 1
+        value:
+          type: string
+          minLength: 1
+        severity:
+          type: string
+          minLength: 1
+      additionalProperties: false
+    WorkspaceSessionSummaryResponse:
+      type: object
+      required:
+        - kind
+        - workspaceId
+        - sessionId
+        - localOnly
+        - status
+        - summaryCards
+      properties:
+        kind:
+          type: string
+          const: workspace-session.summary
+        workspaceId:
+          type: string
+          pattern: "^wsp_[A-Za-z0-9_-]{1,88}$"
+        sessionId:
+          type: string
+          pattern: "^sess_[A-Za-z0-9_-]{1,88}$"
+        localOnly:
+          type: boolean
+          const: true
+        status:
+          type: string
+          enum:
+            - ready
+            - attention
+            - blocked
+        summaryCards:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSummaryCard"
+        redaction:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+    WorkspaceSessionAuditPreviewRequest:
+      type: object
+      required:
+        - localOnly
+        - events
+      properties:
+        localOnly:
+          type: boolean
+          const: true
+        actor:
+          type: string
+          minLength: 1
+        createdAt:
+          type: string
+          format: date-time
+        events:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: true
+      additionalProperties: true
+    WorkspaceSessionAuditPreviewRecord:
+      type: object
+      required:
+        - auditId
+        - workspaceId
+        - action
+        - createdAt
+        - details
+      properties:
+        auditId:
+          type: string
+          minLength: 1
+        workspaceId:
+          type: string
+          pattern: "^wsp_[A-Za-z0-9_-]{1,88}$"
+        action:
+          type: string
+          minLength: 1
+        actor:
+          type: string
+          minLength: 1
+        createdAt:
+          type: string
+          format: date-time
+        details:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+    WorkspaceSessionAuditPreviewResponse:
+      type: object
+      required:
+        - kind
+        - workspaceId
+        - localOnly
+        - recordCount
+        - records
+      properties:
+        kind:
+          type: string
+          const: workspace-session.audit-preview
+        workspaceId:
+          type: string
+          pattern: "^wsp_[A-Za-z0-9_-]{1,88}$"
+        localOnly:
+          type: boolean
+          const: true
+        recordCount:
+          type: integer
+          minimum: 0
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionAuditPreviewRecord"
+        redaction:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
     PluginReviewArtifactPreviewRequest:
       type: object
       required:

@@ -33,6 +33,7 @@ export * from "./localLifecycle.ts";
 export * from "./localMcp.ts";
 export * from "./localMcpProtocol.ts";
 export * from "./localWorkspaceSession.ts";
+export * from "./localWorkspaceSessionApiClient.ts";
 export * from "./mcpApprovalEvidenceClient.ts";
 export * from "./mcpApprovalEvidenceRecordClient.ts";
 export * from "./pluginReviewArtifactClient.ts";
