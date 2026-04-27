@@ -1,0 +1,55 @@
+{
+  "manifestVersion": "1.0.0",
+  "backupId": "bkp_fixture_daily",
+  "workspaceId": "wsp_alpha",
+  "createdAt": "2026-04-27T02:30:00.000Z",
+  "createdByActorId": "act_local_operator",
+  "encryption": {
+    "algorithm": "metadata-only-encryption-v1",
+    "keyId": "fixture_key_slot",
+    "keyFingerprint": "fp_90548e68b078efd2"
+  },
+  "payloads": [
+    {
+      "id": "pay_settings",
+      "kind": "settings",
+      "path": "backups/settings.json.enc",
+      "plaintextByteSize": 384,
+      "encryptedByteSize": 416,
+      "contentType": "application/json",
+      "createdAt": "2026-04-27T02:30:00.000Z",
+      "encryption": {
+        "algorithm": "metadata-only-encryption-v1",
+        "keyId": "fixture_key_slot",
+        "nonceFingerprint": "fp_0e4ccefce5096f1c",
+        "encryptedPayloadFingerprint": "fp_0dd996f427a95610"
+      },
+      "integrity": {
+        "plaintextFingerprint": "fp_47c755d5a4c5921a",
+        "encryptedPayloadFingerprint": "fp_0dd996f427a95610",
+        "descriptorFingerprint": "fp_d408c79d7fdb57db"
+      }
+    },
+    {
+      "id": "pay_workspace_index",
+      "kind": "workspace_state",
+      "path": "backups/workspace-index.json.enc",
+      "plaintextByteSize": 1024,
+      "encryptedByteSize": 1056,
+      "contentType": "application/json",
+      "createdAt": "2026-04-27T02:30:00.000Z",
+      "encryption": {
+        "algorithm": "metadata-only-encryption-v1",
+        "keyId": "fixture_key_slot",
+        "nonceFingerprint": "fp_b21feb9f7f601d40",
+        "encryptedPayloadFingerprint": "fp_0a802eff4460f3eb"
+      },
+      "integrity": {
+        "plaintextFingerprint": "fp_0015b6eb06aaf3d0",
+        "encryptedPayloadFingerprint": "fp_0a802eff4460f3eb",
+        "descriptorFingerprint": "fp_72e51e3d0de9c322"
+      }
+    }
+  ],
+  "manifestFingerprint": "fp_a739c321c9df1519"
+}

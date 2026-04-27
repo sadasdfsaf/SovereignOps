@@ -89,6 +89,93 @@ export interface ListAuditResponse {
   readonly nextCursor?: string;
 }
 
+export type AuditExportEntityInput = string | JsonObject;
+
+export interface AuditExportEventInput {
+  readonly eventId?: string;
+  readonly timestamp: string;
+  readonly type: string;
+  readonly decision?: string | null;
+  readonly actor?: AuditExportEntityInput | null;
+  readonly target?: AuditExportEntityInput | null;
+  readonly reason?: string | null;
+  readonly attributes?: JsonObject;
+  readonly context?: JsonObject;
+}
+
+export interface AuditExportFilters {
+  readonly decision?: string | readonly string[] | null;
+  readonly decisions?: string | readonly string[] | null;
+  readonly type?: string | readonly string[] | null;
+  readonly types?: string | readonly string[] | null;
+  readonly from?: string | null;
+  readonly fromTimestamp?: string | null;
+  readonly to?: string | null;
+  readonly toTimestamp?: string | null;
+}
+
+export interface AuditExportOptions {
+  readonly createdAt?: string;
+  readonly exportId?: string;
+  readonly filters?: AuditExportFilters;
+}
+
+export interface AuditExportRequest extends AuditExportOptions {
+  readonly events: readonly AuditExportEventInput[];
+}
+
+export interface NormalizedAuditExportFilters {
+  readonly decisions: readonly string[];
+  readonly types: readonly string[];
+  readonly fromTimestamp: string | null;
+  readonly toTimestamp: string | null;
+}
+
+export interface AuditExportContentDescriptor {
+  readonly fingerprint: string;
+  readonly mediaType: string;
+  readonly bytes: number;
+  readonly rows?: number;
+  readonly lines?: number;
+  readonly columns?: readonly string[];
+}
+
+export interface AuditExportManifest {
+  readonly kind: "audit-export.manifest";
+  readonly version: number;
+  readonly exportId: string;
+  readonly createdAt: string;
+  readonly eventCount: number;
+  readonly firstTimestamp: string | null;
+  readonly lastTimestamp: string | null;
+  readonly decisions: readonly string[];
+  readonly types: readonly string[];
+  readonly filters: NormalizedAuditExportFilters;
+  readonly eventFingerprints: readonly string[];
+  readonly jsonl: AuditExportContentDescriptor;
+  readonly csv: AuditExportContentDescriptor;
+  readonly fingerprint: string;
+}
+
+export interface AuditExportJsonlResponse {
+  readonly jsonl: string;
+  readonly manifest: AuditExportManifest;
+}
+
+export interface AuditExportCsvResponse {
+  readonly csv: string;
+  readonly manifest: AuditExportManifest;
+}
+
+export interface AuditExportPackage {
+  readonly kind: "audit-export.package";
+  readonly version: number;
+  readonly manifest: AuditExportManifest;
+  readonly jsonl: string;
+  readonly csv: string;
+  readonly fingerprint: string;
+}
+
 export interface MigrationPlanRequest {
   readonly workspaceId: string;
   readonly metadata: JsonObject;
@@ -584,6 +671,48 @@ export class SovereignOpsClient {
     return this.listAudit(query);
   }
 
+  async exportAuditJsonl(
+    input: AuditExportRequest,
+  ): Promise<AuditExportJsonlResponse> {
+    validateAuditExportRequest(input);
+    return this.#request(
+      "audit/export/jsonl",
+      {
+        method: "POST",
+        body: JSON.stringify(input),
+      },
+      parseAuditExportJsonlResponse,
+    );
+  }
+
+  async exportAuditCsv(
+    input: AuditExportRequest,
+  ): Promise<AuditExportCsvResponse> {
+    validateAuditExportRequest(input);
+    return this.#request(
+      "audit/export/csv",
+      {
+        method: "POST",
+        body: JSON.stringify(input),
+      },
+      parseAuditExportCsvResponse,
+    );
+  }
+
+  async exportAuditPackage(
+    input: AuditExportRequest,
+  ): Promise<AuditExportPackage> {
+    validateAuditExportRequest(input);
+    return this.#request(
+      "audit/export/package",
+      {
+        method: "POST",
+        body: JSON.stringify(input),
+      },
+      parseAuditExportPackage,
+    );
+  }
+
   async planMigration(input: MigrationPlanRequest): Promise<MigrationPlanResponse> {
     validateMigrationPlanRequest(input);
     const { workspaceId, metadata, targetVersion } = input;
@@ -1031,6 +1160,87 @@ function parseAuditRecord(value: unknown): AuditRecord {
   }) as AuditRecord;
 }
 
+function validateAuditExportRequest(input: AuditExportRequest): void {
+  if (!isRecord(input)) {
+    throw new ApiRequestValidationError("audit export request is invalid", [
+      { path: "", message: "request must be an object" },
+    ]);
+  }
+
+  const issues: ValidationIssue[] = [];
+  if (!Array.isArray(input.events)) {
+    issues.push({ path: "events", message: "events must be an array" });
+  } else {
+    input.events.forEach((event, index) => {
+      collectAuditExportEventIssues(event, `events.${index}`, issues);
+    });
+  }
+
+  if (input.filters !== undefined) {
+    collectAuditExportFiltersIssues(input.filters, "filters", issues);
+  }
+  if (input.createdAt !== undefined) {
+    requireIsoTimestamp(input, "createdAt", "createdAt", issues);
+  }
+  requireOptionalNonEmptyString(input, "exportId", "exportId", issues);
+
+  if (issues.length > 0) {
+    throw new ApiRequestValidationError("audit export request is invalid", issues);
+  }
+}
+
+function parseAuditExportJsonlResponse(value: unknown): AuditExportJsonlResponse {
+  const issues: ValidationIssue[] = [];
+  if (!isRecord(value)) {
+    throw new ApiResponseValidationError([
+      { path: "", message: "response must be an object" },
+    ], value);
+  }
+
+  collectAuditExportContentResponseIssues(value, "jsonl", issues);
+  collectAuditExportManifestIssues(value.manifest, "manifest", issues);
+
+  if (issues.length > 0) {
+    throw new ApiResponseValidationError(issues, value);
+  }
+
+  return deepFreezeClone({
+    jsonl: value.content,
+    manifest: value.manifest,
+  }) as AuditExportJsonlResponse;
+}
+
+function parseAuditExportCsvResponse(value: unknown): AuditExportCsvResponse {
+  const issues: ValidationIssue[] = [];
+  if (!isRecord(value)) {
+    throw new ApiResponseValidationError([
+      { path: "", message: "response must be an object" },
+    ], value);
+  }
+
+  collectAuditExportContentResponseIssues(value, "csv", issues);
+  collectAuditExportManifestIssues(value.manifest, "manifest", issues);
+
+  if (issues.length > 0) {
+    throw new ApiResponseValidationError(issues, value);
+  }
+
+  return deepFreezeClone({
+    csv: value.content,
+    manifest: value.manifest,
+  }) as AuditExportCsvResponse;
+}
+
+function parseAuditExportPackage(value: unknown): AuditExportPackage {
+  const issues: ValidationIssue[] = [];
+  collectAuditExportPackageIssues(value, "", issues);
+  if (issues.length > 0) {
+    throw new ApiResponseValidationError(issues, value);
+  }
+
+  return deepFreezeClone(value) as AuditExportPackage;
+}
+
 function validateMigrationPlanRequest(input: MigrationPlanRequest): void {
   const issues = collectMigrationRequestIssues(input, false);
   if (issues.length > 0) {
@@ -1349,6 +1559,9 @@ const RESTORE_MODES = ["preview", "merge", "replace"] as const;
 const RESTORE_ACTION_TYPES = ["restore", "skip", "conflict", "blocked"] as const;
 const OBSERVATION_LEVELS = ["debug", "info", "warn", "error"] as const;
 const OBSERVABILITY_METRIC_KINDS = ["counter", "gauge", "histogram"] as const;
+const AUDIT_EXPORT_MANIFEST_KIND = "audit-export.manifest";
+const AUDIT_EXPORT_PACKAGE_KIND = "audit-export.package";
+const AUDIT_EXPORT_CONTENT_KIND = "audit-export.content";
 
 function collectWorkspaceMetadataIssues(
   value: unknown,
@@ -1829,6 +2042,18 @@ function requireTrue(
   }
 }
 
+function requireLiteralString(
+  value: Record<string, unknown>,
+  field: string,
+  path: string,
+  expected: string,
+  issues: ValidationIssue[],
+): void {
+  if (value[field] !== expected) {
+    issues.push({ path, message: `${field} must be ${expected}` });
+  }
+}
+
 function requireNonNegativeInteger(
   value: Record<string, unknown>,
   field: string,
@@ -1870,6 +2095,20 @@ function requireNullableFiniteNumber(
 ): void {
   if (value[field] !== null) {
     requireFiniteNumber(value, field, path, issues);
+  }
+}
+
+function requireFingerprint(
+  value: Record<string, unknown>,
+  field: string,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (
+    typeof value[field] !== "string" ||
+    !/^fnv1a64:[0-9a-f]{16}$/.test(value[field] as string)
+  ) {
+    issues.push({ path, message: `${field} must be an audit export fingerprint` });
   }
 }
 
@@ -1967,6 +2206,239 @@ function collectAuditRecordIssues(value: unknown, path: string): ValidationIssue
   }
 
   return issues;
+}
+
+function collectAuditExportEventIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "audit export event must be an object" });
+    return;
+  }
+
+  requireOptionalNonEmptyString(value, "eventId", joinPath(path, "eventId"), issues);
+  requireIsoTimestamp(value, "timestamp", joinPath(path, "timestamp"), issues);
+  requireNonEmptyString(value, "type", joinPath(path, "type"), issues);
+  requireOptionalNullableNonEmptyString(value, "decision", joinPath(path, "decision"), issues);
+  collectOptionalAuditExportEntityIssues(value, "actor", joinPath(path, "actor"), issues);
+  collectOptionalAuditExportEntityIssues(value, "target", joinPath(path, "target"), issues);
+  requireOptionalNullableNonEmptyString(value, "reason", joinPath(path, "reason"), issues);
+  if (value.attributes !== undefined) {
+    collectJsonObjectIssues(value.attributes, joinPath(path, "attributes"), issues);
+  }
+  if (value.context !== undefined) {
+    collectJsonObjectIssues(value.context, joinPath(path, "context"), issues);
+  }
+}
+
+function collectOptionalAuditExportEntityIssues(
+  value: Record<string, unknown>,
+  field: string,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  const entity = value[field];
+  if (entity === undefined || entity === null) {
+    return;
+  }
+
+  if (typeof entity === "string") {
+    if (entity.trim().length === 0) {
+      issues.push({ path, message: `${field} must be a non-empty string or object` });
+    }
+    return;
+  }
+
+  collectJsonObjectIssues(entity, path, issues);
+}
+
+function collectAuditExportFiltersIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "filters must be an object" });
+    return;
+  }
+
+  collectOptionalFilterListIssues(value, "decision", joinPath(path, "decision"), issues);
+  collectOptionalFilterListIssues(value, "decisions", joinPath(path, "decisions"), issues);
+  collectOptionalFilterListIssues(value, "type", joinPath(path, "type"), issues);
+  collectOptionalFilterListIssues(value, "types", joinPath(path, "types"), issues);
+  requireOptionalNullableIsoTimestamp(value, "from", joinPath(path, "from"), issues);
+  requireOptionalNullableIsoTimestamp(value, "fromTimestamp", joinPath(path, "fromTimestamp"), issues);
+  requireOptionalNullableIsoTimestamp(value, "to", joinPath(path, "to"), issues);
+  requireOptionalNullableIsoTimestamp(value, "toTimestamp", joinPath(path, "toTimestamp"), issues);
+
+  const from = readEffectiveNullableString(value.fromTimestamp, value.from);
+  const to = readEffectiveNullableString(value.toTimestamp, value.to);
+  if (
+    typeof from === "string" &&
+    typeof to === "string" &&
+    isIsoTimestamp(from) &&
+    isIsoTimestamp(to) &&
+    from > to
+  ) {
+    issues.push({
+      path: joinPath(path, "toTimestamp"),
+      message: "toTimestamp must be greater than or equal to fromTimestamp",
+    });
+  }
+}
+
+function collectOptionalFilterListIssues(
+  value: Record<string, unknown>,
+  field: string,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  const fieldValue = value[field];
+  if (fieldValue === undefined || fieldValue === null) {
+    return;
+  }
+
+  if (typeof fieldValue === "string") {
+    if (fieldValue.trim().length === 0) {
+      issues.push({ path, message: `${field} must be a non-empty string or array` });
+    }
+    return;
+  }
+
+  if (!Array.isArray(fieldValue)) {
+    issues.push({ path, message: `${field} must be a non-empty string or array` });
+    return;
+  }
+
+  fieldValue.forEach((item, index) => {
+    if (typeof item !== "string" || item.trim().length === 0) {
+      issues.push({ path: `${path}.${index}`, message: "value must be a non-empty string" });
+    }
+  });
+}
+
+function collectAuditExportPackageIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "audit export package must be an object" });
+    return;
+  }
+
+  requireLiteralString(value, "kind", joinPath(path, "kind"), AUDIT_EXPORT_PACKAGE_KIND, issues);
+  requirePositiveInteger(value, "version", joinPath(path, "version"), issues);
+  collectAuditExportManifestIssues(value.manifest, joinPath(path, "manifest"), issues);
+  requireString(value, "jsonl", joinPath(path, "jsonl"), issues);
+  requireString(value, "csv", joinPath(path, "csv"), issues);
+  requireFingerprint(value, "fingerprint", joinPath(path, "fingerprint"), issues);
+}
+
+function collectAuditExportContentResponseIssues(
+  value: Record<string, unknown>,
+  expectedFormat: "jsonl" | "csv",
+  issues: ValidationIssue[],
+): void {
+  requireLiteralString(value, "kind", "kind", AUDIT_EXPORT_CONTENT_KIND, issues);
+  requireLiteralString(value, "format", "format", expectedFormat, issues);
+  requireNonEmptyString(value, "mediaType", "mediaType", issues);
+  requireString(value, "content", "content", issues);
+  requireFingerprint(value, "fingerprint", "fingerprint", issues);
+  requireNonEmptyString(value, "exportId", "exportId", issues);
+  requireIsoTimestamp(value, "createdAt", "createdAt", issues);
+}
+
+function collectAuditExportManifestIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "audit export manifest must be an object" });
+    return;
+  }
+
+  requireLiteralString(value, "kind", joinPath(path, "kind"), AUDIT_EXPORT_MANIFEST_KIND, issues);
+  requirePositiveInteger(value, "version", joinPath(path, "version"), issues);
+  requireNonEmptyString(value, "exportId", joinPath(path, "exportId"), issues);
+  requireIsoTimestamp(value, "createdAt", joinPath(path, "createdAt"), issues);
+  requireNonNegativeInteger(value, "eventCount", joinPath(path, "eventCount"), issues);
+  requireNullableIsoTimestamp(value, "firstTimestamp", joinPath(path, "firstTimestamp"), issues);
+  requireNullableIsoTimestamp(value, "lastTimestamp", joinPath(path, "lastTimestamp"), issues);
+  collectStringArrayIssues(value.decisions, joinPath(path, "decisions"), issues);
+  collectStringArrayIssues(value.types, joinPath(path, "types"), issues);
+  collectNormalizedAuditExportFiltersIssues(value.filters, joinPath(path, "filters"), issues);
+  collectStringArrayIssues(value.eventFingerprints, joinPath(path, "eventFingerprints"), issues);
+  collectAuditExportContentDescriptorIssues(value.jsonl, joinPath(path, "jsonl"), issues);
+  collectAuditExportContentDescriptorIssues(value.csv, joinPath(path, "csv"), issues);
+  requireFingerprint(value, "fingerprint", joinPath(path, "fingerprint"), issues);
+
+  if (
+    Number.isInteger(value.eventCount) &&
+    Array.isArray(value.eventFingerprints) &&
+    value.eventFingerprints.length !== value.eventCount
+  ) {
+    issues.push({
+      path: joinPath(path, "eventFingerprints"),
+      message: "eventFingerprints length must match eventCount",
+    });
+  }
+}
+
+function collectNormalizedAuditExportFiltersIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "filters must be an object" });
+    return;
+  }
+
+  collectStringArrayIssues(value.decisions, joinPath(path, "decisions"), issues);
+  collectStringArrayIssues(value.types, joinPath(path, "types"), issues);
+  requireNullableIsoTimestamp(value, "fromTimestamp", joinPath(path, "fromTimestamp"), issues);
+  requireNullableIsoTimestamp(value, "toTimestamp", joinPath(path, "toTimestamp"), issues);
+
+  if (
+    typeof value.fromTimestamp === "string" &&
+    typeof value.toTimestamp === "string" &&
+    isIsoTimestamp(value.fromTimestamp) &&
+    isIsoTimestamp(value.toTimestamp) &&
+    value.fromTimestamp > value.toTimestamp
+  ) {
+    issues.push({
+      path: joinPath(path, "toTimestamp"),
+      message: "toTimestamp must be greater than or equal to fromTimestamp",
+    });
+  }
+}
+
+function collectAuditExportContentDescriptorIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    issues.push({ path, message: "content descriptor must be an object" });
+    return;
+  }
+
+  requireFingerprint(value, "fingerprint", joinPath(path, "fingerprint"), issues);
+  requireNonEmptyString(value, "mediaType", joinPath(path, "mediaType"), issues);
+  requireNonNegativeInteger(value, "bytes", joinPath(path, "bytes"), issues);
+  if (value.rows !== undefined) {
+    requireNonNegativeInteger(value, "rows", joinPath(path, "rows"), issues);
+  }
+  if (value.lines !== undefined) {
+    requireNonNegativeInteger(value, "lines", joinPath(path, "lines"), issues);
+  }
+  if (value.columns !== undefined) {
+    collectStringArrayIssues(value.columns, joinPath(path, "columns"), issues);
+  }
 }
 
 function validateListQuery(
@@ -2077,6 +2549,28 @@ function requireNonEmptyString(
   }
 }
 
+function requireString(
+  value: Record<string, unknown>,
+  field: string,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (typeof value[field] !== "string") {
+    issues.push({ path, message: `${field} must be a string` });
+  }
+}
+
+function requireOptionalNullableNonEmptyString(
+  value: Record<string, unknown>,
+  field: string,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (value[field] !== undefined && value[field] !== null) {
+    requireNonEmptyString(value, field, path, issues);
+  }
+}
+
 function requireIsoTimestamp(
   value: Record<string, unknown>,
   field: string,
@@ -2088,9 +2582,42 @@ function requireIsoTimestamp(
   }
 }
 
+function requireNullableIsoTimestamp(
+  value: Record<string, unknown>,
+  field: string,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (value[field] !== null) {
+    requireIsoTimestamp(value, field, path, issues);
+  }
+}
+
+function requireOptionalNullableIsoTimestamp(
+  value: Record<string, unknown>,
+  field: string,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (value[field] !== undefined) {
+    requireNullableIsoTimestamp(value, field, path, issues);
+  }
+}
+
 function isIsoTimestamp(value: string): boolean {
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) && new Date(parsed).toISOString() === value;
+}
+
+function readEffectiveNullableString(
+  primary: unknown,
+  fallback: unknown,
+): string | null | undefined {
+  if (primary !== undefined) {
+    return primary === null || typeof primary === "string" ? primary : undefined;
+  }
+
+  return fallback === null || typeof fallback === "string" ? fallback : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -10,7 +10,7 @@ services.
 API route contracts live in `docs/openapi.yaml` and are mounted by
 `apps/api/src/lifecycleRoutes.ts`. The current lifecycle routes cover migration
 planning and runs, backup manifest submission, restore planning, observability
-events and metrics, and compaction planning:
+events and metrics, compaction planning, audit reads, and audit export bridges:
 
 - `POST /v1/workspaces/:workspaceId/migrations/plan`
 - `POST /v1/workspaces/:workspaceId/migrations/run`
@@ -19,6 +19,10 @@ events and metrics, and compaction planning:
 - `POST /v1/observability/events`
 - `POST /v1/observability/metrics`
 - `POST /v1/workspaces/:workspaceId/compactions/plan`
+- `GET /v1/workspaces/:workspaceId/audit`
+- `POST /v1/audit/export/jsonl`
+- `POST /v1/audit/export/csv`
+- `POST /v1/audit/export/package`
 
 CLI lifecycle previews are implemented in `packages/cli/src/lifecycle.ts`, with
 the shared entrypoint in `packages/cli/src/index.ts` and the base local commands
@@ -35,9 +39,21 @@ across `packages/workspace-store/src/index.ts`,
 `packages/workspace-backup/src/index.ts`, and
 `packages/event-compaction/src/index.ts`.
 
-Audit export is handled by `packages/audit-export/src/index.ts`. It normalizes
-events, filters them, redacts sensitive-shaped values, and renders deterministic
-JSONL, CSV, manifest, and package fingerprints for offline review.
+Audit export is handled by `packages/audit-export/src/index.ts`, with the public
+surface documented in `docs/api-audit-export.md`. It normalizes events, filters
+them, redacts sensitive-shaped values, and renders deterministic JSONL, CSV,
+manifest, and package fingerprints for offline review. API export handlers
+wrap JSONL and CSV outputs with `format`, `mediaType`, `manifest`, and
+`fingerprint` fields. Package exports return the deterministic package object
+directly so SDK and CLI callers can compare the same artifact metadata.
+
+The SDK bridge uses `packages/sdk-js/src/localLifecycle.ts` and
+`buildLocalAuditExportPackage` for local package generation. HTTP callers still
+use `packages/sdk-js/src/client.ts` for typed API access and should keep export
+request shapes aligned with the documented route bodies. The CLI bridge lives in
+`packages/cli/src/auditExport.ts` and is routed by `packages/cli/src/index.ts`
+before the core lifecycle commands. Its command family is `audit export`, with
+`jsonl`, `csv`, and `package` formats.
 
 Path safety is centralized in `packages/path-security/src/index.ts`. It
 normalizes local relative paths, rejects traversal and absolute paths, joins
@@ -59,6 +75,7 @@ python scripts\smoke.py
 python scripts\validate_openapi.py
 python scripts\loc_budget.py --summary
 python -m unittest tests.test_lifecycle_integration_docs
+python -m unittest tests.test_api_audit_export_docs
 npm.cmd --workspace @sovereignops/api run check
 npm.cmd --workspace @sovereignops/cli run check
 npm.cmd --workspace @sovereignops/sdk-js run check
@@ -67,6 +84,23 @@ npm.cmd --workspace @sovereignops/path-security run check
 npm.cmd --workspace @sovereignops/web run check
 ```
 
+Audit export CLI previews can also be exercised locally with stdin input:
+
+```powershell
+node packages\cli\src\index.ts audit export jsonl --stdin
+node packages\cli\src\index.ts audit export csv --stdin
+node packages\cli\src\index.ts audit export package --stdin
+```
+
+## Bridge Test Expectations
+
+- API export routes accept explicit event slices and keep route paths stable across JSONL, CSV, and package formats.
+- JSONL and CSV export routes return redacted string content plus manifest metadata.
+- Package export routes return the deterministic package object plus manifest metadata.
+- SDK local export helpers and CLI export commands produce matching package fingerprints for the same event input.
+- CLI command routing reaches `runAuditExportCli` before lifecycle and core command handlers.
+- API, SDK, and CLI examples remain local and do not require credentials, network access, or external services.
+
 ## Safety Guarantees
 
 - Dry-run planning precedes durable changes for migrations, restores, and compaction.
@@ -74,6 +108,7 @@ npm.cmd --workspace @sovereignops/web run check
 - Restore replace and source overwrite require explicit approval flags.
 - Backup payload paths stay relative; traversal and absolute paths are rejected.
 - Audit export redacts sensitive-shaped values before JSONL or CSV output.
+- Audit export package fingerprints are computed from redacted JSONL, CSV, and manifest content.
 - Path display uses deterministic redacted references instead of exposing local roots.
 - Web review state blocks approval while blockers or open blocking redactions remain.
 - SDK storage and workspace helpers return cloned or frozen snapshots.

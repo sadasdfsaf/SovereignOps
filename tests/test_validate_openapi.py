@@ -32,6 +32,15 @@ paths:
   /v1/workspaces/{workspaceId}/audit:
     get:
       operationId: listAuditEntries
+  /v1/audit/export/jsonl:
+    post:
+      operationId: exportAuditJsonl
+  /v1/audit/export/csv:
+    post:
+      operationId: exportAuditCsv
+  /v1/audit/export/package:
+    post:
+      operationId: exportAuditPackage
 components:
   responses:
     Error:

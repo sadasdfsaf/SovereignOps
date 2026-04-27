@@ -13,6 +13,9 @@ REQUIRED_PATH_OPERATIONS = {
     "/v1/workspaces/{workspaceId}/records/{recordId}": ("getRecord", "updateRecord"),
     "/v1/workspaces/{workspaceId}/agent-actions/preview": ("previewAgentAction",),
     "/v1/workspaces/{workspaceId}/audit": ("listAuditEntries",),
+    "/v1/audit/export/jsonl": ("exportAuditJsonl",),
+    "/v1/audit/export/csv": ("exportAuditCsv",),
+    "/v1/audit/export/package": ("exportAuditPackage",),
 }
 REQUIRED_ERROR_FIELDS = ("code", "message", "requestId")
 

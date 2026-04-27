@@ -1,0 +1,135 @@
+{
+  "backupRestoreReviews": [
+    {
+      "id": "lcr_backup_fixture",
+      "workspaceId": "wsp_alpha",
+      "kind": "backup_restore",
+      "title": "Review fixture backup manifest",
+      "requestedBy": "act_local_operator",
+      "createdAt": "2026-04-27T02:35:00.000Z",
+      "updatedAt": "2026-04-27T02:40:00.000Z",
+      "status": "approved",
+      "blockerCount": 0,
+      "warningCount": 0,
+      "reviewerRoles": [
+        "workspace_owner"
+      ],
+      "redactionMarkerIds": [],
+      "decisionId": "dec_backup_fixture",
+      "operation": "backup",
+      "backupId": "bkp_fixture_daily",
+      "manifestFingerprint": "fp_a739c321c9df1519",
+      "payloadCount": 2,
+      "totalBytes": 1472
+    }
+  ],
+  "migrationPlanReviews": [
+    {
+      "id": "lcr_migration_fixture",
+      "workspaceId": "wsp_alpha",
+      "kind": "migration_plan",
+      "title": "Review local metadata migration",
+      "requestedBy": "act_local_operator",
+      "createdAt": "2026-04-27T02:45:00.000Z",
+      "updatedAt": "2026-04-27T02:45:00.000Z",
+      "status": "pending",
+      "blockerCount": 0,
+      "warningCount": 0,
+      "reviewerRoles": [
+        "workspace_owner",
+        "data_reviewer"
+      ],
+      "redactionMarkerIds": [],
+      "sourceVersion": 2,
+      "targetVersion": 3,
+      "stepCount": 2,
+      "stepIds": [
+        "metadata.schema.v3",
+        "indexes.refresh"
+      ],
+      "rollbackNotes": [
+        "Restore metadata from the prior local backup.",
+        "Rebuild indexes from retained event envelopes."
+      ],
+      "planFingerprint": "fp_1111222233334444"
+    }
+  ],
+  "syncReplayReviews": [
+    {
+      "id": "lcr_sync_replay_fixture",
+      "workspaceId": "wsp_alpha",
+      "kind": "sync_replay",
+      "title": "Review sync replay window",
+      "requestedBy": "act_sync_runner",
+      "createdAt": "2026-04-27T02:50:00.000Z",
+      "updatedAt": "2026-04-27T02:55:00.000Z",
+      "status": "pending",
+      "blockerCount": 0,
+      "warningCount": 1,
+      "reviewerRoles": [
+        "sync_reviewer"
+      ],
+      "redactionMarkerIds": [
+        "red_replay_summary"
+      ],
+      "afterCursor": "cur_v1:0000000000000000:origin",
+      "nextCursor": "cur_v1:0000000000000003:evt_replay_003",
+      "eventCount": 3,
+      "issueCount": 1,
+      "replayStatus": "degraded",
+      "issueCodes": [
+        "duplicate_event"
+      ]
+    }
+  ],
+  "compactionPlanReviews": [
+    {
+      "id": "lcr_compaction_fixture",
+      "workspaceId": "wsp_alpha",
+      "kind": "compaction_plan",
+      "title": "Review item stream compaction",
+      "requestedBy": "act_compaction_runner",
+      "createdAt": "2026-04-27T03:00:00.000Z",
+      "updatedAt": "2026-04-27T03:00:00.000Z",
+      "status": "blocked",
+      "blockerCount": 1,
+      "warningCount": 0,
+      "reviewerRoles": [
+        "workspace_owner"
+      ],
+      "redactionMarkerIds": [],
+      "streamId": "stream_workspace_items",
+      "fromSequence": 1,
+      "toSequence": 3,
+      "sourceEventCount": 3,
+      "compactedEventCount": 2,
+      "retainedEventCount": 1,
+      "checkpointCount": 1,
+      "replayVerified": false,
+      "planFingerprint": "fp_5555666677778888"
+    }
+  ],
+  "approvalDecisions": [
+    {
+      "id": "dec_backup_fixture",
+      "reviewId": "lcr_backup_fixture",
+      "decision": "approved",
+      "decidedBy": "act_reviewer",
+      "decidedAt": "2026-04-27T02:40:00.000Z",
+      "reason": "Fixture backup shape and local path checks passed."
+    }
+  ],
+  "redactionMarkers": [
+    {
+      "id": "red_replay_summary",
+      "reviewId": "lcr_sync_replay_fixture",
+      "path": "$.audit.events[0].payload",
+      "reason": "Payload details stay summarized in lifecycle reviews.",
+      "marker": "[redacted:summary]",
+      "severity": "warning",
+      "createdBy": "act_reviewer",
+      "createdAt": "2026-04-27T02:55:00.000Z",
+      "status": "open"
+    }
+  ]
+}

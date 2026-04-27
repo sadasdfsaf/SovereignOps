@@ -1,0 +1,105 @@
+{
+  "compaction": {
+    "streamId": "stream_workspace_items",
+    "events": [
+      {
+        "eventId": "evt_compact_001",
+        "streamId": "stream_workspace_items",
+        "sequence": 1,
+        "type": "workspace.item_added",
+        "timestamp": "2026-04-27T02:00:00.000Z",
+        "payload": {
+          "itemId": "item_alpha",
+          "itemKind": "note",
+          "fieldCount": 3
+        },
+        "metadata": {
+          "schemaVersion": 2,
+          "source": "fixture"
+        }
+      },
+      {
+        "eventId": "evt_compact_002",
+        "streamId": "stream_workspace_items",
+        "sequence": 2,
+        "type": "workspace.item_updated",
+        "timestamp": "2026-04-27T02:05:00.000Z",
+        "payload": {
+          "itemId": "item_alpha",
+          "changedFields": [
+            "status"
+          ]
+        },
+        "metadata": {
+          "schemaVersion": 2,
+          "source": "fixture"
+        }
+      },
+      {
+        "eventId": "evt_compact_003",
+        "streamId": "stream_workspace_items",
+        "sequence": 3,
+        "type": "workspace.item_indexed",
+        "timestamp": "2026-04-27T02:10:00.000Z",
+        "payload": {
+          "itemId": "item_alpha",
+          "indexVersion": 4
+        },
+        "metadata": {
+          "schemaVersion": 2,
+          "source": "fixture"
+        }
+      }
+    ]
+  },
+  "replay": {
+    "workspaceId": "wsp_alpha",
+    "deviceId": "dev_local_demo",
+    "afterCursor": "cur_v1:0000000000000000:origin",
+    "nextCursor": "cur_v1:0000000000000003:evt_replay_003",
+    "events": [
+      {
+        "id": "evt_replay_001",
+        "workspaceId": "wsp_alpha",
+        "deviceId": "dev_local_demo",
+        "sequence": 1,
+        "type": "workspace.item_added",
+        "payload": {
+          "itemId": "item_alpha",
+          "itemKind": "note",
+          "fieldCount": 3
+        },
+        "createdAt": "2026-04-27T02:00:00.000Z",
+        "cursor": "cur_v1:0000000000000001:evt_replay_001"
+      },
+      {
+        "id": "evt_replay_002",
+        "workspaceId": "wsp_alpha",
+        "deviceId": "dev_local_demo",
+        "sequence": 2,
+        "type": "workspace.item_updated",
+        "payload": {
+          "itemId": "item_alpha",
+          "changedFields": [
+            "status"
+          ]
+        },
+        "createdAt": "2026-04-27T02:05:00.000Z",
+        "cursor": "cur_v1:0000000000000002:evt_replay_002"
+      },
+      {
+        "id": "evt_replay_003",
+        "workspaceId": "wsp_alpha",
+        "deviceId": "dev_local_demo",
+        "sequence": 3,
+        "type": "workspace.item_indexed",
+        "payload": {
+          "itemId": "item_alpha",
+          "indexVersion": 4
+        },
+        "createdAt": "2026-04-27T02:10:00.000Z",
+        "cursor": "cur_v1:0000000000000003:evt_replay_003"
+      }
+    ]
+  }
+}

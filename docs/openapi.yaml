@@ -292,6 +292,69 @@ paths:
                 $ref: "#/components/schemas/AuditEntryListResponse"
         default:
           $ref: "#/components/responses/Error"
+  /v1/audit/export/jsonl:
+    post:
+      tags:
+        - audit
+      summary: Export supplied audit events as deterministic JSONL.
+      operationId: exportAuditJsonl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditExportRequest"
+      responses:
+        "200":
+          description: JSONL content plus manifest metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditExportContentResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/audit/export/csv:
+    post:
+      tags:
+        - audit
+      summary: Export supplied audit events as deterministic CSV.
+      operationId: exportAuditCsv
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditExportRequest"
+      responses:
+        "200":
+          description: CSV content plus manifest metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditExportContentResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/audit/export/package:
+    post:
+      tags:
+        - audit
+      summary: Export supplied audit events as a deterministic package.
+      operationId: exportAuditPackage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditExportRequest"
+      responses:
+        "200":
+          description: Package with JSONL, CSV, manifest, and fingerprint.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditExportPackage"
+        default:
+          $ref: "#/components/responses/Error"
   /v1/workspaces/{workspaceId}/migrations/plan:
     post:
       tags:
@@ -844,6 +907,291 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AuditEntry"
+    AuditExportEntity:
+      oneOf:
+        - type: string
+          minLength: 1
+        - type: object
+          additionalProperties: true
+    AuditExportEvent:
+      type: object
+      required:
+        - timestamp
+        - type
+      properties:
+        eventId:
+          type: string
+          minLength: 1
+        timestamp:
+          type: string
+          format: date-time
+        type:
+          type: string
+          minLength: 1
+        decision:
+          type:
+            - string
+            - "null"
+          minLength: 1
+        actor:
+          oneOf:
+            - $ref: "#/components/schemas/AuditExportEntity"
+            - type: "null"
+        target:
+          oneOf:
+            - $ref: "#/components/schemas/AuditExportEntity"
+            - type: "null"
+        reason:
+          type:
+            - string
+            - "null"
+          minLength: 1
+        attributes:
+          type: object
+          additionalProperties: true
+        context:
+          type: object
+          additionalProperties: true
+    AuditExportStringOrList:
+      oneOf:
+        - type: string
+          minLength: 1
+        - type: array
+          items:
+            type: string
+            minLength: 1
+        - type: "null"
+    AuditExportFilters:
+      type: object
+      properties:
+        decision:
+          $ref: "#/components/schemas/AuditExportStringOrList"
+        decisions:
+          $ref: "#/components/schemas/AuditExportStringOrList"
+        type:
+          $ref: "#/components/schemas/AuditExportStringOrList"
+        types:
+          $ref: "#/components/schemas/AuditExportStringOrList"
+        from:
+          type:
+            - string
+            - "null"
+          format: date-time
+        fromTimestamp:
+          type:
+            - string
+            - "null"
+          format: date-time
+        to:
+          type:
+            - string
+            - "null"
+          format: date-time
+        toTimestamp:
+          type:
+            - string
+            - "null"
+          format: date-time
+    AuditExportRequest:
+      type: object
+      required:
+        - events
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditExportEvent"
+        filters:
+          $ref: "#/components/schemas/AuditExportFilters"
+        createdAt:
+          type: string
+          format: date-time
+        exportId:
+          type: string
+          minLength: 1
+    AuditExportNormalizedFilters:
+      type: object
+      required:
+        - decisions
+        - types
+        - fromTimestamp
+        - toTimestamp
+      properties:
+        decisions:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        types:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        fromTimestamp:
+          type:
+            - string
+            - "null"
+          format: date-time
+        toTimestamp:
+          type:
+            - string
+            - "null"
+          format: date-time
+    AuditExportContentDescriptor:
+      type: object
+      required:
+        - fingerprint
+        - mediaType
+        - bytes
+      properties:
+        fingerprint:
+          type: string
+          minLength: 1
+        mediaType:
+          type: string
+          minLength: 1
+        bytes:
+          type: integer
+          minimum: 0
+        rows:
+          type: integer
+          minimum: 0
+        lines:
+          type: integer
+          minimum: 0
+        columns:
+          type: array
+          items:
+            type: string
+            minLength: 1
+    AuditExportManifest:
+      type: object
+      required:
+        - kind
+        - version
+        - exportId
+        - createdAt
+        - eventCount
+        - firstTimestamp
+        - lastTimestamp
+        - decisions
+        - types
+        - filters
+        - eventFingerprints
+        - jsonl
+        - csv
+        - fingerprint
+      properties:
+        kind:
+          type: string
+          const: audit-export.manifest
+        version:
+          type: integer
+          minimum: 1
+        exportId:
+          type: string
+          minLength: 1
+        createdAt:
+          type: string
+          format: date-time
+        eventCount:
+          type: integer
+          minimum: 0
+        firstTimestamp:
+          type:
+            - string
+            - "null"
+          format: date-time
+        lastTimestamp:
+          type:
+            - string
+            - "null"
+          format: date-time
+        decisions:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        types:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        filters:
+          $ref: "#/components/schemas/AuditExportNormalizedFilters"
+        eventFingerprints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        jsonl:
+          $ref: "#/components/schemas/AuditExportContentDescriptor"
+        csv:
+          $ref: "#/components/schemas/AuditExportContentDescriptor"
+        fingerprint:
+          type: string
+          minLength: 1
+    AuditExportContentResponse:
+      type: object
+      required:
+        - kind
+        - format
+        - mediaType
+        - content
+        - fingerprint
+        - exportId
+        - createdAt
+        - manifest
+      properties:
+        kind:
+          type: string
+          const: audit-export.content
+        format:
+          type: string
+          enum:
+            - jsonl
+            - csv
+        mediaType:
+          type: string
+          minLength: 1
+        content:
+          type: string
+        fingerprint:
+          type: string
+          minLength: 1
+        exportId:
+          type: string
+          minLength: 1
+        createdAt:
+          type: string
+          format: date-time
+        manifest:
+          $ref: "#/components/schemas/AuditExportManifest"
+    AuditExportPackage:
+      type: object
+      required:
+        - kind
+        - version
+        - manifest
+        - jsonl
+        - csv
+        - fingerprint
+      properties:
+        kind:
+          type: string
+          const: audit-export.package
+        version:
+          type: integer
+          minimum: 1
+        manifest:
+          $ref: "#/components/schemas/AuditExportManifest"
+        jsonl:
+          type: string
+        csv:
+          type: string
+        fingerprint:
+          type: string
+          minLength: 1
     DeviceId:
       type: string
       pattern: "^dev_[A-Za-z0-9_-]{1,88}$"

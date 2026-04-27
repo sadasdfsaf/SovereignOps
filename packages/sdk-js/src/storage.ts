@@ -1,5 +1,6 @@
 import type { AuditRecord } from "./client.ts";
 import type { WorkspaceDescriptor, WorkspaceEvent } from "./workspace.ts";
+import { validateLocalRelativePath } from "../../path-security/src/index.ts";
 
 export const STORAGE_SCHEMA_VERSION = 1;
 
@@ -315,46 +316,27 @@ export function createInMemoryLocalStorageAdapter(): InMemoryLocalStorageAdapter
 }
 
 export function validateJsonStorageRelativePath(path: string): string {
-  if (typeof path !== "string" || path.length === 0) {
-    throw invalidPath("storage path must be a non-empty string", { path });
-  }
-
-  if (path !== path.trim()) {
-    throw invalidPath("storage path must not contain leading or trailing whitespace", { path });
-  }
-
-  if (path.includes("\0")) {
-    throw invalidPath("storage path must not contain null bytes", { path });
-  }
-
-  if (path.includes("\\")) {
-    throw invalidPath("storage path must use forward slashes", { path });
-  }
-
-  if (
-    path.startsWith("/") ||
-    path.startsWith("//") ||
-    /^[A-Za-z]:\//.test(path)
-  ) {
-    throw invalidPath("storage path must be relative", { path });
-  }
-
-  if (!path.endsWith(".json")) {
-    throw invalidPath("storage path must target a JSON file", { path });
-  }
-
-  const segments = path.split("/");
-  const invalidSegment = segments.find(
-    (segment) => segment.length === 0 || segment === "." || segment === ".." || segment.includes(":"),
-  );
-  if (invalidSegment !== undefined) {
+  const validation = validateLocalRelativePath(path, { issuePath: "$.path" });
+  if (!validation.ok) {
     throw invalidPath("storage path contains an unsafe segment", {
       path,
-      segment: invalidSegment,
+      issues: validation.issues,
     });
   }
 
-  return path;
+  const normalizedPath = validation.value.normalizedPath;
+  if (path !== normalizedPath) {
+    throw invalidPath("storage path must be a normalized forward-slash relative path", {
+      path,
+      normalizedPath,
+    });
+  }
+
+  if (!normalizedPath.endsWith(".json")) {
+    throw invalidPath("storage path must target a JSON file", { path });
+  }
+
+  return normalizedPath;
 }
 
 export function createStorageEnvelope<RecordValue>(
