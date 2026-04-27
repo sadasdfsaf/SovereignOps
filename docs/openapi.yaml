@@ -1117,6 +1117,50 @@ paths:
                 $ref: "#/components/schemas/WorkspaceSessionAuditPreviewResponse"
         default:
           $ref: "#/components/responses/Error"
+  /v1/workspace-session/snapshot-review/compare:
+    post:
+      tags:
+        - workspace-session
+      summary: Compare two redacted local workspace session snapshots.
+      description: Compares caller-supplied redacted snapshot previews or stored snapshot records without durable writes or retaining request bodies.
+      operationId: compareWorkspaceSessionSnapshotReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceSessionSnapshotCompareRequest"
+      responses:
+        "200":
+          description: Redacted local-only snapshot comparison.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceSessionSnapshotCompareResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/workspace-session/snapshot-review/retention-preview:
+    post:
+      tags:
+        - workspace-session
+      summary: Preview workspace session snapshot retention decisions.
+      description: Performs a dry-run retention review over redacted stored snapshot records without durable writes, deletions, or request body retention.
+      operationId: previewWorkspaceSessionSnapshotRetention
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionPreviewRequest"
+      responses:
+        "200":
+          description: Redacted local-only retention preview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionPreviewResponse"
+        default:
+          $ref: "#/components/responses/Error"
   /v1/plugins/review-artifacts/preview:
     post:
       tags:
@@ -5612,6 +5656,646 @@ components:
             $ref: "#/components/schemas/WorkspaceSessionPreviewEvent"
         audit:
           $ref: "#/components/schemas/WorkspaceSessionAuditPreviewRecords"
+      additionalProperties: false
+    WorkspaceSessionSnapshotFingerprint:
+      type: string
+      pattern: "^sha256:[a-f0-9]{64}$"
+    WorkspaceSessionSnapshotId:
+      type: string
+      pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    WorkspaceSessionSnapshotPreviewSummary:
+      type: object
+      required:
+        - kind
+        - localOnly
+        - redacted
+        - workspaceId
+        - deviceId
+        - sessionId
+        - operations
+        - eventCount
+        - eventIds
+        - auditRecordCount
+        - auditIds
+        - auditActions
+      properties:
+        kind:
+          type: string
+          const: workspace-session.snapshot-summary
+        localOnly:
+          type: boolean
+          const: true
+        redacted:
+          type: boolean
+          const: true
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/WorkspaceSessionDeviceId"
+        sessionId:
+          $ref: "#/components/schemas/WorkspaceSessionId"
+        operations:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        eventCount:
+          type: integer
+          minimum: 0
+        eventIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        auditRecordCount:
+          type: integer
+          minimum: 0
+        auditIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        auditActions:
+          type: array
+          items:
+            type: string
+            minLength: 1
+      additionalProperties: false
+    WorkspaceSessionSnapshotPreviewResponse:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - apiSchemaVersion
+        - localOnly
+        - durableWrites
+        - redacted
+        - fingerprint
+        - summary
+        - auditPreview
+      properties:
+        kind:
+          type: string
+          const: workspace-session.snapshot-preview
+        schemaVersion:
+          type: string
+          const: workspace-session-store/v1
+        apiSchemaVersion:
+          type: string
+          const: workspace-session-api/v1
+        localOnly:
+          type: boolean
+          const: true
+        durableWrites:
+          type: boolean
+          const: false
+        redacted:
+          type: boolean
+          const: true
+        fingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+        summary:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotPreviewSummary"
+        auditPreview:
+          $ref: "#/components/schemas/WorkspaceSessionAuditPreviewResponse"
+      additionalProperties: false
+    WorkspaceSessionSnapshotRecord:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - localOnly
+        - durableWrites
+        - redacted
+        - snapshotId
+        - createdAt
+        - updatedAt
+        - fingerprint
+        - snapshotFingerprint
+        - snapshot
+      properties:
+        kind:
+          type: string
+          const: workspace-session.snapshot-record
+        schemaVersion:
+          type: string
+          const: workspace-session-store/v1
+        localOnly:
+          type: boolean
+          const: true
+        durableWrites:
+          type: boolean
+          const: false
+        redacted:
+          type: boolean
+          const: true
+        snapshotId:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotId"
+        label:
+          type: string
+          minLength: 1
+        metadata:
+          type: object
+          description: Non-sensitive caller metadata; raw paths, lock material, request bodies, and secrets are rejected by the route.
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        fingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+        snapshotFingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+        snapshot:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotPreviewResponse"
+      additionalProperties: false
+    WorkspaceSessionSnapshotBoundary:
+      oneOf:
+        - $ref: "#/components/schemas/WorkspaceSessionSnapshotPreviewResponse"
+        - $ref: "#/components/schemas/WorkspaceSessionSnapshotRecord"
+        - $ref: "#/components/schemas/WorkspaceSessionSnapshotRecordBoundary"
+        - $ref: "#/components/schemas/WorkspaceSessionSnapshotPreviewBoundary"
+        - $ref: "#/components/schemas/WorkspaceSessionSnapshotNestedBoundary"
+    WorkspaceSessionSnapshotRecordBoundary:
+      type: object
+      required:
+        - record
+      properties:
+        record:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotRecord"
+      additionalProperties: false
+    WorkspaceSessionSnapshotPreviewBoundary:
+      type: object
+      required:
+        - preview
+      properties:
+        preview:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotPreviewResponse"
+      additionalProperties: false
+    WorkspaceSessionSnapshotNestedBoundary:
+      type: object
+      required:
+        - snapshot
+      properties:
+        snapshot:
+          oneOf:
+            - $ref: "#/components/schemas/WorkspaceSessionSnapshotPreviewResponse"
+            - $ref: "#/components/schemas/WorkspaceSessionSnapshotRecord"
+      additionalProperties: false
+    WorkspaceSessionSnapshotCompareRequest:
+      type: object
+      required:
+        - baseline
+        - candidate
+      properties:
+        baseline:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotBoundary"
+        candidate:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotBoundary"
+      additionalProperties: false
+    WorkspaceSessionSnapshotReviewBoundarySummary:
+      type: object
+      required:
+        - fingerprint
+        - workspaceId
+        - deviceId
+        - sessionId
+        - operations
+        - auditActions
+        - eventCount
+        - auditRecordCount
+      properties:
+        fingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+        snapshotId:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotId"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/WorkspaceSessionDeviceId"
+        sessionId:
+          $ref: "#/components/schemas/WorkspaceSessionId"
+        operations:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        auditActions:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        eventCount:
+          type: integer
+          minimum: 0
+        auditRecordCount:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    WorkspaceSessionSnapshotCompareSummary:
+      type: object
+      required:
+        - fingerprintMatch
+        - workspaceMatch
+        - deviceMatch
+        - sessionMatch
+        - baselineEventCount
+        - candidateEventCount
+        - unchangedEventCount
+        - addedEventCount
+        - removedEventCount
+        - changedEventCount
+        - baselineAuditRecordCount
+        - candidateAuditRecordCount
+        - unchangedAuditRecordCount
+        - addedAuditRecordCount
+        - removedAuditRecordCount
+        - changedAuditRecordCount
+      properties:
+        fingerprintMatch:
+          type: boolean
+        workspaceMatch:
+          type: boolean
+        deviceMatch:
+          type: boolean
+        sessionMatch:
+          type: boolean
+        baselineEventCount:
+          type: integer
+          minimum: 0
+        candidateEventCount:
+          type: integer
+          minimum: 0
+        unchangedEventCount:
+          type: integer
+          minimum: 0
+        addedEventCount:
+          type: integer
+          minimum: 0
+        removedEventCount:
+          type: integer
+          minimum: 0
+        changedEventCount:
+          type: integer
+          minimum: 0
+        baselineAuditRecordCount:
+          type: integer
+          minimum: 0
+        candidateAuditRecordCount:
+          type: integer
+          minimum: 0
+        unchangedAuditRecordCount:
+          type: integer
+          minimum: 0
+        addedAuditRecordCount:
+          type: integer
+          minimum: 0
+        removedAuditRecordCount:
+          type: integer
+          minimum: 0
+        changedAuditRecordCount:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    WorkspaceSessionSnapshotComparableEvent:
+      type: object
+      required:
+        - key
+        - eventId
+        - operation
+        - fingerprint
+      properties:
+        key:
+          type: string
+          minLength: 1
+        eventId:
+          type: string
+          minLength: 1
+        operation:
+          type: string
+          minLength: 1
+        sequence:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        fingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+      additionalProperties: false
+    WorkspaceSessionSnapshotComparableAuditRecord:
+      type: object
+      required:
+        - key
+        - auditId
+        - action
+        - fingerprint
+      properties:
+        key:
+          type: string
+          minLength: 1
+        auditId:
+          type: string
+          minLength: 1
+        action:
+          type: string
+          minLength: 1
+        createdAt:
+          type: string
+          format: date-time
+        fingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+      additionalProperties: false
+    WorkspaceSessionSnapshotChangedEvent:
+      type: object
+      required:
+        - key
+        - baseline
+        - candidate
+      properties:
+        key:
+          type: string
+          minLength: 1
+        baseline:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotComparableEvent"
+        candidate:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotComparableEvent"
+      additionalProperties: false
+    WorkspaceSessionSnapshotChangedAuditRecord:
+      type: object
+      required:
+        - key
+        - baseline
+        - candidate
+      properties:
+        key:
+          type: string
+          minLength: 1
+        baseline:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotComparableAuditRecord"
+        candidate:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotComparableAuditRecord"
+      additionalProperties: false
+    WorkspaceSessionSnapshotEventDifferences:
+      type: object
+      required:
+        - added
+        - removed
+        - changed
+      properties:
+        added:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotComparableEvent"
+        removed:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotComparableEvent"
+        changed:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotChangedEvent"
+      additionalProperties: false
+    WorkspaceSessionSnapshotAuditRecordDifferences:
+      type: object
+      required:
+        - added
+        - removed
+        - changed
+      properties:
+        added:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotComparableAuditRecord"
+        removed:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotComparableAuditRecord"
+        changed:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotChangedAuditRecord"
+      additionalProperties: false
+    WorkspaceSessionSnapshotCompareDifferences:
+      type: object
+      required:
+        - events
+        - auditRecords
+      properties:
+        events:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotEventDifferences"
+        auditRecords:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotAuditRecordDifferences"
+      additionalProperties: false
+    WorkspaceSessionSnapshotCompareResponse:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - storeSchemaVersion
+        - apiSchemaVersion
+        - localOnly
+        - durableWrites
+        - redacted
+        - fingerprint
+        - equivalent
+        - baseline
+        - candidate
+        - summary
+        - differences
+      properties:
+        kind:
+          type: string
+          const: workspace-session.snapshot-review.compare
+        schemaVersion:
+          type: string
+          const: workspace-session-snapshot-review/v1
+        storeSchemaVersion:
+          type: string
+          const: workspace-session-store/v1
+        apiSchemaVersion:
+          type: string
+          const: workspace-session-api/v1
+        localOnly:
+          type: boolean
+          const: true
+        durableWrites:
+          type: boolean
+          const: false
+        redacted:
+          type: boolean
+          const: true
+        fingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+        equivalent:
+          type: boolean
+        baseline:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotReviewBoundarySummary"
+        candidate:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotReviewBoundarySummary"
+        summary:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotCompareSummary"
+        differences:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotCompareDifferences"
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionPolicy:
+      type: object
+      properties:
+        retainNewest:
+          type: integer
+          minimum: 0
+          maximum: 500
+        retainSnapshotIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotId"
+          uniqueItems: true
+        deleteBefore:
+          type: string
+          format: date-time
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionPreviewRequest:
+      type: object
+      required:
+        - snapshots
+      properties:
+        snapshots:
+          type: array
+          maxItems: 500
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRecord"
+        policy:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionPolicy"
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionSummary:
+      type: object
+      required:
+        - totalSnapshotCount
+        - retainedSnapshotCount
+        - expiredSnapshotCount
+        - pinnedSnapshotCount
+      properties:
+        totalSnapshotCount:
+          type: integer
+          minimum: 0
+        retainedSnapshotCount:
+          type: integer
+          minimum: 0
+        expiredSnapshotCount:
+          type: integer
+          minimum: 0
+        pinnedSnapshotCount:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionDecision:
+      type: object
+      required:
+        - snapshotId
+        - fingerprint
+        - snapshotFingerprint
+        - createdAt
+        - updatedAt
+        - workspaceId
+        - deviceId
+        - sessionId
+        - eventCount
+        - auditRecordCount
+        - newestRank
+        - retain
+        - plannedAction
+        - reasonCodes
+      properties:
+        snapshotId:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotId"
+        fingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+        snapshotFingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/WorkspaceSessionDeviceId"
+        sessionId:
+          $ref: "#/components/schemas/WorkspaceSessionId"
+        eventCount:
+          type: integer
+          minimum: 0
+        auditRecordCount:
+          type: integer
+          minimum: 0
+        newestRank:
+          type: integer
+          minimum: 0
+        retain:
+          type: boolean
+        plannedAction:
+          type: string
+          enum:
+            - retain
+            - expire
+        reasonCodes:
+          type: array
+          items:
+            type: string
+            minLength: 1
+      additionalProperties: false
+    WorkspaceSessionSnapshotRetentionPreviewResponse:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - storeSchemaVersion
+        - localOnly
+        - durableWrites
+        - redacted
+        - fingerprint
+        - policy
+        - summary
+        - snapshots
+      properties:
+        kind:
+          type: string
+          const: workspace-session.snapshot-review.retention-preview
+        schemaVersion:
+          type: string
+          const: workspace-session-snapshot-review/v1
+        storeSchemaVersion:
+          type: string
+          const: workspace-session-store/v1
+        localOnly:
+          type: boolean
+          const: true
+        durableWrites:
+          type: boolean
+          const: false
+        redacted:
+          type: boolean
+          const: true
+        fingerprint:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotFingerprint"
+        policy:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionPolicy"
+        summary:
+          $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionSummary"
+        snapshots:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionDecision"
       additionalProperties: false
     PluginReviewArtifactPreviewRequest:
       type: object

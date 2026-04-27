@@ -386,6 +386,8 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("RUN workspace-session-file-store-alignment: python -m unittest tests.test_workspace_session_file_store_docs tests.test_workspace_session_file_store_alignment", output.getvalue())
         self.assertIn("SKIP workspace-session-snapshot-review-security: missing tool: node", output.getvalue())
         self.assertIn("RUN workspace-session-snapshot-review-alignment: python -m unittest tests.test_workspace_session_snapshot_review_docs tests.test_workspace_session_snapshot_review_alignment", output.getvalue())
+        self.assertIn("tests.test_workspace_session_snapshot_review_e2e", output.getvalue())
+        self.assertIn("tests.test_validate_openapi_workspace_session_snapshot_review", output.getvalue())
         self.assertIn("SKIP release-notes-smoke:", output.getvalue())
         self.assertIn("SKIP cargo-check: missing tool: cargo", output.getvalue())
 

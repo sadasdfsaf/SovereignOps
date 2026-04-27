@@ -29,10 +29,18 @@ EXPECTED_API_NAMES = (
 )
 EXPECTED_SDK_NAMES = (
     "packages/sdk-js/src/localWorkspaceSessionSnapshotReview.ts",
+    "packages/sdk-js/src/localWorkspaceSessionSnapshotReviewApiClient.ts",
+    "packages/sdk-js/src/localWorkspaceSessionSnapshotRetention.ts",
     "compareLocalWorkspaceSessionSnapshots",
     "previewLocalWorkspaceSessionSnapshotRetention",
     "compareSnapshots",
     "previewSnapshotRetention",
+    "createLocalWorkspaceSessionSnapshotReviewApiClient",
+    "compareLocalWorkspaceSessionSnapshotsViaApi",
+    "previewLocalWorkspaceSessionSnapshotRetentionViaApi",
+    "planLocalWorkspaceSessionSnapshotRetentionCleanup",
+    "planFileBackedLocalWorkspaceSessionSnapshotRetentionCleanup",
+    "planSnapshotRetentionCleanupDryRun",
 )
 EXPECTED_CLI_NAMES = (
     "workspace-session snapshot-review compare",
