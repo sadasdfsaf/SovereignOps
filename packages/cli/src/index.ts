@@ -3,15 +3,23 @@ import { pathToFileURL } from "node:url";
 
 export * from "./commands.ts";
 export * from "./lifecycle.ts";
+export * from "./auditExport.ts";
 
+import { runAuditExportCli } from "./auditExport.ts";
 import { runCli as runCoreCli } from "./commands.ts";
 import { runLifecycleCli } from "./lifecycle.ts";
 
 export async function runCli(
   argv: readonly string[] = [],
-  options: Parameters<typeof runCoreCli>[1] & Parameters<typeof runLifecycleCli>[1] = {},
+  options: Parameters<typeof runCoreCli>[1] &
+    Parameters<typeof runLifecycleCli>[1] &
+    Parameters<typeof runAuditExportCli>[1] = {},
 ): ReturnType<typeof runCoreCli> {
-  return (await runLifecycleCli(argv, options)) ?? runCoreCli(argv, options);
+  return (
+    (await runAuditExportCli(argv, options)) ??
+    (await runLifecycleCli(argv, options)) ??
+    runCoreCli(argv, options)
+  );
 }
 
 if (isDirectRun()) {

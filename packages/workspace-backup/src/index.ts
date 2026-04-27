@@ -1,3 +1,8 @@
+import {
+  PathSecurityValidationError,
+  validateLocalRelativePath,
+} from "../../path-security/src/index.ts";
+
 export const BACKUP_MANIFEST_VERSION = "1.0.0";
 export const DEFAULT_ENCRYPTION_ALGORITHM = "metadata-only-encryption-v1";
 
@@ -589,7 +594,7 @@ function validatePayloadDescriptors(
     rejectUnknownFields(payload, PAYLOAD_FIELDS, payloadPath, issues);
     const id = validateRequiredString(payload, "id", `${payloadPath}.id`, issues, isPayloadId, "must use pay_<slug> format");
     validatePayloadKind(payload.kind, `${payloadPath}.kind`, issues);
-    const normalizedPath = validateRequiredString(payload, "path", `${payloadPath}.path`, issues, isSafeBackupPath, "must be a relative backup path");
+    const normalizedPath = validatePayloadPathField(payload, "path", `${payloadPath}.path`, issues);
     validateTimestampField(payload, "createdAt", `${payloadPath}.createdAt`, issues);
     validateByteSize(payload.plaintextByteSize, `${payloadPath}.plaintextByteSize`, issues);
     validateByteSize(payload.encryptedByteSize, `${payloadPath}.encryptedByteSize`, issues);
@@ -764,6 +769,37 @@ function validateRequiredString(
   return normalized;
 }
 
+function validatePayloadPathField(
+  record: Record<string, unknown>,
+  key: string,
+  path: string,
+  issues: BackupValidationIssue[],
+): string | undefined {
+  if (!Object.hasOwn(record, key)) {
+    issues.push({ path, message: "is required" });
+    return undefined;
+  }
+
+  const value = record[key];
+  if (!isNonEmptyString(value)) {
+    issues.push({ path, message: "must be a non-empty string" });
+    return undefined;
+  }
+
+  const result = validateLocalRelativePath(value, { issuePath: path });
+  if (!result.ok) {
+    issues.push(...result.issues.map((issue) => ({
+      path: issue.path,
+      message: issue.patternId === undefined
+        ? `${issue.code}: ${issue.message}`
+        : `${issue.code}: ${issue.message} (${issue.patternId})`,
+    })));
+    return undefined;
+  }
+
+  return result.value.normalizedPath;
+}
+
 function validateByteSize(value: unknown, path: string, issues: BackupValidationIssue[]): void {
   if (!Number.isInteger(value) || value < 0) {
     issues.push({ path, message: "must be a non-negative integer" });
@@ -903,30 +939,16 @@ function summarizeRestoreActions(actions: readonly RestorePlanAction[]): Restore
 }
 
 function normalizeBackupPath(value: string): string {
-  return value
-    .trim()
-    .replace(/\\/g, "/")
-    .split("/")
-    .filter((segment) => segment.length > 0 && segment !== ".")
-    .join("/");
+  const result = validateLocalRelativePath(value, { issuePath: "$.path" });
+  if (!result.ok) {
+    throw new PathSecurityValidationError("Invalid backup payload path", result.issues);
+  }
+
+  return result.value.normalizedPath;
 }
 
 function isSafeBackupPath(value: unknown): value is string {
-  if (!isNonEmptyString(value)) {
-    return false;
-  }
-
-  const normalized = value.trim().replace(/\\/g, "/");
-  if (
-    normalized.includes("\0") ||
-    normalized.startsWith("/") ||
-    /^[A-Za-z]:\//.test(normalized)
-  ) {
-    return false;
-  }
-
-  const segments = normalized.split("/").filter((segment) => segment.length > 0 && segment !== ".");
-  return segments.length > 0 && !segments.includes("..");
+  return validateLocalRelativePath(value).ok;
 }
 
 function normalizeTimestamp(value: string): string {

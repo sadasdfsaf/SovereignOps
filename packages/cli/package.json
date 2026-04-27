@@ -8,7 +8,7 @@
     "sovereignops": "src/index.ts"
   },
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package && node tests/commands.test.mjs && node tests/lifecycle-commands.test.mjs",
-    "test": "node tests/commands.test.mjs && node tests/lifecycle-commands.test.mjs"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/commands.test.mjs && node tests/lifecycle-commands.test.mjs && node tests/audit-export-commands.test.mjs",
+    "test": "node tests/commands.test.mjs && node tests/lifecycle-commands.test.mjs && node tests/audit-export-commands.test.mjs"
   }
 }

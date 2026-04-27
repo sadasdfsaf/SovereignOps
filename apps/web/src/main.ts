@@ -15,6 +15,7 @@ export * from "./approvals.ts";
 export * from "./automationSettings.ts";
 export * from "./auditTimeline.ts";
 export * from "./documents.ts";
+export * from "./lifecycleDashboard.ts";
 export * from "./lifecycleReview.ts";
 export * from "./onboarding.ts";
 export * from "./routes.ts";

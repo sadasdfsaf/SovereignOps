@@ -5,7 +5,7 @@
   "private": true,
   "main": "src/index.ts",
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package && node tests/backup.test.mjs",
-    "test": "node tests/backup.test.mjs"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/backup.test.mjs && node tests/backup-path-security.test.mjs",
+    "test": "node tests/backup.test.mjs && node tests/backup-path-security.test.mjs"
   }
 }
