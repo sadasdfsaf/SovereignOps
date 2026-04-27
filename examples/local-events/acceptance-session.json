@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "local-event-acceptance-session/v1",
+  "generatedAt": "2026-04-27T12:35:00.000Z",
+  "acceptanceId": "acc_local_event_001",
+  "workspaceId": "wsp_local_catalog",
+  "deviceId": "dev_local_acceptance",
+  "localOnly": true,
+  "network": {
+    "mode": "disabled",
+    "allowedHttpPrefixes": [
+      "http://127.0.0.1"
+    ],
+    "allowedUriPrefixes": [
+      "fixture://local-events/",
+      "local://",
+      "workspace://"
+    ]
+  },
+  "catalog": {
+    "path": "examples/local-events/catalog.json",
+    "schemaVersion": "canonical-local-event-catalog/v1",
+    "eventCount": 5,
+    "eventIds": [
+      "evt_catalog_001",
+      "evt_catalog_002",
+      "evt_catalog_003",
+      "evt_catalog_004",
+      "evt_catalog_005"
+    ],
+    "lastEventDigest": "a875d09c6cb2a44dd60c1becda474949418e9275e4901d1649958fa78c72c0cf"
+  },
+  "fixtures": {
+    "guide": "docs/local-event-acceptance.md",
+    "apiGuide": "docs/local-event-api.md",
+    "apiRequests": "examples/local-events/api-requests.json",
+    "sdkSession": "examples/local-events/sdk-session.json",
+    "exportSession": "examples/local-events/export-session.json",
+    "importPlan": "examples/local-events/import-plan.json"
+  },
+  "gates": [
+    {
+      "id": "api_fixture_replay",
+      "status": "pass",
+      "sourcePath": "examples/local-events/api-requests.json",
+      "apiBase": "http://127.0.0.1:7317",
+      "routeOrder": [
+        "GET /v1/local-events/catalog",
+        "GET /v1/local-events/summary",
+        "GET /v1/local-events/replay-batches"
+      ],
+      "statusCodes": [
+        200,
+        200,
+        200
+      ],
+      "batchCount": 2,
+      "replayedEventIds": [
+        "evt_catalog_001",
+        "evt_catalog_002",
+        "evt_catalog_003",
+        "evt_catalog_004",
+        "evt_catalog_005"
+      ],
+      "retainedFields": [
+        "eventId",
+        "payloadDigest",
+        "previousDigest",
+        "redactionMetadata"
+      ]
+    },
+    {
+      "id": "sdk_fake_fetch_replay",
+      "status": "pass",
+      "sourcePath": "examples/local-events/sdk-session.json",
+      "module": "packages/sdk-js/src/localEvents.ts",
+      "fakeFetchFactory": "createLocalEventCatalogFixtureFetch",
+      "entrypoints": [
+        "loadLocalEventCatalogFixture",
+        "validateLocalEventCatalogFixture",
+        "summarizeLocalEventCatalog",
+        "createLocalEventReplayBatches",
+        "createLocalEventCatalogFixtureFetch"
+      ],
+      "callOrder": [
+        "/v1/local-events/catalog",
+        "/v1/local-events/summary",
+        "/v1/local-events/replay-batches?batchSize=3"
+      ],
+      "statusCodes": [
+        200,
+        200,
+        200
+      ]
+    },
+    {
+      "id": "cli_export_import_planning",
+      "status": "pass",
+      "exportModule": "packages/cli/src/localEventExports.ts",
+      "replayModule": "packages/cli/src/localEvents.ts",
+      "exportSessionPath": "examples/local-events/export-session.json",
+      "importPlanPath": "examples/local-events/import-plan.json",
+      "formats": [
+        "jsonl",
+        "csv",
+        "package"
+      ],
+      "payloadStorage": "ciphertext-only",
+      "dryRun": true,
+      "strategy": "stage-then-apply",
+      "preflightCheckIds": [
+        "load_export_session",
+        "load_catalog",
+        "verify_digest_chain",
+        "verify_cursor_window",
+        "verify_ciphertext_payload"
+      ],
+      "integrityFailureMode": "block_import"
+    },
+    {
+      "id": "web_acceptance_state",
+      "status": "pass",
+      "module": "apps/web/src/localEventCatalog.ts",
+      "stateBuilder": "buildLocalEventCatalogState",
+      "filterHelpers": [
+        "filterCanonicalLocalEvents",
+        "summarizeLocalEvents"
+      ],
+      "state": {
+        "id": "local_event_catalog",
+        "status": "attention",
+        "totalCount": 5,
+        "visibleCount": 2,
+        "visibleEventIds": [
+          "evt_catalog_002",
+          "evt_catalog_004"
+        ],
+        "redactions": {
+          "total": 3,
+          "open": 3,
+          "resolved": 0
+        }
+      }
+    },
+    {
+      "id": "sync_catalog_readiness",
+      "status": "pass",
+      "service": "services/sync/src/replay.ts",
+      "entrypoints": [
+        "replayAcceptedEvents",
+        "detectReplayIntegrityIssues",
+        "createReplayAuditSummary"
+      ],
+      "cursorWindow": {
+        "afterCursor": "cur_v1:0000000000000000:origin",
+        "nextCursor": "cur_v1:0000000000000005:evt_catalog_005",
+        "hasMore": false
+      },
+      "acceptedEventIds": [
+        "evt_catalog_001",
+        "evt_catalog_002",
+        "evt_catalog_003",
+        "evt_catalog_004",
+        "evt_catalog_005"
+      ],
+      "integrity": {
+        "status": "ok",
+        "issueCount": 0,
+        "blockingCount": 0,
+        "warningCount": 0,
+        "codes": []
+      },
+      "audit": {
+        "eventCount": 5,
+        "redactsIdentifiers": true,
+        "retainedFields": [
+          "eventId",
+          "cursor",
+          "deviceId",
+          "sequence",
+          "type"
+        ]
+      }
+    }
+  ],
+  "acceptanceCriteria": [
+    "api_route_parity",
+    "sdk_fake_fetch_parity",
+    "cli_plan_ready",
+    "web_state_ready",
+    "sync_catalog_ready",
+    "local_only_sources",
+    "no_record_bodies"
+  ],
+  "validationCommands": [
+    "python -m json.tool examples\\local-events\\acceptance-session.json",
+    "python -m unittest tests.test_local_event_acceptance_docs"
+  ]
+}
