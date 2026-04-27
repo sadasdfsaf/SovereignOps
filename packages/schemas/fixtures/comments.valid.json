@@ -1,0 +1,11 @@
+{
+  "id": "cmt_review_note",
+  "workspaceId": "wsp_main",
+  "targetId": "doc_notes",
+  "body": "Ready for review.",
+  "status": "open",
+  "risk": "low",
+  "authorActorId": "act_owner",
+  "createdAt": "2026-04-27T00:00:00.000Z",
+  "updatedAt": "2026-04-27T00:00:00.000Z"
+}

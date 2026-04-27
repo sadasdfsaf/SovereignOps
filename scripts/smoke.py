@@ -45,6 +45,7 @@ def main() -> int:
     run([sys.executable, "scripts/repo_health.py", "--json"], cwd=root)
     run([sys.executable, "scripts/env_guard.py"], cwd=root)
     run([sys.executable, "scripts/rust_guard.py"], cwd=root)
+    run([sys.executable, "scripts/validate_openapi.py"], cwd=root)
 
     source_dirs = [root / "scripts", root / "services" / "ingest" / "src"]
     for source_dir in source_dirs:

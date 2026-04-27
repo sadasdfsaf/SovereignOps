@@ -44,3 +44,18 @@ Documents support title, body, tags, archive markers, and deletion markers. Task
 
 Audit helpers redact sensitive field names and credential-shaped values before serialization. Redaction metadata records which path was changed and why.
 
+## Policy
+
+Policy evaluation supports ordered matchers, rule effects, and explanation traces. Decisions can allow, deny, require approval, require a stronger actor context, or quarantine a request before follow-up handling.
+
+## Crypto
+
+`CryptoProvider` defines the encryption boundary for future production providers. The repository includes a deterministic test provider for repeatable interface tests only; it is not a production cryptographic implementation.
+
+## Search
+
+`IndexDocument` stores source URI, language, checksum, body text, and citations. Search fixtures use a stable JSON subset so compatibility tests can run without adding serialization dependencies.
+
+## Manifest
+
+`WorkspaceManifest` advertises schema version, supported capabilities, and default policy summary rules. Validation rejects unsupported versions, duplicate capabilities, missing policy coverage, unknown rules, and empty descriptions.

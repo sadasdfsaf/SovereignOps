@@ -11,6 +11,7 @@
     "smoke": "python scripts/smoke.py",
     "health": "python scripts/repo_health.py --markdown docs/STATUS.md",
     "loc": "python scripts/loc_budget.py --summary",
+    "openapi:check": "python scripts/validate_openapi.py",
     "queue": "python scripts/task_queue.py",
     "test": "python -m unittest discover -s tests"
   },

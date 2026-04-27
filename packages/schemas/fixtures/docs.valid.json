@@ -1,0 +1,12 @@
+{
+  "id": "doc_notes",
+  "workspaceId": "wsp_main",
+  "projectId": "prj_launch",
+  "title": "Launch notes",
+  "body": "Checklist for the local release.",
+  "status": "active",
+  "risk": "low",
+  "ownerActorId": "act_owner",
+  "createdAt": "2026-04-27T00:00:00.000Z",
+  "updatedAt": "2026-04-27T00:00:00.000Z"
+}

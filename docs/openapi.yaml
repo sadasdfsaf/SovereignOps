@@ -1,0 +1,595 @@
+openapi: 3.1.0
+info:
+  title: SovereignOps Local API
+  version: 0.1.0
+  description: Contract for local-first encrypted workspace records, agent action previews, and audit reads.
+servers:
+  - url: http://127.0.0.1:7317
+    description: Local gateway
+tags:
+  - name: health
+  - name: records
+  - name: agent-actions
+  - name: audit
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: Check the local gateway status.
+      operationId: getHealth
+      responses:
+        "200":
+          description: Gateway status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/workspaces/{workspaceId}/records:
+    get:
+      tags:
+        - records
+      summary: List records in a workspace.
+      operationId: listRecords
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - name: kind
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/RecordKind"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Records for the selected workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordListResponse"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags:
+        - records
+      summary: Create a workspace record after policy evaluation.
+      operationId: createRecord
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRecordRequest"
+      responses:
+        "201":
+          description: Created record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/workspaces/{workspaceId}/records/{recordId}:
+    get:
+      tags:
+        - records
+      summary: Read one workspace record.
+      operationId: getRecord
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/RecordId"
+      responses:
+        "200":
+          description: Matching record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordResponse"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags:
+        - records
+      summary: Update one workspace record after policy evaluation.
+      operationId: updateRecord
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/RecordId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRecordRequest"
+      responses:
+        "200":
+          description: Updated record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/workspaces/{workspaceId}/agent-actions/preview:
+    post:
+      tags:
+        - agent-actions
+      summary: Build an action preview before durable execution.
+      operationId: previewAgentAction
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentActionPreviewRequest"
+      responses:
+        "200":
+          description: Preview and current policy decision.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentActionPreviewResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/workspaces/{workspaceId}/audit:
+    get:
+      tags:
+        - audit
+      summary: List redacted audit entries for a workspace.
+      operationId: listAuditEntries
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Redacted audit entries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditEntryListResponse"
+        default:
+          $ref: "#/components/responses/Error"
+components:
+  parameters:
+    WorkspaceId:
+      name: workspaceId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/WorkspaceId"
+    RecordId:
+      name: recordId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/SovereignRecordId"
+  responses:
+    Error:
+      description: Error response.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    WorkspaceId:
+      type: string
+      pattern: "^wsp_[A-Za-z0-9_-]{1,88}$"
+    ActorId:
+      type: string
+      pattern: "^act_[A-Za-z0-9_-]{1,88}$"
+    SovereignRecordId:
+      type: string
+      pattern: "^(doc|prj|inc|cmt|att|apv|obj)_[A-Za-z0-9_-]{1,88}$"
+    RecordKind:
+      type: string
+      enum:
+        - docs
+        - projects
+        - incidents
+        - comments
+        - attachments
+        - approvals
+    RiskLevel:
+      type: string
+      enum:
+        - low
+        - medium
+        - high
+    PolicyDecision:
+      type: string
+      enum:
+        - allow
+        - require_approval
+        - deny
+    GatewayCapability:
+      type: string
+      enum:
+        - read_object
+        - write_object
+        - propose_agent_action
+        - manage_plugin
+        - sync_bundle
+    HealthResponse:
+      type: object
+      required:
+        - ok
+        - service
+      properties:
+        ok:
+          type: boolean
+        service:
+          type: string
+          const: sovereignops-local-api
+    RecordBase:
+      type: object
+      required:
+        - id
+        - workspaceId
+        - status
+        - risk
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/SovereignRecordId"
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        status:
+          type: string
+        risk:
+          $ref: "#/components/schemas/RiskLevel"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+    DocRecord:
+      allOf:
+        - $ref: "#/components/schemas/RecordBase"
+        - type: object
+          required:
+            - title
+            - ownerActorId
+          properties:
+            id:
+              type: string
+              pattern: "^doc_[A-Za-z0-9_-]{1,88}$"
+            status:
+              type: string
+              enum:
+                - draft
+                - review
+                - active
+                - archived
+            title:
+              type: string
+              minLength: 1
+            body:
+              type: string
+            projectId:
+              type: string
+              pattern: "^prj_[A-Za-z0-9_-]{1,88}$"
+            ownerActorId:
+              $ref: "#/components/schemas/ActorId"
+    ProjectRecord:
+      allOf:
+        - $ref: "#/components/schemas/RecordBase"
+        - type: object
+          required:
+            - name
+            - ownerActorId
+          properties:
+            id:
+              type: string
+              pattern: "^prj_[A-Za-z0-9_-]{1,88}$"
+            status:
+              type: string
+              enum:
+                - planned
+                - active
+                - paused
+                - completed
+                - archived
+            name:
+              type: string
+              minLength: 1
+            ownerActorId:
+              $ref: "#/components/schemas/ActorId"
+    IncidentRecord:
+      allOf:
+        - $ref: "#/components/schemas/RecordBase"
+        - type: object
+          required:
+            - title
+            - reportedByActorId
+          properties:
+            id:
+              type: string
+              pattern: "^inc_[A-Za-z0-9_-]{1,88}$"
+            status:
+              type: string
+              enum:
+                - open
+                - triaged
+                - resolved
+                - closed
+            title:
+              type: string
+              minLength: 1
+            summary:
+              type: string
+            projectId:
+              type: string
+              pattern: "^prj_[A-Za-z0-9_-]{1,88}$"
+            reportedByActorId:
+              $ref: "#/components/schemas/ActorId"
+    CommentRecord:
+      allOf:
+        - $ref: "#/components/schemas/RecordBase"
+        - type: object
+          required:
+            - targetId
+            - body
+            - authorActorId
+          properties:
+            id:
+              type: string
+              pattern: "^cmt_[A-Za-z0-9_-]{1,88}$"
+            status:
+              type: string
+              enum:
+                - open
+                - resolved
+                - deleted
+            targetId:
+              $ref: "#/components/schemas/SovereignRecordId"
+            body:
+              type: string
+              minLength: 1
+            authorActorId:
+              $ref: "#/components/schemas/ActorId"
+    AttachmentRecord:
+      allOf:
+        - $ref: "#/components/schemas/RecordBase"
+        - type: object
+          required:
+            - targetId
+            - filename
+            - contentType
+            - byteSize
+            - uploadedByActorId
+          properties:
+            id:
+              type: string
+              pattern: "^att_[A-Za-z0-9_-]{1,88}$"
+            status:
+              type: string
+              enum:
+                - pending
+                - ready
+                - failed
+                - deleted
+            targetId:
+              $ref: "#/components/schemas/SovereignRecordId"
+            filename:
+              type: string
+              minLength: 1
+            contentType:
+              type: string
+              minLength: 1
+            byteSize:
+              type: integer
+              minimum: 0
+            uploadedByActorId:
+              $ref: "#/components/schemas/ActorId"
+    ApprovalRecord:
+      allOf:
+        - $ref: "#/components/schemas/RecordBase"
+        - type: object
+          required:
+            - targetId
+            - summary
+            - requestedByActorId
+          properties:
+            id:
+              type: string
+              pattern: "^apv_[A-Za-z0-9_-]{1,88}$"
+            status:
+              type: string
+              enum:
+                - requested
+                - approved
+                - rejected
+                - cancelled
+            targetId:
+              $ref: "#/components/schemas/SovereignRecordId"
+            summary:
+              type: string
+              minLength: 1
+            requestedByActorId:
+              $ref: "#/components/schemas/ActorId"
+            approverActorId:
+              $ref: "#/components/schemas/ActorId"
+    SovereignRecord:
+      oneOf:
+        - $ref: "#/components/schemas/DocRecord"
+        - $ref: "#/components/schemas/ProjectRecord"
+        - $ref: "#/components/schemas/IncidentRecord"
+        - $ref: "#/components/schemas/CommentRecord"
+        - $ref: "#/components/schemas/AttachmentRecord"
+        - $ref: "#/components/schemas/ApprovalRecord"
+    RecordListResponse:
+      type: object
+      required:
+        - records
+      properties:
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/SovereignRecord"
+    RecordResponse:
+      type: object
+      required:
+        - record
+      properties:
+        record:
+          $ref: "#/components/schemas/SovereignRecord"
+    CreateRecordRequest:
+      type: object
+      required:
+        - kind
+        - record
+      properties:
+        kind:
+          $ref: "#/components/schemas/RecordKind"
+        record:
+          $ref: "#/components/schemas/SovereignRecord"
+    UpdateRecordRequest:
+      type: object
+      required:
+        - changes
+      properties:
+        changes:
+          type: object
+          additionalProperties: true
+    AgentActionPreviewRequest:
+      type: object
+      required:
+        - actorId
+        - capability
+        - risk
+        - summary
+      properties:
+        actorId:
+          $ref: "#/components/schemas/ActorId"
+        targetId:
+          $ref: "#/components/schemas/SovereignRecordId"
+        capability:
+          $ref: "#/components/schemas/GatewayCapability"
+        risk:
+          $ref: "#/components/schemas/RiskLevel"
+        summary:
+          type: string
+          minLength: 1
+    AgentActionPreview:
+      type: object
+      required:
+        - id
+        - workspaceId
+        - actorId
+        - capability
+        - risk
+        - summary
+      properties:
+        id:
+          type: string
+          pattern: "^obj_[A-Za-z0-9_-]{1,88}$"
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        actorId:
+          $ref: "#/components/schemas/ActorId"
+        capability:
+          $ref: "#/components/schemas/GatewayCapability"
+        risk:
+          $ref: "#/components/schemas/RiskLevel"
+        summary:
+          type: string
+          minLength: 1
+    AgentActionPreviewResponse:
+      type: object
+      required:
+        - preview
+        - decision
+      properties:
+        preview:
+          $ref: "#/components/schemas/AgentActionPreview"
+        decision:
+          $ref: "#/components/schemas/PolicyDecision"
+        reason:
+          type: string
+    AuditEntry:
+      type: object
+      required:
+        - workspaceId
+        - actorId
+        - action
+        - decision
+        - redactedPaths
+        - recordedAt
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        actorId:
+          $ref: "#/components/schemas/ActorId"
+        action:
+          type: string
+          minLength: 1
+        decision:
+          $ref: "#/components/schemas/PolicyDecision"
+        redactedPaths:
+          type: array
+          items:
+            type: string
+        recordedAt:
+          type: string
+          format: date-time
+    AuditEntryListResponse:
+      type: object
+      required:
+        - entries
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEntry"
+    ValidationIssue:
+      type: object
+      required:
+        - path
+        - message
+      properties:
+        path:
+          type: string
+        message:
+          type: string
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - requestId
+      properties:
+        code:
+          type: string
+          minLength: 1
+        message:
+          type: string
+          minLength: 1
+        requestId:
+          type: string
+          minLength: 1
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationIssue"

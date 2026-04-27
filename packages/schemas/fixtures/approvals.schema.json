@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sovereignops.local/approvals.schema.json",
+  "title": "Approval record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "workspaceId",
+    "status",
+    "risk",
+    "createdAt",
+    "updatedAt",
+    "targetId",
+    "summary",
+    "requestedByActorId"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^apv_[A-Za-z0-9_-]{1,88}$"
+    },
+    "workspaceId": {
+      "type": "string",
+      "pattern": "^wsp_[A-Za-z0-9_-]{1,88}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "approved",
+        "rejected",
+        "cancelled"
+      ]
+    },
+    "risk": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "createdAt": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "updatedAt": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "targetId": {
+      "type": "string",
+      "pattern": "^(doc|prj|inc|cmt|att|apv|obj)_[A-Za-z0-9_-]{1,88}$"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "requestedByActorId": {
+      "type": "string",
+      "pattern": "^act_[A-Za-z0-9_-]{1,88}$"
+    },
+    "approverActorId": {
+      "type": "string",
+      "pattern": "^act_[A-Za-z0-9_-]{1,88}$"
+    }
+  }
+}

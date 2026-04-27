@@ -1,0 +1,12 @@
+{
+  "id": "inc_import_mismatch",
+  "workspaceId": "wsp_main",
+  "projectId": "prj_launch",
+  "title": "Import mismatch",
+  "summary": "A local import produced a count mismatch.",
+  "status": "triaged",
+  "risk": "high",
+  "reportedByActorId": "act_owner",
+  "createdAt": "2026-04-27T00:00:00.000Z",
+  "updatedAt": "2026-04-27T00:00:00.000Z"
+}

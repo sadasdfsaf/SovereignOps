@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sovereignops.local/incidents.schema.json",
+  "title": "Incident record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "workspaceId",
+    "status",
+    "risk",
+    "createdAt",
+    "updatedAt",
+    "title",
+    "reportedByActorId"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^inc_[A-Za-z0-9_-]{1,88}$"
+    },
+    "workspaceId": {
+      "type": "string",
+      "pattern": "^wsp_[A-Za-z0-9_-]{1,88}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "triaged",
+        "resolved",
+        "closed"
+      ]
+    },
+    "risk": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "createdAt": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "updatedAt": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "projectId": {
+      "type": "string",
+      "pattern": "^prj_[A-Za-z0-9_-]{1,88}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "reportedByActorId": {
+      "type": "string",
+      "pattern": "^act_[A-Za-z0-9_-]{1,88}$"
+    }
+  }
+}

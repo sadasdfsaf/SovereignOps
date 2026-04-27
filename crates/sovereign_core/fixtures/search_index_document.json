@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "document_id": "doc_workspace-notes",
+  "source_uri": "sovereign://workspace/demo/documents/workspace-notes",
+  "language": "en",
+  "checksum": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "title": "Workspace Notes",
+  "body": "Offline-first notes describe local updates, sync state, and citation links.",
+  "citations": [
+    {
+      "citation_id": "cite_local-updates",
+      "source_uri": "sovereign://workspace/demo/documents/local-updates",
+      "title": "Local Updates",
+      "checksum": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "citation_id": "cite_sync-state",
+      "source_uri": "sovereign://workspace/demo/documents/sync-state",
+      "title": "Sync State",
+      "checksum": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ]
+}

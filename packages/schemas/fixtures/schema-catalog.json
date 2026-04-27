@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "draft": "https://json-schema.org/draft/2020-12/schema",
+  "schemas": [
+    {
+      "kind": "docs",
+      "schemaFile": "docs.schema.json",
+      "id": "https://schemas.sovereignops.local/docs.schema.json",
+      "title": "Doc record"
+    },
+    {
+      "kind": "projects",
+      "schemaFile": "projects.schema.json",
+      "id": "https://schemas.sovereignops.local/projects.schema.json",
+      "title": "Project record"
+    },
+    {
+      "kind": "incidents",
+      "schemaFile": "incidents.schema.json",
+      "id": "https://schemas.sovereignops.local/incidents.schema.json",
+      "title": "Incident record"
+    },
+    {
+      "kind": "comments",
+      "schemaFile": "comments.schema.json",
+      "id": "https://schemas.sovereignops.local/comments.schema.json",
+      "title": "Comment record"
+    },
+    {
+      "kind": "attachments",
+      "schemaFile": "attachments.schema.json",
+      "id": "https://schemas.sovereignops.local/attachments.schema.json",
+      "title": "Attachment record"
+    },
+    {
+      "kind": "approvals",
+      "schemaFile": "approvals.schema.json",
+      "id": "https://schemas.sovereignops.local/approvals.schema.json",
+      "title": "Approval record"
+    }
+  ]
+}

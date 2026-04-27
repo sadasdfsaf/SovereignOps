@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "fixtures": [
+    {
+      "kind": "docs",
+      "schema": "docs.schema.json",
+      "fixture": "docs.valid.json",
+      "valid": true
+    },
+    {
+      "kind": "projects",
+      "schema": "projects.schema.json",
+      "fixture": "projects.valid.json",
+      "valid": true
+    },
+    {
+      "kind": "incidents",
+      "schema": "incidents.schema.json",
+      "fixture": "incidents.valid.json",
+      "valid": true
+    },
+    {
+      "kind": "comments",
+      "schema": "comments.schema.json",
+      "fixture": "comments.valid.json",
+      "valid": true
+    },
+    {
+      "kind": "attachments",
+      "schema": "attachments.schema.json",
+      "fixture": "attachments.valid.json",
+      "valid": true
+    },
+    {
+      "kind": "approvals",
+      "schema": "approvals.schema.json",
+      "fixture": "approvals.valid.json",
+      "valid": true
+    }
+  ]
+}

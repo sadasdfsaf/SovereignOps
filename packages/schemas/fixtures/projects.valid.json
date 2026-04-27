@@ -1,0 +1,10 @@
+{
+  "id": "prj_launch",
+  "workspaceId": "wsp_main",
+  "name": "Local release",
+  "status": "active",
+  "risk": "medium",
+  "ownerActorId": "act_owner",
+  "createdAt": "2026-04-27T00:00:00.000Z",
+  "updatedAt": "2026-04-27T00:00:00.000Z"
+}

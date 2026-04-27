@@ -28,8 +28,12 @@ REQUIRED_PATHS = [
     "services/sync/.env.example",
     "docs/release-checklist.md",
     "docs/core-model.md",
+    "docs/openapi.yaml",
+    "docs/mcp-contract.md",
+    "docs/schema-alignment.md",
     "docs/adr/000-template.md",
     "docs/adr/001-local-first-event-model.md",
+    "scripts/validate_openapi.py",
 ]
 
 OPTIONAL_COMMANDS = {

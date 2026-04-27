@@ -1,0 +1,13 @@
+{
+  "id": "att_release_notes",
+  "workspaceId": "wsp_main",
+  "targetId": "doc_notes",
+  "filename": "release-notes.txt",
+  "contentType": "text/plain",
+  "byteSize": 512,
+  "status": "ready",
+  "risk": "medium",
+  "uploadedByActorId": "act_owner",
+  "createdAt": "2026-04-27T00:00:00.000Z",
+  "updatedAt": "2026-04-27T00:00:00.000Z"
+}

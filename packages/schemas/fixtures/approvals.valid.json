@@ -1,0 +1,12 @@
+{
+  "id": "apv_release_notes",
+  "workspaceId": "wsp_main",
+  "targetId": "doc_notes",
+  "summary": "Approve release notes for local sharing.",
+  "status": "requested",
+  "risk": "high",
+  "requestedByActorId": "act_owner",
+  "approverActorId": "act_reviewer",
+  "createdAt": "2026-04-27T00:00:00.000Z",
+  "updatedAt": "2026-04-27T00:00:00.000Z"
+}
