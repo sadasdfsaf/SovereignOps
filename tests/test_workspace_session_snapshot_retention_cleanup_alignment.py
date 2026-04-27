@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 from typing import Any
 
+from scripts import release_check
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -13,10 +14,45 @@ DOC_PATH = "docs/workspace-session-snapshot-retention-cleanup.md"
 FIXTURE_PATH = "examples/workspace-session/snapshot-retention-cleanup.json"
 DOCS_TEST_PATH = "tests/test_workspace_session_snapshot_retention_cleanup_docs.py"
 ALIGNMENT_TEST_PATH = "tests/test_workspace_session_snapshot_retention_cleanup_alignment.py"
+E2E_TEST_PATH = "tests/test_workspace_session_snapshot_retention_cleanup_e2e.py"
 SDK_SOURCE_PATH = "packages/sdk-js/src/localWorkspaceSessionSnapshotRetention.ts"
+SDK_API_CLIENT_PATH = "packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupApiClient.ts"
+SDK_API_CLIENT_TEST_PATH = (
+    "packages/sdk-js/tests/local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs"
+)
+SDK_API_CLIENT_SECURITY_TEST_PATH = (
+    "tests/security/workspace_session_snapshot_retention_cleanup_api_client_threats.test.mjs"
+)
+API_REPLAY_FIXTURE_PATH = "examples/workspace-session/snapshot-retention-cleanup-api-requests.json"
+CLI_API_REPLAY_PATH = "packages/cli/src/workspaceSessionSnapshotRetentionCleanupApiReplay.ts"
+CLI_API_REPLAY_TEST_PATH = (
+    "packages/cli/tests/workspace-session-snapshot-retention-cleanup-api-replay.test.mjs"
+)
 API_ROUTE_PATH = "apps/api/src/workspaceSessionSnapshotRetentionCleanupRoutes.ts"
 CLI_SOURCE_PATH = "packages/cli/src/workspaceSessionSnapshotRetentionCleanup.ts"
 WEB_STATE_PATH = "apps/web/src/workspaceSessionSnapshotRetentionCleanupState.ts"
+SCHEMA_SOURCE_PATH = "packages/schemas/src/workspaceSessionSnapshotRetentionCleanup.ts"
+SCHEMA_TEST_PATH = "packages/schemas/tests/workspace-session-snapshot-retention-cleanup.test.mjs"
+SCHEMA_FIXTURE_PATHS = (
+    "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-request.valid.json",
+    "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-request.invalid.json",
+    "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-request.schema.json",
+    "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.valid.json",
+    "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.invalid.json",
+    "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.schema.json",
+)
+ROUND44_REQUIRED_PATHS = (
+    E2E_TEST_PATH,
+    SDK_API_CLIENT_PATH,
+    SDK_API_CLIENT_TEST_PATH,
+    SDK_API_CLIENT_SECURITY_TEST_PATH,
+    API_REPLAY_FIXTURE_PATH,
+    CLI_API_REPLAY_PATH,
+    CLI_API_REPLAY_TEST_PATH,
+    SCHEMA_SOURCE_PATH,
+    SCHEMA_TEST_PATH,
+    *SCHEMA_FIXTURE_PATHS,
+)
 
 EXPECTED_SCHEMA_VERSION = "local-workspace-session-snapshot-retention/v1"
 EXPECTED_FIXTURE_KIND = "workspace-session.snapshot-retention-cleanup.dry-run"
@@ -91,6 +127,7 @@ class WorkspaceSessionSnapshotRetentionCleanupAlignmentTests(unittest.TestCase):
         cls.api_text = read_text(API_ROUTE_PATH)
         cls.cli_text = read_text(CLI_SOURCE_PATH)
         cls.web_text = read_text(WEB_STATE_PATH)
+        cls.release_check_text = read_text("scripts/release_check.py")
         cls.combined_text = cls.doc_text + "\n" + cls.fixture_text
 
     def test_owned_retention_cleanup_files_exist(self) -> None:
@@ -140,6 +177,33 @@ class WorkspaceSessionSnapshotRetentionCleanupAlignmentTests(unittest.TestCase):
             "buildWorkspaceSessionSnapshotRetentionCleanupState",
             self.web_text,
         )
+
+    def test_round44_api_client_schema_fixtures_and_e2e_are_release_gated(self) -> None:
+        required_paths = set(
+            release_check.WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS
+        )
+        check_specs = {spec.name: spec for spec in release_check.CHECK_SPECS}
+        alignment_check = check_specs["workspace-session-snapshot-retention-cleanup-alignment"]
+        security_check = check_specs["workspace-session-snapshot-retention-cleanup-security"]
+
+        for rel_path in ROUND44_REQUIRED_PATHS:
+            with self.subTest(path=rel_path):
+                self.assertIn(rel_path, self.doc_text)
+                self.assertIn(rel_path, self.release_check_text)
+                self.assertIn(rel_path, required_paths)
+
+        self.assertIn(
+            "tests.test_workspace_session_snapshot_retention_cleanup_e2e",
+            alignment_check.command,
+        )
+        self.assertIn("SDK API client", alignment_check.description)
+        self.assertIn("schema fixtures", alignment_check.description)
+        self.assertIn("API replay", alignment_check.description)
+        self.assertIn("E2E replay", alignment_check.description)
+        self.assertIn(SDK_API_CLIENT_SECURITY_TEST_PATH, security_check.command)
+        self.assertIn(SDK_API_CLIENT_TEST_PATH, security_check.command)
+        self.assertIn(SCHEMA_TEST_PATH, security_check.command)
+        self.assertIn(CLI_API_REPLAY_TEST_PATH, security_check.command)
 
     def test_fixture_schema_shape_matches_dry_run_cleanup_plan(self) -> None:
         fixture = self.fixture

@@ -70,6 +70,48 @@ These names are the public contract for snapshot retention cleanup planning:
 The cleanup fixture documents the SDK dry-run plan shape. CLI, API, and Web
 integrations use the same local-only dry-run plan contract.
 
+## Round 44 Release Handoff
+
+The Round 44 release gate also tracks the parent SDK API client, schema
+fixtures, and API replay artifacts that exercise this cleanup contract end to
+end:
+
+- SDK API client module:
+  `packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupApiClient.ts`
+- SDK API client test:
+  `packages/sdk-js/tests/local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs`
+- SDK API client security test:
+  `tests/security/workspace_session_snapshot_retention_cleanup_api_client_threats.test.mjs`
+- API replay fixture:
+  `examples/workspace-session/snapshot-retention-cleanup-api-requests.json`
+- API replay CLI module:
+  `packages/cli/src/workspaceSessionSnapshotRetentionCleanupApiReplay.ts`
+- API replay CLI test:
+  `packages/cli/tests/workspace-session-snapshot-retention-cleanup-api-replay.test.mjs`
+- Schema source:
+  `packages/schemas/src/workspaceSessionSnapshotRetentionCleanup.ts`
+- Schema test:
+  `packages/schemas/tests/workspace-session-snapshot-retention-cleanup.test.mjs`
+- Schema fixtures:
+  `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-request.valid.json`,
+  `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-request.invalid.json`,
+  `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-request.schema.json`,
+  `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.valid.json`,
+  `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.invalid.json`,
+  and
+  `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.schema.json`
+- E2E replay test:
+  `tests/test_workspace_session_snapshot_retention_cleanup_e2e.py`
+
+The SDK API client is expected to call
+`POST /v1/workspace-session/snapshot-retention-cleanup/preview` and preserve the
+same dry-run response shape as the fixture. The schema fixtures are expected to
+describe the same cleanup plan contract without adding raw body, raw path, raw
+token, session id, or root key retention. The API replay fixture is expected to
+exercise the local preview route without network access. The E2E replay is
+expected to use the checked-in cleanup fixture across SDK, API, CLI, and Web
+state surfaces.
+
 ## Fixture
 
 `examples/workspace-session/snapshot-retention-cleanup.json` contains:

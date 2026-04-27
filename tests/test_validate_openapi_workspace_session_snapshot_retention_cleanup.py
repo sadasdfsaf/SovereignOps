@@ -28,10 +28,16 @@ FORBIDDEN_RAW_RETENTION_MARKERS = (
     "absolutePath:",
     "filePath:",
     "rawLockToken:",
+    "rawToken:",
     "rawPath:",
     "rawSecret:",
+    "apiKey:",
+    "authorization:",
+    "bearerToken:",
+    "password:",
     "secret:",
     "storagePath:",
+    "token:",
     "lockToken:",
 )
 
@@ -49,6 +55,7 @@ class ValidateOpenApiWorkspaceSessionSnapshotRetentionCleanupTests(unittest.Test
         request_block = _require_block(self, method_block, "requestBody", 6)
         responses_block = _require_block(self, method_block, "responses", 6)
         status_block = _require_block(self, responses_block, '"200"', 8)
+        bad_request_block = _require_block(self, responses_block, '"400"', 8)
         default_block = _require_block(self, responses_block, "default", 8)
 
         self.assertIn("- workspace-session", _stripped_lines(tag_block))
@@ -56,8 +63,26 @@ class ValidateOpenApiWorkspaceSessionSnapshotRetentionCleanupTests(unittest.Test
         self.assertIn("required: true", _stripped_lines(request_block))
         self.assertTrue(_has_schema_ref(request_block, EXPECTED_REQUEST_SCHEMA))
         self.assertTrue(_has_schema_ref(status_block, EXPECTED_RESPONSE_SCHEMA))
+        self.assertIn('$ref: "#/components/responses/Error"', _stripped_lines(bad_request_block))
         self.assertIn('$ref: "#/components/responses/Error"', _stripped_lines(default_block))
         self.assertIn("dry-run", "\n".join(method_block).lower())
+
+    def test_retention_cleanup_preview_route_is_body_only_json_contract(self) -> None:
+        path_block = _require_cleanup_route_or_skip(self, self.lines)
+        method_block = _require_block(self, path_block, EXPECTED_METHOD, 4)
+        request_block = _require_block(self, method_block, "requestBody", 6)
+        status_block = _require_block(
+            self,
+            _require_block(self, method_block, "responses", 6),
+            '"200"',
+            8,
+        )
+        error_response_block = _require_block(self, self.lines, "Error", 4)
+
+        self.assertNotIn("parameters:", _stripped_lines(method_block))
+        self.assertEqual(_media_types(request_block), ["application/json"])
+        self.assertEqual(_media_types(status_block), ["application/json"])
+        self.assertEqual(_media_types(error_response_block), ["application/json"])
 
     def test_retention_cleanup_preview_response_is_local_dry_run_only(self) -> None:
         _require_cleanup_route_or_skip(self, self.lines)
@@ -77,6 +102,15 @@ class ValidateOpenApiWorkspaceSessionSnapshotRetentionCleanupTests(unittest.Test
         _require_cleanup_route_or_skip(self, self.lines)
         request_block = _require_block(self, self.lines, EXPECTED_REQUEST_SCHEMA, 4)
         self.assertIn("additionalProperties: false", _stripped_lines(request_block))
+
+        for field in ("entries", "files", "records"):
+            with self.subTest(request_field=field):
+                field_block = _require_nested_block(self, request_block, field)
+                self.assertTrue(_has_schema_ref(
+                    field_block,
+                    "WorkspaceSessionSnapshotRetentionCleanupInputEntry",
+                ))
+                self.assertFalse(_has_schema_ref(field_block, "WorkspaceSessionSnapshotRecord"))
 
         for schema_name in EXPECTED_DECLARED_SCHEMAS:
             with self.subTest(schema=schema_name):
@@ -170,6 +204,28 @@ def _has_schema_ref(lines: list[str], schema_name: str) -> bool:
     ref = f'$ref: "#/components/schemas/{schema_name}"'
     stripped = _stripped_lines(lines)
     return ref in stripped or f"- {ref}" in stripped
+
+
+def _media_types(lines: list[str]) -> list[str]:
+    content_index = next(
+        (index for index, line in enumerate(lines) if line.strip() == "content:"),
+        None,
+    )
+    if content_index is None:
+        return []
+
+    content_indent = len(lines[content_index]) - len(lines[content_index].lstrip(" "))
+    media_indent = content_indent + 2
+    media_types: list[str] = []
+    for line in lines[content_index + 1 :]:
+        if not line.strip():
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if indent <= content_indent:
+            break
+        if indent == media_indent and line.strip().endswith(":"):
+            media_types.append(line.strip()[:-1])
+    return media_types
 
 
 def _stripped_lines(lines: list[str]) -> set[str]:

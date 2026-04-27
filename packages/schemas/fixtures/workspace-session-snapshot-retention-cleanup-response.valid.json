@@ -1,0 +1,209 @@
+{
+  "kind": "localWorkspaceSessionSnapshotRetentionCleanupPlan",
+  "schemaVersion": "local-workspace-session-snapshot-retention/v1",
+  "localOnly": true,
+  "dryRun": true,
+  "durableWrites": false,
+  "thresholds": {
+    "maxCount": 1,
+    "maxAgeMs": 86400000,
+    "now": "2026-04-28T04:00:00.000Z",
+    "cutoffAt": "2026-04-27T04:00:00.000Z"
+  },
+  "entryCount": 3,
+  "keepCount": 1,
+  "deleteCount": 1,
+  "reviewCount": 1,
+  "actions": [
+    {
+      "kind": "localWorkspaceSessionSnapshotRetentionCleanupAction",
+      "action": "keep",
+      "reasons": [
+        "within-max-count",
+        "within-max-age"
+      ],
+      "sourceIndex": 0,
+      "rank": 1,
+      "summary": {
+        "kind": "localWorkspaceSessionSnapshotRetentionCleanupSummary",
+        "sourceKind": "snapshot-record-summary",
+        "auditSafe": true,
+        "redacted": true,
+        "snapshotId": "wssnap_cleanup_latest",
+        "workspaceId": "wsp_cleanup_alpha",
+        "deviceId": "dev_cleanup_laptop",
+        "sessionId": "[redacted:session:latest]",
+        "label": "Latest snapshot",
+        "createdAt": "2026-04-28T03:50:00.000Z",
+        "updatedAt": "2026-04-28T03:55:00.000Z",
+        "ageMs": 600000,
+        "sizeBytes": 12288,
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "snapshotFingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "operationCount": 12
+      },
+      "issues": []
+    },
+    {
+      "kind": "localWorkspaceSessionSnapshotRetentionCleanupAction",
+      "action": "delete",
+      "reasons": [
+        "exceeds-max-count",
+        "exceeds-max-age"
+      ],
+      "sourceIndex": 1,
+      "rank": 2,
+      "summary": {
+        "kind": "localWorkspaceSessionSnapshotRetentionCleanupSummary",
+        "sourceKind": "snapshot-record-summary",
+        "auditSafe": true,
+        "redacted": true,
+        "snapshotId": "wssnap_cleanup_stale",
+        "workspaceId": "wsp_cleanup_alpha",
+        "deviceId": "dev_cleanup_laptop",
+        "sessionId": "[redacted:session:stale]",
+        "label": "Stale snapshot",
+        "createdAt": "2026-04-26T02:00:00.000Z",
+        "updatedAt": "2026-04-26T02:05:00.000Z",
+        "ageMs": 180000000,
+        "sizeBytes": 8192,
+        "fingerprint": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "snapshotFingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "operationCount": 7
+      },
+      "issues": []
+    },
+    {
+      "kind": "localWorkspaceSessionSnapshotRetentionCleanupAction",
+      "action": "review",
+      "reasons": [
+        "requires-review",
+        "missing-created-at"
+      ],
+      "sourceIndex": 2,
+      "summary": {
+        "kind": "localWorkspaceSessionSnapshotRetentionCleanupSummary",
+        "sourceKind": "snapshot-record-summary",
+        "auditSafe": true,
+        "redacted": true,
+        "snapshotId": "wssnap_cleanup_review",
+        "workspaceId": "wsp_cleanup_alpha",
+        "deviceId": "dev_cleanup_laptop",
+        "sessionId": "[redacted:session:review]",
+        "label": "Review snapshot",
+        "updatedAt": "2026-04-27T03:05:00.000Z",
+        "sizeBytes": 4096,
+        "fingerprint": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "snapshotFingerprint": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "operationCount": 4
+      },
+      "issues": [
+        {
+          "kind": "localWorkspaceSessionSnapshotRetentionCleanupIssue",
+          "issueKind": "missing-created-at",
+          "path": "records[2].createdAt",
+          "reason": "missing-created-at",
+          "message": "cleanup entry must include a createdAt value"
+        }
+      ]
+    }
+  ],
+  "keepActions": [
+    {
+      "kind": "localWorkspaceSessionSnapshotRetentionCleanupAction",
+      "action": "keep",
+      "reasons": [
+        "within-max-count",
+        "within-max-age"
+      ],
+      "sourceIndex": 0,
+      "rank": 1,
+      "summary": {
+        "kind": "localWorkspaceSessionSnapshotRetentionCleanupSummary",
+        "sourceKind": "snapshot-record-summary",
+        "auditSafe": true,
+        "redacted": true,
+        "snapshotId": "wssnap_cleanup_latest",
+        "workspaceId": "wsp_cleanup_alpha",
+        "deviceId": "dev_cleanup_laptop",
+        "sessionId": "[redacted:session:latest]",
+        "label": "Latest snapshot",
+        "createdAt": "2026-04-28T03:50:00.000Z",
+        "updatedAt": "2026-04-28T03:55:00.000Z",
+        "ageMs": 600000,
+        "sizeBytes": 12288,
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "snapshotFingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "operationCount": 12
+      },
+      "issues": []
+    }
+  ],
+  "deleteActions": [
+    {
+      "kind": "localWorkspaceSessionSnapshotRetentionCleanupAction",
+      "action": "delete",
+      "reasons": [
+        "exceeds-max-count",
+        "exceeds-max-age"
+      ],
+      "sourceIndex": 1,
+      "rank": 2,
+      "summary": {
+        "kind": "localWorkspaceSessionSnapshotRetentionCleanupSummary",
+        "sourceKind": "snapshot-record-summary",
+        "auditSafe": true,
+        "redacted": true,
+        "snapshotId": "wssnap_cleanup_stale",
+        "workspaceId": "wsp_cleanup_alpha",
+        "deviceId": "dev_cleanup_laptop",
+        "sessionId": "[redacted:session:stale]",
+        "label": "Stale snapshot",
+        "createdAt": "2026-04-26T02:00:00.000Z",
+        "updatedAt": "2026-04-26T02:05:00.000Z",
+        "ageMs": 180000000,
+        "sizeBytes": 8192,
+        "fingerprint": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "snapshotFingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "operationCount": 7
+      },
+      "issues": []
+    }
+  ],
+  "reviewActions": [
+    {
+      "kind": "localWorkspaceSessionSnapshotRetentionCleanupAction",
+      "action": "review",
+      "reasons": [
+        "requires-review",
+        "missing-created-at"
+      ],
+      "sourceIndex": 2,
+      "summary": {
+        "kind": "localWorkspaceSessionSnapshotRetentionCleanupSummary",
+        "sourceKind": "snapshot-record-summary",
+        "auditSafe": true,
+        "redacted": true,
+        "snapshotId": "wssnap_cleanup_review",
+        "workspaceId": "wsp_cleanup_alpha",
+        "deviceId": "dev_cleanup_laptop",
+        "sessionId": "[redacted:session:review]",
+        "label": "Review snapshot",
+        "updatedAt": "2026-04-27T03:05:00.000Z",
+        "sizeBytes": 4096,
+        "fingerprint": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "snapshotFingerprint": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "operationCount": 4
+      },
+      "issues": [
+        {
+          "kind": "localWorkspaceSessionSnapshotRetentionCleanupIssue",
+          "issueKind": "missing-created-at",
+          "path": "records[2].createdAt",
+          "reason": "missing-created-at",
+          "message": "cleanup entry must include a createdAt value"
+        }
+      ]
+    }
+  ]
+}

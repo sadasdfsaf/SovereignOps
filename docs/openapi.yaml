@@ -1181,6 +1181,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupPreviewResponse"
+        "400":
+          $ref: "#/components/responses/Error"
         default:
           $ref: "#/components/responses/Error"
   /v1/plugins/review-artifacts/preview:
@@ -6375,7 +6377,7 @@ components:
           type: array
           maxItems: 1000
           items:
-            $ref: "#/components/schemas/WorkspaceSessionSnapshotRecord"
+            $ref: "#/components/schemas/WorkspaceSessionSnapshotRetentionCleanupInputEntry"
         maxCount:
           type: integer
           minimum: 0

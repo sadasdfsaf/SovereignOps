@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "workspace-session-snapshot-retention-cleanup-api-requests/v1",
+  "generatedAt": "2026-04-28T04:20:00.000Z",
+  "apiBase": "local://workspace-session-snapshot-retention-cleanup-api",
+  "localOnly": true,
+  "requests": [
+    {
+      "id": "api_workspace_session_snapshot_retention_cleanup_preview",
+      "title": "Preview local snapshot retention cleanup",
+      "route": {
+        "method": "POST",
+        "path": "/v1/workspace-session/snapshot-retention-cleanup/preview"
+      },
+      "request": {
+        "headers": {
+          "content-type": "application/json",
+          "authorization": "[REDACTED]"
+        },
+        "body": {
+          "records": [
+            {
+              "path": "snapshots/snap-current.json",
+              "snapshotId": "snap-current",
+              "workspaceId": "wsp_notes_lab",
+              "deviceId": "dev_laptop_alpha",
+              "label": "notes-current",
+              "createdAt": "2026-04-28T03:50:00.000Z",
+              "updatedAt": "2026-04-28T03:55:00.000Z",
+              "sizeBytes": 12288,
+              "eventCount": 12,
+              "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            {
+              "path": "snapshots/snap-previous.json",
+              "snapshotId": "snap-previous",
+              "workspaceId": "wsp_notes_lab",
+              "deviceId": "dev_laptop_alpha",
+              "label": "notes-previous",
+              "createdAt": "2026-04-28T03:00:00.000Z",
+              "updatedAt": "2026-04-28T03:05:00.000Z",
+              "sizeBytes": 10240,
+              "eventCount": 10,
+              "fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            {
+              "path": "snapshots/snap-stale.json",
+              "snapshotId": "snap-stale",
+              "workspaceId": "wsp_notes_lab",
+              "deviceId": "dev_laptop_alpha",
+              "label": "notes-stale",
+              "createdAt": "2026-04-26T02:00:00.000Z",
+              "updatedAt": "2026-04-26T02:05:00.000Z",
+              "sizeBytes": 8192,
+              "eventCount": 7,
+              "fingerprint": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ],
+          "maxCount": 2,
+          "maxAgeMs": 86400000,
+          "now": "2026-04-28T04:00:00.000Z"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "kind": "localWorkspaceSessionSnapshotRetentionCleanupPlan",
+        "schemaVersion": "local-workspace-session-snapshot-retention/v1",
+        "entryCount": 3,
+        "keepCount": 2,
+        "deleteCount": 1,
+        "reviewCount": 0
+      }
+    },
+    {
+      "id": "api_workspace_session_snapshot_retention_cleanup_invalid_sections",
+      "title": "Reject ambiguous cleanup entry sections",
+      "route": {
+        "method": "POST",
+        "path": "/v1/workspace-session/snapshot-retention-cleanup/preview"
+      },
+      "request": {
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "records": [],
+          "files": []
+        }
+      },
+      "expect": {
+        "status": 400,
+        "contentType": "application/json",
+        "errorCode": "validation_failed"
+      }
+    }
+  ],
+  "validationCommands": [
+    "python -m json.tool examples\\workspace-session\\snapshot-retention-cleanup-api-requests.json",
+    "node packages\\cli\\tests\\workspace-session-snapshot-retention-cleanup-api-replay.test.mjs"
+  ]
+}

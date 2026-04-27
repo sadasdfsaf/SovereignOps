@@ -1,0 +1,20 @@
+{
+  "entries": [
+    {
+      "path": "C:\\Users\\DELL\\snapshot-cleanup\\raw.json",
+      "snapshotId": "wssnap_cleanup_bad",
+      "createdAt": "not-a-timestamp",
+      "metadata": {
+        "apiToken": "sk-invalid-cleanup-secret",
+        "nested": {
+          "label": "not allowed"
+        }
+      }
+    }
+  ],
+  "files": [],
+  "maxCount": -1,
+  "maxAgeMs": 1.5,
+  "now": "not-a-date",
+  "unexpected": true
+}

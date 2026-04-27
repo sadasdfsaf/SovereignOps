@@ -21,6 +21,10 @@ import {
   pluginReviewArtifactRecordListSchema,
   pluginReviewArtifactRecordSchema,
 } from "../src/pluginReviewArtifactRecord.ts";
+import {
+  workspaceSessionSnapshotRetentionCleanupRequestSchema,
+  workspaceSessionSnapshotRetentionCleanupResponseSchema,
+} from "../src/workspaceSessionSnapshotRetentionCleanup.ts";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const fixturesDir = join(packageDir, "fixtures");
@@ -43,6 +47,14 @@ const outputs = [
   ["plugin-review-artifact-record-list.schema.json", pluginReviewArtifactRecordListSchema],
   ["plugin-review-artifact-record-comparison.schema.json", pluginReviewArtifactRecordComparisonSchema],
   ["plugin-review-artifact-record-create-request.schema.json", pluginReviewArtifactRecordCreateRequestSchema],
+  [
+    "workspace-session-snapshot-retention-cleanup-request.schema.json",
+    workspaceSessionSnapshotRetentionCleanupRequestSchema,
+  ],
+  [
+    "workspace-session-snapshot-retention-cleanup-response.schema.json",
+    workspaceSessionSnapshotRetentionCleanupResponseSchema,
+  ],
 ];
 
 await mkdir(fixturesDir, { recursive: true });

@@ -1,0 +1,63 @@
+{
+  "kind": "localWorkspaceSessionSnapshotRetentionCleanupPlan",
+  "schemaVersion": "workspace-session-snapshot-retention-cleanup/v0",
+  "localOnly": false,
+  "dryRun": false,
+  "durableWrites": true,
+  "thresholds": {
+    "maxCount": -1,
+    "now": "not-a-date"
+  },
+  "entryCount": 2,
+  "keepCount": 2,
+  "deleteCount": 0,
+  "reviewCount": 0,
+  "actions": [
+    {
+      "kind": "localWorkspaceSessionSnapshotRetentionCleanupAction",
+      "action": "keep",
+      "reasons": [
+        "requires-review"
+      ],
+      "sourceIndex": 0,
+      "summary": {
+        "kind": "localWorkspaceSessionSnapshotRetentionCleanupSummary",
+        "sourceKind": "file-metadata",
+        "auditSafe": false,
+        "redacted": false,
+        "snapshotId": "wssnap_cleanup_bad",
+        "fileRef": "C:/Users/DELL/snapshot-cleanup/raw.json"
+      },
+      "issues": [
+        {
+          "kind": "localWorkspaceSessionSnapshotRetentionCleanupIssue",
+          "issueKind": "raw-secret",
+          "path": "body.authorization=secret",
+          "reason": "raw-secret",
+          "message": "raw secret sk_bad"
+        }
+      ]
+    }
+  ],
+  "keepActions": [
+    {
+      "kind": "localWorkspaceSessionSnapshotRetentionCleanupAction",
+      "action": "delete",
+      "reasons": [
+        "exceeds-max-count"
+      ],
+      "sourceIndex": 0,
+      "rank": 1,
+      "summary": {
+        "kind": "localWorkspaceSessionSnapshotRetentionCleanupSummary",
+        "sourceKind": "snapshot-record-summary",
+        "auditSafe": true,
+        "redacted": true
+      },
+      "issues": []
+    }
+  ],
+  "deleteActions": [],
+  "reviewActions": [],
+  "unexpected": true
+}

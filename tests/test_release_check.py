@@ -393,9 +393,56 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("tests.test_validate_openapi_workspace_session_snapshot_review", output.getvalue())
         self.assertIn("SKIP workspace-session-snapshot-retention-cleanup-security: missing tool: node", output.getvalue())
         self.assertIn("RUN workspace-session-snapshot-retention-cleanup-alignment: python -m unittest tests.test_workspace_session_snapshot_retention_cleanup_docs tests.test_workspace_session_snapshot_retention_cleanup_alignment", output.getvalue())
+        self.assertIn("tests.test_workspace_session_snapshot_retention_cleanup_e2e", output.getvalue())
         self.assertIn("tests.test_validate_openapi_workspace_session_snapshot_retention_cleanup", output.getvalue())
         self.assertIn("SKIP release-notes-smoke:", output.getvalue())
         self.assertIn("SKIP cargo-check: missing tool: cargo", output.getvalue())
+
+    def test_retention_cleanup_release_gate_tracks_round44_files(self) -> None:
+        required = set(release_check.WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS)
+        expected = {
+            "tests/test_workspace_session_snapshot_retention_cleanup_e2e.py",
+            "tests/security/workspace_session_snapshot_retention_cleanup_api_client_threats.test.mjs",
+            "examples/workspace-session/snapshot-retention-cleanup-api-requests.json",
+            "packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupApiClient.ts",
+            "packages/sdk-js/tests/local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs",
+            "packages/cli/src/workspaceSessionSnapshotRetentionCleanupApiReplay.ts",
+            "packages/cli/tests/workspace-session-snapshot-retention-cleanup-api-replay.test.mjs",
+            "packages/schemas/src/workspaceSessionSnapshotRetentionCleanup.ts",
+            "packages/schemas/tests/workspace-session-snapshot-retention-cleanup.test.mjs",
+            "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-request.valid.json",
+            "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-request.invalid.json",
+            "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-request.schema.json",
+            "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.valid.json",
+            "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.invalid.json",
+            "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.schema.json",
+        }
+        self.assertLessEqual(expected, required)
+
+        checks = {spec.name: spec for spec in release_check.CHECK_SPECS}
+        alignment = checks["workspace-session-snapshot-retention-cleanup-alignment"]
+        security = checks["workspace-session-snapshot-retention-cleanup-security"]
+        self.assertIn("tests.test_workspace_session_snapshot_retention_cleanup_e2e", alignment.command)
+        self.assertIn(
+            "tests/security/workspace_session_snapshot_retention_cleanup_api_client_threats.test.mjs",
+            security.command,
+        )
+        self.assertIn(
+            "packages/sdk-js/tests/local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs",
+            security.command,
+        )
+        self.assertIn(
+            "packages/schemas/tests/workspace-session-snapshot-retention-cleanup.test.mjs",
+            security.command,
+        )
+        self.assertIn(
+            "packages/cli/tests/workspace-session-snapshot-retention-cleanup-api-replay.test.mjs",
+            security.command,
+        )
+        self.assertIn("SDK API client", alignment.description)
+        self.assertIn("schema fixtures", alignment.description)
+        self.assertIn("API replay", alignment.description)
+        self.assertIn("E2E replay", alignment.description)
 
     def test_missing_tools_are_skipped_when_running_available_checks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

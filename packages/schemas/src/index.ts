@@ -350,6 +350,7 @@ export * from "./mcpApprovalEvidence.ts";
 export * from "./mcpApprovalEvidenceRecord.ts";
 export * from "./pluginReviewArtifact.ts";
 export * from "./pluginReviewArtifactRecord.ts";
+export * from "./workspaceSessionSnapshotRetentionCleanup.ts";
 
 export {
   API_ERROR_SCHEMA_VERSION,
