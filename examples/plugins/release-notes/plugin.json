@@ -1,0 +1,184 @@
+{
+  "id": "plugin.release-notes.local-draft",
+  "name": "Local Release Notes Draft",
+  "version": "0.1.0",
+  "description": "Builds deterministic release-note draft metadata from local commit and change summaries.",
+  "entrypoint": "index.mjs",
+  "permissions": [
+    "read_object",
+    "propose_agent_action"
+  ],
+  "capabilities": [
+    {
+      "id": "read_local_change_summaries",
+      "permission": "read_object",
+      "description": "Read host-supplied local commit and change summary records."
+    },
+    {
+      "id": "redact_sensitive_release_note_fields",
+      "permission": "propose_agent_action",
+      "description": "Apply deterministic local redaction before draft metadata is returned."
+    },
+    {
+      "id": "propose_release_note_draft",
+      "permission": "propose_agent_action",
+      "description": "Return release-note draft metadata for review without changing workspace records."
+    }
+  ],
+  "tools": [
+    {
+      "id": "draft_release_note_metadata",
+      "name": "Draft release note metadata",
+      "description": "Creates redacted release-note draft metadata from local commit and change summaries.",
+      "capability": "propose_release_note_draft",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "releaseName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "kind": {
+                "type": "string"
+              },
+              "workspacePath": {
+                "type": "string"
+              },
+              "generatedBy": {
+                "type": "string"
+              }
+            }
+          },
+          "commits": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "sha": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "author": {
+                  "type": "string"
+                },
+                "files": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "refs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "sha",
+                "summary"
+              ]
+            }
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "commits": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "risk": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high"
+                  ]
+                },
+                "includeInDraft": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "category",
+                "title",
+                "summary"
+              ]
+            }
+          },
+          "redaction": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "placeholder": {
+                "type": "string"
+              },
+              "patterns": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "releaseName",
+          "commits",
+          "changes"
+        ]
+      }
+    }
+  ],
+  "resources": [
+    {
+      "id": "local_change_summary_input",
+      "name": "Local change summary input",
+      "description": "Host-provided local JSON with commit and change summaries.",
+      "uri": "local://release-notes/change-summary-input",
+      "capability": "read_local_change_summaries"
+    }
+  ],
+  "prompts": [
+    {
+      "id": "release_note_draft_review",
+      "name": "Release note draft review",
+      "description": "Frames redacted draft metadata for human review before sharing.",
+      "capability": "propose_release_note_draft",
+      "arguments": [
+        {
+          "id": "release_name",
+          "description": "Release name to display in the draft metadata.",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "minimumHostVersion": "0.3.0"
+}

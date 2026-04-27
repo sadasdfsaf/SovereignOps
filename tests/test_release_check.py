@@ -21,9 +21,16 @@ def make_release_root(root: Path) -> None:
     (root / "docs").mkdir()
     (root / "examples" / "mcp-gateway").mkdir(parents=True)
     (root / "examples" / "ingest-search").mkdir(parents=True)
+    (root / "examples" / "plugins" / "release-notes").mkdir(parents=True)
     (root / "apps" / "api" / "src").mkdir(parents=True)
+    (root / "apps" / "web" / "src").mkdir(parents=True)
+    (root / "apps" / "web" / "tests").mkdir(parents=True)
     (root / "packages" / "cli" / "src").mkdir(parents=True)
     (root / "packages" / "ingest-evidence" / "src").mkdir(parents=True)
+    (root / "packages" / "plugin-sdk" / "src").mkdir(parents=True)
+    (root / "packages" / "plugin-sdk" / "tests").mkdir(parents=True)
+    (root / "services" / "automation" / "src").mkdir(parents=True)
+    (root / "services" / "automation" / "tests").mkdir(parents=True)
     (root / "services" / "ingest" / "src" / "sovereignops_ingest").mkdir(parents=True)
     (root / "services" / "ingest" / "tests").mkdir(parents=True)
     (root / "tests").mkdir()
@@ -49,6 +56,8 @@ def make_release_root(root: Path) -> None:
         "docs/ingest-evidence-export.md",
         "docs/ingest-evidence-parity.md",
         "docs/ingest-evidence-api-fixtures.md",
+        "docs/plugin-sandbox.md",
+        "docs/plugin-release-notes-example.md",
         "scripts/loc_integrity.py",
         "scripts/release_notes.py",
         "examples/mcp-gateway/resources.json",
@@ -71,6 +80,11 @@ def make_release_root(root: Path) -> None:
         "examples/ingest-search/evidence-parity-session.json",
         "examples/ingest-search/evidence-api-requests.json",
         "examples/ingest-search/evidence-release-artifact.json",
+        "examples/plugins/release-notes/manifest.json",
+        "examples/plugins/release-notes/plugin.json",
+        "examples/plugins/release-notes/index.mjs",
+        "examples/plugins/release-notes/sample-input.json",
+        "examples/plugins/release-notes/README.md",
         "tests/test_ingest_search_docs.py",
         "tests/test_ingest_api_docs.py",
         "tests/test_ingest_integration_docs.py",
@@ -79,6 +93,8 @@ def make_release_root(root: Path) -> None:
         "tests/test_ingest_evidence_parity_docs.py",
         "tests/test_ingest_evidence_api_fixtures_docs.py",
         "tests/test_ingest_evidence_api_fixture_alignment.py",
+        "tests/test_plugin_sandbox_docs.py",
+        "tests/test_plugin_automation_alignment.py",
         "tests/test_ingest_contract_alignment.py",
         "tests/test_validate_openapi_ingest_search.py",
         "tests/test_validate_openapi_ingest_evidence.py",
@@ -88,6 +104,13 @@ def make_release_root(root: Path) -> None:
         "packages/cli/src/ingestEvidence.ts",
         "packages/cli/src/ingestEvidenceApiReplay.ts",
         "packages/ingest-evidence/src/index.ts",
+        "packages/plugin-sdk/src/sandboxReview.ts",
+        "packages/plugin-sdk/tests/sandbox-review.test.mjs",
+        "packages/plugin-sdk/tests/release-notes-plugin-example.test.mjs",
+        "services/automation/src/audit.ts",
+        "services/automation/tests/automation-audit.test.mjs",
+        "apps/web/src/automationPluginReview.ts",
+        "apps/web/tests/automation-plugin-review.test.mjs",
         "services/ingest/src/sovereignops_ingest/cli.py",
         "services/ingest/src/sovereignops_ingest/index.py",
         "services/ingest/src/sovereignops_ingest/logs.py",
@@ -120,6 +143,7 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertTrue(by_name["node-package-baseline"].available)
         self.assertTrue(by_name["ingest-evidence-parity"].available)
         self.assertTrue(by_name["ingest-evidence-api-replay"].available)
+        self.assertTrue(by_name["plugin-automation-alignment"].available)
         self.assertTrue(by_name["npm-workspace-check"].available)
         self.assertTrue(by_name["cargo-check"].available)
         self.assertFalse(by_name["pnpm-workspace-check"].available)

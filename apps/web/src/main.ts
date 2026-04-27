@@ -12,6 +12,7 @@ export const bootstrapRoutes: RouteSummary[] = [
 
 export { InMemoryLocalStore, createInMemoryLocalStore } from "./localStore.ts";
 export * from "./approvals.ts";
+export * from "./automationPluginReview.ts";
 export * from "./automationSettings.ts";
 export * from "./auditTimeline.ts";
 export * from "./documents.ts";

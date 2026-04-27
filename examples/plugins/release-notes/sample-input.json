@@ -1,0 +1,99 @@
+{
+  "releaseName": "Desktop Workspace 1.8.0",
+  "source": {
+    "kind": "local_change_summary",
+    "workspacePath": ".",
+    "generatedBy": "local-fixture"
+  },
+  "commits": [
+    {
+      "sha": "a1b2c3d4",
+      "summary": "Add manifest-driven release note draft metadata.",
+      "author": "A. Patel",
+      "files": [
+        "examples/plugins/release-notes/plugin.json",
+        "examples/plugins/release-notes/README.md"
+      ],
+      "refs": [
+        "task-101"
+      ]
+    },
+    {
+      "sha": "d4e5f6a7",
+      "summary": "Redact password=hunter2 and apiKey=sk_test_local_example before drafting.",
+      "author": "J. Chen",
+      "files": [
+        "packages/plugin-sdk/tests/release-notes-plugin-example.test.mjs"
+      ],
+      "refs": [
+        "task-102"
+      ]
+    },
+    {
+      "sha": "f7e8d9c0",
+      "summary": "Document local-only release note review flow.",
+      "author": "M. Rivera",
+      "files": [
+        "examples/plugins/release-notes/sample-input.json"
+      ],
+      "refs": [
+        "task-103"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "id": "chg-001",
+      "category": "Added",
+      "title": "Manifest-driven draft metadata",
+      "summary": "Adds a plugin.json contract for release-note draft metadata generated from local summaries.",
+      "commits": [
+        "a1b2c3d4"
+      ],
+      "risk": "low",
+      "includeInDraft": true
+    },
+    {
+      "id": "chg-002",
+      "category": "Changed",
+      "title": "Local input redaction",
+      "summary": "Redacts password=hunter2, apiKey=sk_test_local_example, and Bearer local-development-token before metadata is returned.",
+      "commits": [
+        "d4e5f6a7"
+      ],
+      "risk": "medium",
+      "includeInDraft": true
+    },
+    {
+      "id": "chg-003",
+      "category": "Fixed",
+      "title": "Deterministic audit metadata",
+      "summary": "Uses fixed audit event names and stable sorting so repeated runs produce the same draft.",
+      "commits": [
+        "d4e5f6a7",
+        "f7e8d9c0"
+      ],
+      "risk": "low",
+      "includeInDraft": true
+    },
+    {
+      "id": "chg-004",
+      "category": "Internal",
+      "title": "Omit sensitive fixture material",
+      "summary": "Do not include -----BEGIN PRIVATE KEY-----\\nlocal-fixture-key\\n-----END PRIVATE KEY----- in shared note text.",
+      "commits": [
+        "f7e8d9c0"
+      ],
+      "risk": "high",
+      "includeInDraft": false
+    }
+  ],
+  "redaction": {
+    "placeholder": "[REDACTED]",
+    "patterns": [
+      "keyValueSecret",
+      "bearerToken",
+      "privateKeyBlock"
+    ]
+  }
+}
