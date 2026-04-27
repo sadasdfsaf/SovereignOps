@@ -1,0 +1,14 @@
+{
+  "name": "@sovereignops/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "src/index.ts",
+  "bin": {
+    "sovereignops": "src/index.ts"
+  },
+  "scripts": {
+    "check": "node ../../scripts/node-check.mjs --package && node tests/commands.test.mjs",
+    "test": "node tests/commands.test.mjs"
+  }
+}

@@ -21,6 +21,7 @@
   "workspaces": [
     "apps/*",
     "packages/*",
+    "services/automation",
     "services/mcp-gateway",
     "services/sync"
   ],

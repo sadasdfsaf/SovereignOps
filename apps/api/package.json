@@ -5,7 +5,7 @@
   "private": true,
   "main": "src/index.ts",
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package && node tests/router.test.mjs",
-    "test": "node tests/router.test.mjs"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/router.test.mjs && node tests/service-routes.test.mjs",
+    "test": "node tests/router.test.mjs && node tests/service-routes.test.mjs"
   }
 }

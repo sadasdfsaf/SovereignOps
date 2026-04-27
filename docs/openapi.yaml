@@ -11,6 +11,8 @@ tags:
   - name: records
   - name: agent-actions
   - name: audit
+  - name: sync
+  - name: mcp
 paths:
   /health:
     get:
@@ -25,6 +27,126 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/sync/bundles:
+    post:
+      tags:
+        - sync
+      summary: Upload an encrypted sync bundle.
+      operationId: uploadSyncBundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncUploadBatch"
+      responses:
+        "201":
+          description: Accepted bundle.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncUploadReceipt"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/sync/download:
+    post:
+      tags:
+        - sync
+      summary: Download encrypted events after a cursor.
+      operationId: downloadSyncWindow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncDownloadRequest"
+      responses:
+        "200":
+          description: Sync download window.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncDownloadWindow"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/sync/cursor-status:
+    post:
+      tags:
+        - sync
+      summary: Compare a client cursor with the relay cursor.
+      operationId: getSyncCursorStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncCursorStatusRequest"
+      responses:
+        "200":
+          description: Cursor comparison result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncCursorStatusResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/mcp/resources:
+    get:
+      tags:
+        - mcp
+      summary: List policy-visible MCP resources.
+      operationId: listMcpResources
+      responses:
+        "200":
+          description: Resources visible to the caller.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpResourceListResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/mcp/resources/read:
+    post:
+      tags:
+        - mcp
+      summary: Read one MCP resource after policy evaluation.
+      operationId: readMcpResource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/McpReadResourceRequest"
+      responses:
+        "200":
+          description: Resource contents.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpReadResourceResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/mcp/tools/execute:
+    post:
+      tags:
+        - mcp
+      summary: Preview a safe local tool call.
+      operationId: executeMcpToolPreview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/McpToolExecuteRequest"
+      responses:
+        "200":
+          description: Tool preview result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpToolExecuteResponse"
         default:
           $ref: "#/components/responses/Error"
   /v1/workspaces/{workspaceId}/records:
@@ -563,6 +685,253 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AuditEntry"
+    DeviceId:
+      type: string
+      pattern: "^dev_[A-Za-z0-9_-]{1,88}$"
+    SyncCursor:
+      type: string
+      pattern: "^cur_v1:[0-9]{16}:(origin|evt_[A-Za-z0-9_-]{1,88})$"
+    SyncEventId:
+      type: string
+      pattern: "^evt_[A-Za-z0-9_-]{1,88}$"
+    SyncEventEnvelope:
+      type: object
+      required:
+        - id
+        - workspaceId
+        - deviceId
+        - sequence
+        - type
+        - payload
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/SyncEventId"
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/DeviceId"
+        sequence:
+          type: integer
+          minimum: 1
+        type:
+          type: string
+          minLength: 1
+        payload: true
+        createdAt:
+          type: string
+          format: date-time
+    SyncedEventEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SyncEventEnvelope"
+        - type: object
+          required:
+            - cursor
+          properties:
+            cursor:
+              $ref: "#/components/schemas/SyncCursor"
+    SyncUploadBatch:
+      type: object
+      required:
+        - workspaceId
+        - deviceId
+        - baseCursor
+        - events
+        - checksum
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/DeviceId"
+        baseCursor:
+          $ref: "#/components/schemas/SyncCursor"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncEventEnvelope"
+        checksum:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+    SyncUploadReceipt:
+      type: object
+      required:
+        - workspaceId
+        - deviceId
+        - baseCursor
+        - nextCursor
+        - events
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/DeviceId"
+        baseCursor:
+          $ref: "#/components/schemas/SyncCursor"
+        nextCursor:
+          $ref: "#/components/schemas/SyncCursor"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncedEventEnvelope"
+    SyncDownloadRequest:
+      type: object
+      required:
+        - workspaceId
+        - deviceId
+        - afterCursor
+        - limit
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/DeviceId"
+        afterCursor:
+          $ref: "#/components/schemas/SyncCursor"
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 500
+    SyncDownloadWindow:
+      type: object
+      required:
+        - workspaceId
+        - afterCursor
+        - nextCursor
+        - events
+        - hasMore
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        afterCursor:
+          $ref: "#/components/schemas/SyncCursor"
+        nextCursor:
+          $ref: "#/components/schemas/SyncCursor"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncedEventEnvelope"
+        hasMore:
+          type: boolean
+    SyncCursorStatusRequest:
+      type: object
+      required:
+        - workspaceId
+        - deviceId
+        - cursor
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/DeviceId"
+        cursor:
+          $ref: "#/components/schemas/SyncCursor"
+    SyncCursorStatusResponse:
+      type: object
+      required:
+        - workspaceId
+        - deviceId
+        - cursor
+        - currentCursor
+        - stale
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        deviceId:
+          $ref: "#/components/schemas/DeviceId"
+        cursor:
+          $ref: "#/components/schemas/SyncCursor"
+        currentCursor:
+          $ref: "#/components/schemas/SyncCursor"
+        stale:
+          type: boolean
+    McpResourceSummary:
+      type: object
+      required:
+        - uri
+        - name
+      properties:
+        uri:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        mimeType:
+          type: string
+    McpResourceListResponse:
+      type: object
+      required:
+        - resources
+      properties:
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/McpResourceSummary"
+    McpReadResourceRequest:
+      type: object
+      required:
+        - uri
+      properties:
+        uri:
+          type: string
+          minLength: 1
+    McpResourceContent:
+      type: object
+      required:
+        - uri
+      properties:
+        uri:
+          type: string
+          minLength: 1
+        mimeType:
+          type: string
+        text:
+          type: string
+        blob:
+          type: string
+    McpReadResourceResponse:
+      type: object
+      required:
+        - contents
+      properties:
+        contents:
+          type: array
+          items:
+            $ref: "#/components/schemas/McpResourceContent"
+    McpToolExecuteRequest:
+      type: object
+      required:
+        - toolName
+      properties:
+        toolName:
+          type: string
+          minLength: 1
+        arguments:
+          type: object
+          additionalProperties: true
+    McpToolExecuteResponse:
+      type: object
+      required:
+        - status
+        - toolName
+      properties:
+        status:
+          type: string
+          enum:
+            - denied
+            - approval_required
+            - executed
+        toolName:
+          type: string
+          minLength: 1
+        policy:
+          type: object
+          additionalProperties: true
+        output:
+          type: object
+          additionalProperties: true
     ValidationIssue:
       type: object
       required:

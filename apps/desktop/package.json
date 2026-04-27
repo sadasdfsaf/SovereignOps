@@ -1,0 +1,10 @@
+{
+  "name": "@sovereignops/desktop",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "check": "node ../../scripts/node-check.mjs --package && node tests/commands.test.mjs",
+    "test": "node tests/commands.test.mjs"
+  }
+}
