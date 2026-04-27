@@ -15,6 +15,9 @@ tags:
   - name: mcp
   - name: lifecycle
   - name: observability
+  - name: ingest
+  - name: search
+  - name: quarantine
 paths:
   /health:
     get:
@@ -598,6 +601,134 @@ paths:
                 $ref: "#/components/schemas/CompactionPlanResponse"
         default:
           $ref: "#/components/responses/Error"
+  /v1/ingest/normalize:
+    post:
+      tags:
+        - ingest
+      summary: Normalize local text for ingest.
+      operationId: normalizeIngestContent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestNormalizeRequest"
+      responses:
+        "200":
+          description: Normalized text and checksum.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestNormalizeResponse"
+        default:
+          $ref: "#/components/responses/IngestSearchError"
+  /v1/ingest/structured:
+    post:
+      tags:
+        - ingest
+      summary: Parse structured local content into cited records.
+      operationId: ingestStructuredContent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StructuredIngestRequest"
+      responses:
+        "200":
+          description: Parsed records and held items.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StructuredIngestResponse"
+        default:
+          $ref: "#/components/responses/IngestSearchError"
+  /v1/ingest/repository/scan:
+    post:
+      tags:
+        - ingest
+      summary: Scan allowed local paths for ingest sources.
+      operationId: scanIngestRepository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepositoryScanRequest"
+      responses:
+        "200":
+          description: Local source records with checksums.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepositoryScanResponse"
+        default:
+          $ref: "#/components/responses/IngestSearchError"
+  /v1/search/query:
+    post:
+      tags:
+        - search
+      summary: Query the local search index.
+      operationId: queryLocalSearch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchQueryRequest"
+      responses:
+        "200":
+          description: Ranked local search results.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchQueryResponse"
+        default:
+          $ref: "#/components/responses/IngestSearchError"
+  /v1/quarantine/cases:
+    post:
+      tags:
+        - quarantine
+      summary: Build review cases from held ingest items.
+      operationId: createQuarantineCases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuarantineCasesRequest"
+      responses:
+        "200":
+          description: Review cases ready for local action.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuarantineCasesResponse"
+        default:
+          $ref: "#/components/responses/IngestSearchError"
+  /v1/quarantine/cases/{caseId}/decision:
+    post:
+      tags:
+        - quarantine
+      summary: Record a terminal decision for one review case.
+      operationId: decideQuarantineCase
+      parameters:
+        - $ref: "#/components/parameters/QuarantineCaseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuarantineDecisionRequest"
+      responses:
+        "200":
+          description: Updated review case.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuarantineDecisionResponse"
+        default:
+          $ref: "#/components/responses/IngestSearchError"
 components:
   parameters:
     WorkspaceId:
@@ -619,6 +750,12 @@ components:
       schema:
         type: string
         minLength: 1
+    QuarantineCaseId:
+      name: caseId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/QuarantineCaseId"
   responses:
     Error:
       description: Error response.
@@ -626,6 +763,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+    IngestSearchError:
+      description: JSON error envelope.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/IngestSearchErrorResponse"
   schemas:
     WorkspaceId:
       type: string
@@ -2629,6 +2772,672 @@ components:
         fingerprint:
           type: string
           minLength: 1
+    LocalSourceUri:
+      type: string
+      pattern: '^(fixture|file|stdin|workspace|local)://.+$'
+    LocalPath:
+      type: string
+      minLength: 1
+      pattern: '^(?![A-Za-z]:)(?!/)(?!.*\.\.).+$'
+    IngestMediaType:
+      type: string
+      enum:
+        - text/plain
+        - text/markdown
+        - text/csv
+        - application/json
+    Sha256Checksum:
+      type: string
+      pattern: '^[0-9a-f]{64}$'
+    QuarantineCaseId:
+      type: string
+      pattern: '^qtn_[A-Za-z0-9_.-]{1,120}$'
+    LocalActorId:
+      type: string
+      pattern: '^[A-Za-z0-9_.-]{1,120}$'
+    IngestOptions:
+      type: object
+      properties:
+        trusted:
+          type: boolean
+          default: false
+        requiredColumns:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        uniqueColumns:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        includePaths:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocalPath"
+        maxTextBytes:
+          type: integer
+          minimum: 1
+      additionalProperties: false
+    IngestNormalizeRequest:
+      type: object
+      required:
+        - workspaceId
+        - sourceUri
+        - mediaType
+        - content
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        sourceUri:
+          $ref: "#/components/schemas/LocalSourceUri"
+        mediaType:
+          $ref: "#/components/schemas/IngestMediaType"
+        content:
+          type: string
+        options:
+          $ref: "#/components/schemas/IngestOptions"
+      additionalProperties: false
+    IngestNormalizeResponse:
+      type: object
+      required:
+        - ok
+        - sourceUri
+        - mediaType
+        - checksum
+        - normalizedText
+        - untrusted
+      properties:
+        ok:
+          type: boolean
+          const: true
+        sourceUri:
+          $ref: "#/components/schemas/LocalSourceUri"
+        mediaType:
+          $ref: "#/components/schemas/IngestMediaType"
+        checksum:
+          $ref: "#/components/schemas/Sha256Checksum"
+        normalizedText:
+          type: string
+        untrusted:
+          type: boolean
+      additionalProperties: false
+    SourceLineRange:
+      type: object
+      required:
+        - start_line
+        - end_line
+      properties:
+        start_line:
+          type: integer
+          minimum: 1
+        end_line:
+          type: integer
+          minimum: 1
+      additionalProperties: false
+    SourceRowRange:
+      type: object
+      required:
+        - row
+      properties:
+        row:
+          type: integer
+          minimum: 1
+        column:
+          oneOf:
+            - type: string
+              minLength: 1
+            - type: integer
+              minimum: 1
+      additionalProperties: false
+    SourceJsonPathRange:
+      type: object
+      required:
+        - path
+      properties:
+        path:
+          type: string
+          pattern: '^\$'
+      additionalProperties: false
+    SourceRange:
+      oneOf:
+        - $ref: "#/components/schemas/SourceLineRange"
+        - $ref: "#/components/schemas/SourceRowRange"
+        - $ref: "#/components/schemas/SourceJsonPathRange"
+    SourceCitation:
+      type: object
+      required:
+        - sourceUri
+        - range
+        - trusted
+      properties:
+        sourceUri:
+          $ref: "#/components/schemas/LocalSourceUri"
+        range:
+          $ref: "#/components/schemas/SourceRange"
+        trusted:
+          type: boolean
+          default: false
+      additionalProperties: false
+    QuarantineState:
+      type: string
+      enum:
+        - clear
+        - open
+        - released
+        - rejected
+    SourceIndexState:
+      type: string
+      enum:
+        - indexed
+        - partly_quarantined
+    IngestDocument:
+      type: object
+      required:
+        - id
+        - sourceUri
+        - mediaType
+        - checksum
+        - title
+        - untrusted
+        - quarantineState
+        - citations
+      properties:
+        id:
+          type: string
+          minLength: 1
+        sourceUri:
+          $ref: "#/components/schemas/LocalSourceUri"
+        mediaType:
+          $ref: "#/components/schemas/IngestMediaType"
+        checksum:
+          $ref: "#/components/schemas/Sha256Checksum"
+        title:
+          type: string
+          minLength: 1
+        untrusted:
+          type: boolean
+        quarantineState:
+          $ref: "#/components/schemas/QuarantineState"
+        citations:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/SourceCitation"
+      additionalProperties: false
+    QuarantineItem:
+      type: object
+      required:
+        - id
+        - sourceUri
+        - checksum
+        - reasonCode
+        - citation
+        - untrusted
+        - quarantineState
+      properties:
+        id:
+          $ref: "#/components/schemas/QuarantineCaseId"
+        sourceUri:
+          $ref: "#/components/schemas/LocalSourceUri"
+        checksum:
+          $ref: "#/components/schemas/Sha256Checksum"
+        reasonCode:
+          type: string
+          minLength: 1
+        citation:
+          $ref: "#/components/schemas/SourceCitation"
+        untrusted:
+          type: boolean
+        quarantineState:
+          type: string
+          const: open
+      additionalProperties: false
+    QuarantineItemsEnvelope:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuarantineItem"
+      additionalProperties: false
+    StructuredIngestRequest:
+      type: object
+      required:
+        - workspaceId
+        - sourceUri
+        - mediaType
+        - content
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        sourceUri:
+          $ref: "#/components/schemas/LocalSourceUri"
+        mediaType:
+          $ref: "#/components/schemas/IngestMediaType"
+        content:
+          type: string
+        options:
+          $ref: "#/components/schemas/IngestOptions"
+      additionalProperties: false
+    StructuredIngestSummary:
+      type: object
+      required:
+        - documentCount
+        - indexedCount
+        - quarantineCount
+        - validationErrorCount
+      properties:
+        documentCount:
+          type: integer
+          minimum: 0
+        indexedCount:
+          type: integer
+          minimum: 0
+        quarantineCount:
+          type: integer
+          minimum: 0
+        validationErrorCount:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    StructuredIngestResponse:
+      type: object
+      required:
+        - ok
+        - sourceUri
+        - mediaType
+        - summary
+        - documents
+        - quarantine
+      properties:
+        ok:
+          type: boolean
+          const: true
+        sourceUri:
+          $ref: "#/components/schemas/LocalSourceUri"
+        mediaType:
+          $ref: "#/components/schemas/IngestMediaType"
+        summary:
+          $ref: "#/components/schemas/StructuredIngestSummary"
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngestDocument"
+        quarantine:
+          $ref: "#/components/schemas/QuarantineItemsEnvelope"
+      additionalProperties: false
+    RepositoryScanRequest:
+      type: object
+      required:
+        - workspaceId
+        - localPath
+        - options
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        localPath:
+          $ref: "#/components/schemas/LocalPath"
+        options:
+          $ref: "#/components/schemas/IngestOptions"
+      additionalProperties: false
+    RepositorySourceRecord:
+      type: object
+      required:
+        - sourceUri
+        - path
+        - mediaType
+        - checksum
+        - state
+        - untrusted
+      properties:
+        sourceUri:
+          $ref: "#/components/schemas/LocalSourceUri"
+        path:
+          $ref: "#/components/schemas/LocalPath"
+        mediaType:
+          $ref: "#/components/schemas/IngestMediaType"
+        checksum:
+          $ref: "#/components/schemas/Sha256Checksum"
+        state:
+          $ref: "#/components/schemas/SourceIndexState"
+        untrusted:
+          type: boolean
+      additionalProperties: false
+    RepositoryScanResponse:
+      type: object
+      required:
+        - ok
+        - workspaceId
+        - sources
+      properties:
+        ok:
+          type: boolean
+          const: true
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/RepositorySourceRecord"
+      additionalProperties: false
+    SearchFilters:
+      type: object
+      properties:
+        mediaTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngestMediaType"
+        sourceUris:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocalSourceUri"
+        tags:
+          type: array
+          items:
+            type: string
+            minLength: 1
+      additionalProperties: false
+    SearchQueryRequest:
+      type: object
+      required:
+        - workspaceId
+        - query
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        query:
+          type: string
+          minLength: 1
+        filters:
+          $ref: "#/components/schemas/SearchFilters"
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      additionalProperties: false
+    SearchResult:
+      type: object
+      required:
+        - id
+        - score
+        - sourceUri
+        - mediaType
+        - checksum
+        - title
+        - snippet
+        - citations
+        - untrusted
+        - quarantineState
+      properties:
+        id:
+          type: string
+          minLength: 1
+        score:
+          type: number
+          minimum: 0
+        matchedTerms:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        sourceUri:
+          $ref: "#/components/schemas/LocalSourceUri"
+        mediaType:
+          $ref: "#/components/schemas/IngestMediaType"
+        checksum:
+          $ref: "#/components/schemas/Sha256Checksum"
+        title:
+          type: string
+          minLength: 1
+        snippet:
+          type: string
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceCitation"
+        untrusted:
+          type: boolean
+        quarantineState:
+          type: string
+          const: clear
+      additionalProperties: false
+    SearchQueryResponse:
+      type: object
+      required:
+        - ok
+        - workspaceId
+        - query
+        - results
+      properties:
+        ok:
+          type: boolean
+          const: true
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        query:
+          type: string
+          minLength: 1
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+      additionalProperties: false
+    QuarantineCaseInput:
+      type: object
+      required:
+        - id
+        - sourceUri
+        - checksum
+        - reasonCode
+        - content
+        - citation
+        - untrusted
+      properties:
+        id:
+          $ref: "#/components/schemas/QuarantineCaseId"
+        sourceUri:
+          $ref: "#/components/schemas/LocalSourceUri"
+        checksum:
+          $ref: "#/components/schemas/Sha256Checksum"
+        reasonCode:
+          type: string
+          minLength: 1
+        content:
+          type: string
+        citation:
+          $ref: "#/components/schemas/SourceCitation"
+        untrusted:
+          type: boolean
+      additionalProperties: false
+    QuarantineCasesRequest:
+      type: object
+      required:
+        - workspaceId
+        - items
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/QuarantineCaseInput"
+      additionalProperties: false
+    QuarantineSeverity:
+      type: string
+      enum:
+        - low
+        - medium
+        - high
+    QuarantineDecisionAction:
+      type: string
+      enum:
+        - release
+        - reject
+    QuarantineCase:
+      type: object
+      required:
+        - id
+        - sourceUri
+        - state
+        - reasonCodes
+        - severity
+        - citationSnapshots
+        - previewText
+        - allowedActions
+      properties:
+        id:
+          $ref: "#/components/schemas/QuarantineCaseId"
+        sourceUri:
+          $ref: "#/components/schemas/LocalSourceUri"
+        state:
+          $ref: "#/components/schemas/QuarantineState"
+        reasonCodes:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        severity:
+          $ref: "#/components/schemas/QuarantineSeverity"
+        citationSnapshots:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceCitation"
+        previewText:
+          type: string
+        allowedActions:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuarantineDecisionAction"
+      additionalProperties: false
+    QuarantineCasesResponse:
+      type: object
+      required:
+        - ok
+        - cases
+      properties:
+        ok:
+          type: boolean
+          const: true
+        cases:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuarantineCase"
+      additionalProperties: false
+    QuarantineDecisionRequest:
+      type: object
+      required:
+        - workspaceId
+        - actorId
+        - decision
+        - reason
+        - decidedAt
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/WorkspaceId"
+        actorId:
+          $ref: "#/components/schemas/LocalActorId"
+        decision:
+          $ref: "#/components/schemas/QuarantineDecisionAction"
+        reason:
+          type: string
+          minLength: 1
+        override:
+          type: boolean
+          default: false
+        decidedAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+    QuarantineDecisionRecord:
+      type: object
+      required:
+        - action
+        - actorId
+        - timestamp
+        - reason
+        - override
+      properties:
+        action:
+          $ref: "#/components/schemas/QuarantineDecisionAction"
+        actorId:
+          $ref: "#/components/schemas/LocalActorId"
+        timestamp:
+          type: string
+          format: date-time
+        reason:
+          type: string
+          minLength: 1
+        override:
+          type: boolean
+      additionalProperties: false
+    QuarantineDecisionCase:
+      type: object
+      required:
+        - id
+        - sourceUri
+        - fromState
+        - state
+        - decision
+      properties:
+        id:
+          $ref: "#/components/schemas/QuarantineCaseId"
+        sourceUri:
+          $ref: "#/components/schemas/LocalSourceUri"
+        fromState:
+          $ref: "#/components/schemas/QuarantineState"
+        state:
+          $ref: "#/components/schemas/QuarantineState"
+        decision:
+          $ref: "#/components/schemas/QuarantineDecisionRecord"
+      additionalProperties: false
+    QuarantineDecisionResponse:
+      type: object
+      required:
+        - ok
+        - case
+      properties:
+        ok:
+          type: boolean
+          const: true
+        case:
+          $ref: "#/components/schemas/QuarantineDecisionCase"
+      additionalProperties: false
+    IngestSearchErrorDetails:
+      type: object
+      properties:
+        path:
+          type: string
+          minLength: 1
+      additionalProperties: true
+    IngestSearchErrorBody:
+      type: object
+      required:
+        - code
+        - message
+        - details
+      properties:
+        code:
+          type: string
+          minLength: 1
+        message:
+          type: string
+          minLength: 1
+        details:
+          $ref: "#/components/schemas/IngestSearchErrorDetails"
+      additionalProperties: false
+    IngestSearchErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          $ref: "#/components/schemas/IngestSearchErrorBody"
+      additionalProperties: false
     ValidationIssue:
       type: object
       required:

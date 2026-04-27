@@ -7,10 +7,11 @@
   "exports": {
     ".": "./src/index.ts",
     "./auditExportRoutes": "./src/auditExportRoutes.ts",
+    "./ingestFixtureServices": "./src/ingestFixtureServices.ts",
     "./ingestRoutes": "./src/ingestRoutes.ts"
   },
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package && node tests/router.test.mjs && node tests/service-routes.test.mjs && node tests/mcp-routes.test.mjs && node tests/mcp-runtime.test.mjs && node tests/mcp-runtime-fixture.test.mjs && node tests/lifecycle-routes.test.mjs && node tests/lifecycle-services.test.mjs && node tests/audit-export-routes.test.mjs && node tests/ingest-routes.test.mjs && node tests/api-contracts.test.mjs",
-    "test": "node tests/router.test.mjs && node tests/service-routes.test.mjs && node tests/mcp-routes.test.mjs && node tests/mcp-runtime.test.mjs && node tests/mcp-runtime-fixture.test.mjs && node tests/lifecycle-routes.test.mjs && node tests/lifecycle-services.test.mjs && node tests/audit-export-routes.test.mjs && node tests/ingest-routes.test.mjs && node tests/api-contracts.test.mjs"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/router.test.mjs && node tests/service-routes.test.mjs && node tests/mcp-routes.test.mjs && node tests/mcp-runtime.test.mjs && node tests/mcp-runtime-fixture.test.mjs && node tests/lifecycle-routes.test.mjs && node tests/lifecycle-services.test.mjs && node tests/audit-export-routes.test.mjs && node tests/ingest-routes.test.mjs && node tests/ingest-fixture-services.test.mjs && node tests/api-contracts.test.mjs",
+    "test": "node tests/router.test.mjs && node tests/service-routes.test.mjs && node tests/mcp-routes.test.mjs && node tests/mcp-runtime.test.mjs && node tests/mcp-runtime-fixture.test.mjs && node tests/lifecycle-routes.test.mjs && node tests/lifecycle-services.test.mjs && node tests/audit-export-routes.test.mjs && node tests/ingest-routes.test.mjs && node tests/ingest-fixture-services.test.mjs && node tests/api-contracts.test.mjs"
   }
 }

@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "ingest-search-client-session.v1",
+  "generatedAt": "2026-04-27T08:10:00.000Z",
+  "workspaceId": "wsp_ingest_demo",
+  "localOnly": true,
+  "baseUrl": "http://127.0.0.1:7317",
+  "fixtures": [
+    {
+      "id": "repository",
+      "fixturePath": "examples/ingest-search/repository.json"
+    },
+    {
+      "id": "searchIndex",
+      "fixturePath": "examples/ingest-search/search-index.json"
+    },
+    {
+      "id": "quarantine",
+      "fixturePath": "examples/ingest-search/quarantine.json"
+    }
+  ],
+  "api": {
+    "routes": [
+      {
+        "method": "GET",
+        "routePath": "/v1/ingest/sources"
+      },
+      {
+        "method": "POST",
+        "routePath": "/v1/ingest/search",
+        "request": {
+          "query": "alpha",
+          "sourceIds": ["src_design_notes"],
+          "limit": 5
+        }
+      },
+      {
+        "method": "GET",
+        "routePath": "/v1/ingest/quarantine"
+      },
+      {
+        "method": "POST",
+        "routePath": "/v1/ingest/quarantine/qrn_alpha/decision",
+        "request": {
+          "decision": "release",
+          "reason": "Metadata added locally.",
+          "actorId": "act_local"
+        }
+      }
+    ]
+  },
+  "sdk": {
+    "entryPoints": [
+      "normalizeLocalSourceSummaries",
+      "buildLocalSearchView",
+      "searchLocalText",
+      "groupLocalQuarantineRecords",
+      "prepareLocalQuarantineDecisionPayload"
+    ],
+    "sourceUris": [
+      "fixture://ingest-search/notes.md",
+      "fixture://ingest-search/records.csv",
+      "fixture://ingest-search/records.json"
+    ]
+  },
+  "cli": {
+    "commands": [
+      "node packages\\cli\\src\\index.ts ingest search source summary --input-path examples\\ingest-search\\repository.json",
+      "node packages\\cli\\src\\index.ts ingest search index search --index-path examples\\ingest-search\\search-index.json --query checksum --media-type application/json --limit 5",
+      "node packages\\cli\\src\\index.ts ingest search quarantine list --quarantine-path examples\\ingest-search\\quarantine.json --source-uri fixture://ingest-search/records.csv",
+      "node packages\\cli\\src\\index.ts ingest search quarantine decide --quarantine-path examples\\ingest-search\\quarantine.json --item-id qtn_csv_beta_status --decision release --actor-id local_reviewer --reason \"Status accepted for local indexing.\" --timestamp 2026-04-27T08:05:00.000Z"
+    ]
+  },
+  "web": {
+    "sourceCards": [
+      {
+        "sourceId": "src_design_notes",
+        "status": "attention",
+        "indexedCount": 2,
+        "quarantinedCount": 1
+      }
+    ],
+    "searchRows": [
+      {
+        "resultId": "idx_json_beta",
+        "sourceUri": "fixture://ingest-search/records.json",
+        "title": "Checksum recap",
+        "matchedTerms": ["checksum"],
+        "quarantineState": "clear"
+      }
+    ],
+    "quarantineQueue": {
+      "pendingCount": 1,
+      "items": [
+        {
+          "itemId": "qtn_csv_beta_status",
+          "sourceUri": "fixture://ingest-search/records.csv",
+          "decision": "pending"
+        }
+      ]
+    }
+  },
+  "schemas": {
+    "version": 1,
+    "kinds": [
+      "repositorySourceSnapshot",
+      "logSourceSnapshot",
+      "normalizedDocument",
+      "searchQuery",
+      "searchResult",
+      "quarantineRecord",
+      "quarantineDecision"
+    ]
+  }
+}
