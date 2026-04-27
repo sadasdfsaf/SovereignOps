@@ -19,6 +19,8 @@ def make_release_root(root: Path) -> None:
     )
     (root / "scripts").mkdir()
     (root / "docs").mkdir()
+    (root / "docs" / "adr").mkdir()
+    (root / ".github" / "workflows").mkdir(parents=True)
     (root / "examples" / "mcp-gateway").mkdir(parents=True)
     (root / "examples" / "mcp").mkdir(parents=True)
     (root / "examples" / "ingest-search").mkdir(parents=True)
@@ -49,6 +51,7 @@ def make_release_root(root: Path) -> None:
         "scripts/release_check.py",
         "scripts/repo_health.py",
         "scripts/public_boundary_guard.py",
+        "scripts/status_dashboard.py",
         "scripts/env_guard.py",
         "scripts/rust_guard.py",
         "scripts/validate_openapi.py",
@@ -74,6 +77,17 @@ def make_release_root(root: Path) -> None:
         "docs/plugin-review-artifact-api.md",
         "docs/plugin-review-artifact-records-api.md",
         "docs/plugin-review-artifacts.md",
+        "docs/status.md",
+        "docs/ci.md",
+        "docs/development-quickstart.md",
+        "docs/release-checklist.md",
+        "docs/adr/000-template.md",
+        "docs/adr/001-local-first-event-model.md",
+        ".github/workflows/smoke.yml",
+        ".github/workflows/python.yml",
+        ".github/workflows/node.yml",
+        ".github/workflows/typescript.yml",
+        ".github/workflows/rust.yml",
         "scripts/loc_integrity.py",
         "scripts/release_notes.py",
         "examples/mcp-gateway/resources.json",
@@ -126,6 +140,12 @@ def make_release_root(root: Path) -> None:
         "tests/test_plugin_review_artifact_records_api_docs.py",
         "tests/test_plugin_review_artifacts_docs.py",
         "tests/test_plugin_review_artifact_alignment.py",
+        "tests/test_adr_docs.py",
+        "tests/test_ci_workflows.py",
+        "tests/test_contributing_quickstart.py",
+        "tests/test_release_checklist_docs.py",
+        "tests/test_status_dashboard.py",
+        "tests/test_status_docs.py",
         "tests/test_ingest_contract_alignment.py",
         "tests/test_validate_openapi_ingest_search.py",
         "tests/test_validate_openapi_ingest_evidence.py",
@@ -252,6 +272,8 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertTrue(by_name["node-package-baseline"].available)
         self.assertTrue(by_name["ingest-evidence-parity"].available)
         self.assertTrue(by_name["ingest-evidence-api-replay"].available)
+        self.assertTrue(by_name["status-dashboard"].available)
+        self.assertTrue(by_name["bootstrap-docs"].available)
         self.assertTrue(by_name["plugin-automation-alignment"].available)
         self.assertTrue(by_name["mcp-approval-evidence-api-alignment"].available)
         self.assertTrue(by_name["mcp-approval-evidence-records-api-alignment"].available)
@@ -308,6 +330,8 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertEqual(calls, [])
         self.assertIn("RUN python-tests: python -m unittest discover -s tests", output.getvalue())
         self.assertIn("RUN ingest-python-tests: python -m unittest discover -s services/ingest/tests", output.getvalue())
+        self.assertIn("RUN status-dashboard: python scripts/status_dashboard.py --json", output.getvalue())
+        self.assertIn("RUN bootstrap-docs: python -m unittest tests.test_adr_docs", output.getvalue())
         self.assertIn("RUN loc-integrity: python scripts/loc_integrity.py", output.getvalue())
         self.assertIn("SKIP release-notes-smoke:", output.getvalue())
         self.assertIn("SKIP cargo-check: missing tool: cargo", output.getvalue())

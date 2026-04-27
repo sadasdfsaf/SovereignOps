@@ -1,4 +1,4 @@
-name: typescript
+name: node
 
 on:
   pull_request:
@@ -9,17 +9,17 @@ permissions:
   contents: read
 
 jobs:
-  packages:
+  package-baseline:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - run: node scripts/node-check.mjs
       - name: Workspace checks
         shell: bash
         run: |
-          corepack enable
           if command -v pnpm >/dev/null 2>&1; then
             pnpm -r --if-present check
           else

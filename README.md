@@ -40,7 +40,7 @@ The repository now has the first public bootstrap: root toolchain metadata, cros
 - `docs/core-model.md`: public overview of identifiers, events, reducers, sync, and audit primitives.
 - `docs/local-workflows.md`: public overview of the current Web, sync, SDK, and plugin workflow modules.
 - `docs/service-contracts.md`: public overview of API, sync, MCP gateway, and structured ingest service contracts.
-- `docs/STATUS.md`: generated repository health summary.
+- `docs/status.md`: public repository health summary.
 
 ## Local Checks
 

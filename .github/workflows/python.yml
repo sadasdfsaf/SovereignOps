@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   unittest:
     runs-on: ubuntu-latest
@@ -16,4 +19,4 @@ jobs:
       - run: python -m unittest discover -s tests
       - run: python scripts/env_guard.py
       - run: python scripts/repo_health.py --json
-
+      - run: python scripts/validate_openapi.py

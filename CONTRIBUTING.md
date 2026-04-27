@@ -20,24 +20,56 @@ SovereignOps is early-stage. Keep changes small, reviewable, and aligned with th
 
 ## Quickstart
 
+Install the baseline tools first:
+
+- Python 3.9 or newer.
+- Node.js 22 or newer for package metadata and workspace checks.
+- Rust 1.76 or newer when changing Rust crates.
+- pnpm when changing package workspaces.
+
+PowerShell examples use backslashes:
+
 ```powershell
 git clone <repo-url>
 Set-Location SovereignOps
 python scripts\smoke.py
 python -m unittest discover -s tests
 python scripts\env_guard.py
+python scripts\rust_guard.py
 ```
 
-Optional checks run when their tools are installed:
+Git Bash examples use forward slashes:
+
+```bash
+git clone <repo-url>
+cd SovereignOps
+python scripts/smoke.py
+python -m unittest discover -s tests
+python scripts/env_guard.py
+python scripts/rust_guard.py
+```
+
+`scripts/smoke.py` is the preferred bootstrap check. It runs the source guards and Python checks, then runs Cargo, Node, and pnpm checks when those tools are installed. Run the optional toolchain checks directly when you touched those areas:
 
 ```powershell
+node scripts/node-check.mjs
+cargo check --workspace
 cargo test --workspace
 pnpm -r --if-present check
 ```
 
+If Cargo is unavailable, `python scripts\rust_guard.py` is the Rust-source guard fallback for unsafe panic-style calls. See `docs/development-quickstart.md` for the expanded setup and validation flow.
+
 ## Environment Examples
 
 Use `.env.example` files to document local settings. Secret-like values must stay blank or use obvious example-only placeholders, and `python scripts\env_guard.py` enforces that rule.
+
+```dotenv
+SERVICE_TOKEN=
+LOCAL_DATA_DIR=.sovereignops-data
+```
+
+Do not add real tokens, keys, credentials, private notes, local plan packs, run logs, workspace exports, or machine-specific paths to examples, tests, docs, or fixtures.
 
 ## Task Queue Helper
 

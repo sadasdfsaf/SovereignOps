@@ -9,7 +9,7 @@
     "env:check": "python scripts/env_guard.py",
     "rust:guard": "python scripts/rust_guard.py",
     "smoke": "python scripts/smoke.py",
-    "health": "python scripts/repo_health.py --markdown docs/STATUS.md",
+    "health": "python scripts/status_dashboard.py --json",
     "loc": "python scripts/loc_budget.py --summary",
     "openapi:check": "python scripts/validate_openapi.py",
     "queue": "python scripts/task_queue.py",
