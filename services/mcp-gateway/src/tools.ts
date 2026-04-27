@@ -194,6 +194,19 @@ export async function executeToolCall(
   }
 
   if (policy.decision === "require_approval") {
+    options.audit?.emit({
+      type: "tool_call_approval_required",
+      toolName,
+      arguments: args,
+      actorId: options.actor?.id,
+      decision: policy.decision,
+      reason: policy.reason,
+      metadata: {
+        ...(policy.ruleId ? { ruleId: policy.ruleId } : {}),
+        ...(policy.approvalId ? { approvalId: policy.approvalId } : {}),
+      },
+    });
+
     return {
       status: "approval_required",
       toolName,

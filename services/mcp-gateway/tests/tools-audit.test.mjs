@@ -65,8 +65,9 @@ describe("safe local tool registry and audit emitter", () => {
     assert.equal(handlerCalled, false);
     assert.deepEqual(
       audit.entries().map((event) => event.type),
-      ["tool_call_requested"],
+      ["tool_call_requested", "tool_call_approval_required"],
     );
+    assert.equal(audit.entries()[1].decision, "require_approval");
   });
 
   it("allows and executes registered safe local tools as proposals", async () => {

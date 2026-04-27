@@ -1,0 +1,69 @@
+{
+  "id": "plugin.workspace-summarizer",
+  "name": "Workspace Summarizer",
+  "version": "0.1.0",
+  "description": "Builds a reviewable local summary from document, task, and audit metadata.",
+  "entrypoint": "index.mjs",
+  "permissions": [
+    "propose_agent_action",
+    "read_object"
+  ],
+  "capabilities": [
+    {
+      "id": "propose_workspace_summary",
+      "permission": "propose_agent_action",
+      "description": "Return a workspace summary proposal without changing workspace records."
+    },
+    {
+      "id": "read_workspace_metadata",
+      "permission": "read_object",
+      "description": "Read local document, task, and audit metadata supplied by the host."
+    }
+  ],
+  "tools": [
+    {
+      "id": "summarize_workspace",
+      "name": "Summarize workspace",
+      "description": "Builds a local workspace summary proposal from supplied metadata.",
+      "capability": "propose_workspace_summary",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "auditEvents": {
+            "type": "array"
+          },
+          "docs": {
+            "type": "array"
+          },
+          "tasks": {
+            "type": "array"
+          }
+        }
+      }
+    }
+  ],
+  "resources": [
+    {
+      "id": "workspace_summary_inputs",
+      "name": "Workspace summary inputs",
+      "description": "Host-provided local metadata used to build a summary proposal.",
+      "uri": "sovereignops://workspace/summary-inputs",
+      "capability": "read_workspace_metadata"
+    }
+  ],
+  "prompts": [
+    {
+      "id": "workspace_summary_review",
+      "name": "Workspace summary review",
+      "description": "Frames the local summary for review.",
+      "capability": "propose_workspace_summary",
+      "arguments": [
+        {
+          "id": "focus",
+          "description": "Optional summary focus supplied by the caller."
+        }
+      ]
+    }
+  ],
+  "minimumHostVersion": "0.3.0"
+}

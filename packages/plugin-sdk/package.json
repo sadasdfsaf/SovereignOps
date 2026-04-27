@@ -5,7 +5,7 @@
   "private": true,
   "main": "src/index.ts",
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package && node tests/manifest.test.mjs && node tests/sandbox.test.mjs",
-    "test": "node tests/manifest.test.mjs && node tests/sandbox.test.mjs"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/manifest.test.mjs && node tests/sandbox.test.mjs && node tests/plugin-examples.test.mjs",
+    "test": "node tests/manifest.test.mjs && node tests/sandbox.test.mjs && node tests/plugin-examples.test.mjs"
   }
 }

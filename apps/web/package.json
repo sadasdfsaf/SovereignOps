@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package && node tests/localStore.test.mjs && node tests/routes-onboarding.test.mjs && node tests/tasks-documents.test.mjs && node tests/approvals-audit.test.mjs",
-    "test": "node tests/localStore.test.mjs && node tests/routes-onboarding.test.mjs && node tests/tasks-documents.test.mjs && node tests/approvals-audit.test.mjs"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/localStore.test.mjs && node tests/routes-onboarding.test.mjs && node tests/tasks-documents.test.mjs && node tests/approvals-audit.test.mjs && node tests/automation-settings.test.mjs",
+    "test": "node tests/localStore.test.mjs && node tests/routes-onboarding.test.mjs && node tests/tasks-documents.test.mjs && node tests/approvals-audit.test.mjs && node tests/automation-settings.test.mjs"
   }
 }

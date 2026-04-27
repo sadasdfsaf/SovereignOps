@@ -21,4 +21,5 @@ export class WorkspaceClient {
 }
 
 export * from "./client.ts";
+export * from "./storage.ts";
 export * from "./workspace.ts";

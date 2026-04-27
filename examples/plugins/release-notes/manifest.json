@@ -1,0 +1,69 @@
+{
+  "id": "plugin.release-notes",
+  "name": "Release Notes",
+  "version": "0.1.0",
+  "description": "Drafts reviewable release notes from completed task records.",
+  "entrypoint": "index.mjs",
+  "permissions": [
+    "propose_agent_action",
+    "read_object"
+  ],
+  "capabilities": [
+    {
+      "id": "propose_release_notes",
+      "permission": "propose_agent_action",
+      "description": "Return a release notes proposal without changing workspace records."
+    },
+    {
+      "id": "read_completed_tasks",
+      "permission": "read_object",
+      "description": "Read completed task titles, summaries, labels, and release grouping metadata."
+    }
+  ],
+  "tools": [
+    {
+      "id": "draft_release_notes",
+      "name": "Draft release notes",
+      "description": "Builds a release notes proposal from completed task records.",
+      "capability": "propose_release_notes",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "releaseName": {
+            "type": "string"
+          },
+          "tasks": {
+            "type": "array"
+          }
+        },
+        "required": [
+          "tasks"
+        ]
+      }
+    }
+  ],
+  "resources": [
+    {
+      "id": "completed_task_feed",
+      "name": "Completed task feed",
+      "description": "Host-provided task records eligible for release note drafting.",
+      "uri": "sovereignops://workspace/tasks/completed",
+      "capability": "read_completed_tasks"
+    }
+  ],
+  "prompts": [
+    {
+      "id": "release_note_review",
+      "name": "Release note review",
+      "description": "Frames the draft for review before publication.",
+      "capability": "propose_release_notes",
+      "arguments": [
+        {
+          "id": "release_name",
+          "description": "Release name to display in the proposal."
+        }
+      ]
+    }
+  ],
+  "minimumHostVersion": "0.3.0"
+}
