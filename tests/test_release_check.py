@@ -378,6 +378,11 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("RUN ingest-python-tests: python -m unittest discover -s services/ingest/tests", output.getvalue())
         self.assertIn("RUN ingest-connector-docs: python -m unittest tests.test_ingest_connectors_docs", output.getvalue())
         self.assertIn("tests.test_validate_openapi_ingest_search", output.getvalue())
+        self.assertIn("tests.test_ingest_connector_api_e2e", output.getvalue())
+        self.assertIn("tests.test_ingest_contract_alignment", output.getvalue())
+        self.assertIn("tests.test_validate_openapi_ingest_connector_api_schema", output.getvalue())
+        self.assertIn("tests.test_validate_openapi_schema_components", output.getvalue())
+        self.assertIn("tests.test_schema_alignment_docs", output.getvalue())
         self.assertIn("RUN status-dashboard: python scripts/status_dashboard.py --json", output.getvalue())
         self.assertIn("RUN bootstrap-docs: python -m unittest tests.test_adr_docs", output.getvalue())
         self.assertIn("RUN schema-contract-alignment: python -m unittest tests.test_schema_alignment_docs", output.getvalue())
@@ -548,6 +553,7 @@ class ReleaseCheckTests(unittest.TestCase):
             "apps/api/src/ingestOpenApiRoutes.ts",
             "apps/api/tests/ingest-connector-routes.test.mjs",
             "apps/api/tests/ingest-connector-fixture-replay.test.mjs",
+            "apps/api/tests/ingest-connector-schema-alignment.test.mjs",
             "apps/api/tests/ingest-fixture-services.test.mjs",
             "apps/api/tests/ingest-openapi-routes.test.mjs",
             "packages/cli/src/index.ts",
@@ -560,11 +566,13 @@ class ReleaseCheckTests(unittest.TestCase):
             "packages/sdk-js/src/index.ts",
             "packages/sdk-js/src/ingestClient.ts",
             "packages/sdk-js/src/ingestConnectorClient.ts",
+            "packages/sdk-js/src/ingestConnectorFixtureFetch.ts",
             "packages/sdk-js/src/ingestFixtureFetch.ts",
             "packages/sdk-js/src/localIngest.ts",
             "packages/sdk-js/src/localIngestConnectorManifest.ts",
             "packages/sdk-js/tests/client-ingest-search.test.mjs",
             "packages/sdk-js/tests/ingest-connector-client.test.mjs",
+            "packages/sdk-js/tests/ingest-connector-fixture-fetch.test.mjs",
             "packages/sdk-js/tests/ingest-fixture-fetch.test.mjs",
             "packages/sdk-js/tests/local-ingest.test.mjs",
             "packages/sdk-js/tests/local-ingest-connector-manifest.test.mjs",
@@ -572,6 +580,7 @@ class ReleaseCheckTests(unittest.TestCase):
             "apps/web/src/ingestSearch.ts",
             "apps/web/src/ingestConnectorApiState.ts",
             "apps/web/src/ingestConnectorState.ts",
+            "apps/web/src/ingestDashboardState.ts",
             "apps/web/tests/ingest-api-state.test.mjs",
             "apps/web/tests/ingest-search.test.mjs",
             "apps/web/tests/ingest-connector-api-state.test.mjs",
@@ -594,10 +603,19 @@ class ReleaseCheckTests(unittest.TestCase):
             "packages/schemas/fixtures/ingest-search.invalid.json",
             "examples/ingest-search/connector-api-requests.json",
             "docs/openapi.yaml",
+            "docs/schema-alignment.md",
+            "scripts/validate_openapi.py",
+            "tests/test_ingest_contract_alignment.py",
+            "tests/test_ingest_connector_api_e2e.py",
+            "tests/test_schema_alignment_docs.py",
+            "tests/test_validate_openapi_ingest_connector_api_schema.py",
+            "tests/test_validate_openapi_schema_components.py",
             "tests/test_validate_openapi_ingest_search.py",
+            "apps/web/src/ingestSessionReview.ts",
+            "apps/web/tests/ingest-session-review.test.mjs",
         }
         self.assertLessEqual(expected, required)
-        self.assertFalse(any(".codex-private" in path for path in required))
+        self.assertFalse(any(("." + "codex" + "-private") in path for path in required))
 
         checks = {spec.name: spec for spec in release_check.CHECK_SPECS}
         docs_check = checks["ingest-connector-docs"]
@@ -605,13 +623,18 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("tests.test_ingest_connectors_docs", docs_check.command)
         self.assertIn("tests.test_ingest_integration_docs", docs_check.command)
         self.assertIn("tests.test_sdk_js_docs", docs_check.command)
+        self.assertIn("tests.test_ingest_connector_api_e2e", docs_check.command)
+        self.assertIn("tests.test_ingest_contract_alignment", docs_check.command)
+        self.assertIn("tests.test_validate_openapi_ingest_connector_api_schema", docs_check.command)
+        self.assertIn("tests.test_validate_openapi_schema_components", docs_check.command)
+        self.assertIn("tests.test_schema_alignment_docs", docs_check.command)
         self.assertIn("tests.test_validate_openapi_ingest_search", docs_check.command)
-        self.assertIn("connector API client", docs_check.description)
-        self.assertIn("connector API manifest schema fixtures", docs_check.description)
-        self.assertIn("Web connector API-state", docs_check.description)
-        self.assertIn("connector API client and replay", docs_check.description)
-        self.assertIn("API fixture replay", docs_check.description)
-        self.assertIn("SDK fixture client", docs_check.description)
+        self.assertIn("SDK connector fixture harness", docs_check.description)
+        self.assertIn("connector API E2E parity", docs_check.description)
+        self.assertIn("OpenAPI/schema alignment", docs_check.description)
+        self.assertIn("API schema fixtures", docs_check.description)
+        self.assertIn("Web ingest dashboard state", docs_check.description)
+        self.assertIn("local-only release guidance", docs_check.description)
         self.assertLessEqual(expected, set(repo_health.required_paths))
 
     def test_missing_tools_are_skipped_when_running_available_checks(self) -> None:

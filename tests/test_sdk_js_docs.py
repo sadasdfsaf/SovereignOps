@@ -31,6 +31,7 @@ EXPECTED_REFERENCES = (
     "packages/sdk-js/src/ingestClient.ts",
     "packages/sdk-js/src/ingestFixtureFetch.ts",
     "packages/sdk-js/src/ingestConnectorClient.ts",
+    "packages/sdk-js/src/ingestConnectorFixtureFetch.ts",
     "packages/sdk-js/src/localIngest.ts",
     "packages/sdk-js/src/localIngestConnectorManifest.ts",
     "examples/ingest-search/api-requests.json",
@@ -38,6 +39,7 @@ EXPECTED_REFERENCES = (
     "packages/sdk-js/tests/client-ingest-search.test.mjs",
     "packages/sdk-js/tests/ingest-fixture-fetch.test.mjs",
     "packages/sdk-js/tests/ingest-connector-client.test.mjs",
+    "packages/sdk-js/tests/ingest-connector-fixture-fetch.test.mjs",
     "packages/sdk-js/tests/local-ingest.test.mjs",
     "packages/sdk-js/tests/local-ingest-connector-manifest.test.mjs",
     "packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupApiClient.ts",
@@ -82,6 +84,15 @@ EXPECTED_SYMBOLS = (
     "baseUrlFromIngestFixtureBundle",
     "IngestFixtureFetch",
     "IngestFixtureClientHarness",
+    "DEFAULT_INGEST_CONNECTOR_FIXTURE_PATH",
+    "loadIngestConnectorFixtureBundle",
+    "createIngestConnectorFixtureFetch",
+    "createIngestConnectorFixtureClient",
+    "createIngestConnectorFixtureClientHarness",
+    "baseUrlFromIngestConnectorFixtureBundle",
+    "IngestConnectorFixtureError",
+    "IngestConnectorFixtureFetch",
+    "IngestConnectorFixtureClientHarness",
     "listLocalIngestConnectorProfiles",
     "normalizeLocalIngestConnectorManifest",
     "buildLocalIngestConnectorReadinessSummary",
@@ -121,6 +132,7 @@ EXPECTED_COMMANDS = (
     r"node packages\sdk-js\tests\client-ingest-search.test.mjs",
     r"node packages\sdk-js\tests\ingest-fixture-fetch.test.mjs",
     r"node packages\sdk-js\tests\ingest-connector-client.test.mjs",
+    r"node packages\sdk-js\tests\ingest-connector-fixture-fetch.test.mjs",
     r"node packages\sdk-js\tests\local-ingest.test.mjs",
     r"node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs",
     r"node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs",
@@ -131,7 +143,9 @@ EXPECTED_COMMANDS = (
 
 PRIVATE_PATH_MARKERS = (
     "".join(("sovereignops", "-codex", "-pack")),
-    "." + "codex-private",
+    "plan" + "-pack",
+    "private " + "plan " + "pack",
+    "." + "codex" + "-private",
     "." + "codex-run",
     "CODEX" + "_START" + "_HERE",
     "tasks" + "/backlog.jsonl",
@@ -186,6 +200,16 @@ class SdkJsDocsTests(unittest.TestCase):
         for symbol in EXPECTED_SYMBOLS:
             with self.subTest(symbol=symbol):
                 self.assertIn(symbol, self.text)
+
+        for phrase in (
+            "SDK fixture fetch and client harness",
+            "connector API preview parity",
+            "checked-in JSON",
+            "negative replay cases",
+            "no global fetch fallback",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, self.text)
 
         for command in EXPECTED_COMMANDS:
             with self.subTest(command=command):

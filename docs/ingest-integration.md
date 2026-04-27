@@ -43,17 +43,27 @@ SDK helpers, and Web state builders:
 - SDK route client, API fixture fetch, pure helpers, and connector manifest
   helpers: `packages/sdk-js/src/ingestClient.ts`,
   `packages/sdk-js/src/ingestFixtureFetch.ts`,
-  `packages/sdk-js/src/ingestConnectorClient.ts`, and
+  `packages/sdk-js/src/ingestConnectorClient.ts`,
+  `packages/sdk-js/src/ingestConnectorFixtureFetch.ts`, and
   `packages/sdk-js/src/localIngest.ts`, plus
   `packages/sdk-js/src/localIngestConnectorManifest.ts`.
 - Web state builders:
   `apps/web/src/ingestSearch.ts`, `apps/web/src/ingestConnectorState.ts`,
-  `apps/web/src/ingestApiState.ts`, and
-  `apps/web/src/ingestConnectorApiState.ts`.
+  `apps/web/src/ingestApiState.ts`, `apps/web/src/ingestConnectorApiState.ts`,
+  `apps/web/src/ingestSessionReview.ts`, and
+  `apps/web/src/ingestDashboardState.ts`.
 - Schema manifest contract:
   `packages/schemas/src/ingestConnectorManifest.ts` and
   `packages/schemas/src/ingestConnectorApiManifest.ts`, plus
   `packages/schemas/src/ingestSearch.ts`.
+- Cross-surface alignment checks:
+  `tests/test_ingest_contract_alignment.py`,
+  `tests/test_ingest_connector_api_e2e.py`,
+  `tests/test_validate_openapi_ingest_search.py`,
+  `tests/test_validate_openapi_ingest_connector_api_schema.py`,
+  `tests/test_validate_openapi_schema_components.py`,
+  `apps/api/tests/ingest-connector-schema-alignment.test.mjs`,
+  `tests/test_schema_alignment_docs.py`, and `docs/schema-alignment.md`.
 
 The manifest path stays local-only, requires no network access, and keeps
 connector output default untrusted unless the caller explicitly passes a trusted
@@ -125,7 +135,28 @@ OpenAPI-shaped preview routes through an injected fetch:
 - `baseUrlFromIngestFixtureBundle`
 
 Use this fixture client when SDK tests need the API client surface but should
-not start an API process or open a socket.
+not start an API process or open a socket. The harness records each local call,
+matches method, route path, and JSON body, and reports typed fixture errors for
+unmatched paths, method mismatches, and request-body drift.
+
+`packages/sdk-js/src/ingestConnectorFixtureFetch.ts` builds the focused
+connector manifest fixture fetch and client harness around
+`examples/ingest-search/connector-api-requests.json`:
+
+- `DEFAULT_INGEST_CONNECTOR_FIXTURE_PATH`
+- `loadIngestConnectorFixtureBundle`
+- `createIngestConnectorFixtureFetch`
+- `createIngestConnectorFixtureClient`
+- `createIngestConnectorFixtureClientHarness`
+- `baseUrlFromIngestConnectorFixtureBundle`
+- `IngestConnectorFixtureError`
+
+Use it when SDK tests need `IngestConnectorClient` against the connector
+fixture bundle without global fetch or a live API process. It validates the
+successful manifest case, preserves local negative method/path/body cases, and
+redacts unsafe errors.
+Focused connector fixture harness coverage lives in
+`packages/sdk-js/tests/ingest-connector-fixture-fetch.test.mjs`.
 
 `packages/sdk-js/src/ingestConnectorClient.ts` is the focused connector manifest
 API client. It exposes:
@@ -204,6 +235,11 @@ The connector replay module exposes `runIngestConnectorApiReplayCli`,
 `createIngestConnectorApiDispatcher`.
 Focused replay coverage lives in
 `packages/cli/tests/ingest-connector-api-replay.test.mjs`.
+Together with `apps/api/tests/ingest-connector-fixture-replay.test.mjs`, this
+keeps the connector API fixture parity path local across API router dispatch
+and CLI replay output. Both surfaces replay the successful manifest response
+and the local negative method/path cases from
+`examples/ingest-search/connector-api-requests.json`.
 
 ## Web State Path
 
@@ -265,6 +301,35 @@ fetches.
 Focused connector API-state coverage lives in
 `apps/web/tests/ingest-connector-api-state.test.mjs`.
 
+`apps/web/src/ingestSessionReview.ts` is the Web ingest dashboard state for
+captured client sessions. It reads already captured session JSON and optional
+ingest log evidence, then builds route timelines, SDK call rows, quarantine
+decision summaries, checksum evidence, empty states, and redacted error states:
+
+- `buildIngestSessionReview`
+- `collectIngestSessionRouteTimeline`
+- `collectIngestSessionSdkCalls`
+- `buildIngestSessionQuarantineDecisionSummary`
+- `collectIngestSessionChecksumEvidence`
+- `buildIngestSessionReviewEmptyState`
+- `buildIngestSessionReviewErrorState`
+
+The dashboard state helper is local-only, does not fetch, and returns
+defensive clones for UI tests. Focused coverage lives in
+`apps/web/tests/ingest-session-review.test.mjs`.
+
+`apps/web/src/ingestDashboardState.ts` composes ingest API fixture state and
+connector API fixture state into the Web ingest dashboard:
+
+- `buildIngestDashboardState`
+- `buildIngestDashboardCards`
+- `buildIngestDashboardSections`
+- `INGEST_DASHBOARD_SECTION_IDS`
+
+The dashboard state exposes local-only and no-network indicators, connector
+readiness, source/search/quarantine cards, warnings, errors, redaction counts,
+and frozen sections without fetching remote data.
+
 ## Schema Contracts
 
 `packages/schemas/src/ingestSearch.ts` defines runtime validators and JSON
@@ -323,6 +388,19 @@ The connector API manifest fixtures are
 behavior checked by
 `packages/schemas/tests/ingest-connector-api-manifest.test.mjs`.
 
+The OpenAPI and schema alignment gates are public and local-only:
+`tests/test_validate_openapi_ingest_search.py` checks ingest/search route and
+schema shape in `docs/openapi.yaml`,
+`tests/test_validate_openapi_ingest_connector_api_schema.py` checks the
+connector manifest API OpenAPI/schema shape,
+`tests/test_ingest_contract_alignment.py` checks API fixture, client-session,
+docs, and OpenAPI route parity, `tests/test_ingest_connector_api_e2e.py`
+checks cross-surface connector API E2E parity,
+`tests/test_validate_openapi_schema_components.py` checks shared OpenAPI schema
+component wiring, `apps/api/tests/ingest-connector-schema-alignment.test.mjs`
+checks API route schema fixture alignment, and
+`tests/test_schema_alignment_docs.py` checks `docs/schema-alignment.md`.
+
 ## Fixtures
 
 The fixture set is intentionally small and deterministic:
@@ -374,10 +452,16 @@ python -m json.tool examples\ingest-search\client-session.json
 python -m unittest tests.test_ingest_connectors_docs
 python -m unittest tests.test_ingest_integration_docs
 python -m unittest tests.test_sdk_js_docs
+python -m unittest tests.test_ingest_connector_api_e2e
+python -m unittest tests.test_ingest_contract_alignment
+python -m unittest tests.test_validate_openapi_ingest_connector_api_schema
+python -m unittest tests.test_validate_openapi_schema_components
+python -m unittest tests.test_schema_alignment_docs
 python -m unittest discover -s services\ingest\tests -p test_connector_manifest.py
 python -m unittest discover -s services\ingest\tests -p test_ingest_cli_connector_manifest.py
 node apps\api\tests\ingest-connector-routes.test.mjs
 node apps\api\tests\ingest-connector-fixture-replay.test.mjs
+node apps\api\tests\ingest-connector-schema-alignment.test.mjs
 node apps\api\tests\ingest-fixture-services.test.mjs
 node apps\api\tests\ingest-openapi-routes.test.mjs
 node packages\cli\tests\ingest-connector-api-replay.test.mjs
@@ -385,11 +469,13 @@ node packages\cli\tests\ingest-api-replay.test.mjs
 node packages\cli\tests\ingest-api-verify.test.mjs
 node packages\sdk-js\tests\client-ingest-search.test.mjs
 node packages\sdk-js\tests\ingest-connector-client.test.mjs
+node packages\sdk-js\tests\ingest-connector-fixture-fetch.test.mjs
 node packages\sdk-js\tests\ingest-fixture-fetch.test.mjs
 node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs
 node apps\web\tests\ingest-api-state.test.mjs
 node apps\web\tests\ingest-connector-api-state.test.mjs
 node apps\web\tests\ingest-connector-state.test.mjs
+node apps\web\tests\ingest-session-review.test.mjs
 node packages\schemas\tests\ingest-connector-api-manifest.test.mjs
 node packages\schemas\tests\ingest-connector-manifest.test.mjs
 node packages\schemas\tests\ingest-search.test.mjs

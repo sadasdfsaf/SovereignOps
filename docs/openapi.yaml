@@ -3684,11 +3684,13 @@ components:
         capabilities:
           type: array
           minItems: 1
+          uniqueItems: true
           items:
             $ref: "#/components/schemas/IngestConnectorCapability"
         mediaTypes:
           type: array
           minItems: 1
+          uniqueItems: true
           items:
             $ref: "#/components/schemas/IngestMediaType"
         auth:

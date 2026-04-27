@@ -55,6 +55,8 @@ console.log(workspace.describe(), plan.dryRun);
   `packages/sdk-js/src/localIngestConnectorManifest.ts`
 - Ingest connector API client:
   `packages/sdk-js/src/ingestConnectorClient.ts`
+- Ingest connector API fixture fetch and harness:
+  `packages/sdk-js/src/ingestConnectorFixtureFetch.ts`
 - Ingest connector guide: `docs/ingest-connectors.md`
 - Ingest API replay fixture:
   `examples/ingest-search/api-requests.json`
@@ -70,6 +72,8 @@ console.log(workspace.describe(), plan.dryRun);
   `packages/sdk-js/tests/local-ingest-connector-manifest.test.mjs`
 - Focused connector API client test:
   `packages/sdk-js/tests/ingest-connector-client.test.mjs`
+- Focused connector API fixture fetch test:
+  `packages/sdk-js/tests/ingest-connector-fixture-fetch.test.mjs`
 - Workspace session retention cleanup API client:
   `packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupApiClient.ts`
 - Workspace session retention cleanup inventory API client:
@@ -260,7 +264,9 @@ Use `packages/sdk-js/src/ingestFixtureFetch.ts` when tests need the SDK API
 client but must stay on checked-in local fixtures. The fixture fetch matches
 method, route path, and JSON request body against
 `examples/ingest-search/api-requests.json`; returned responses and recorded
-calls are defensive clones.
+calls are defensive clones. This is the SDK fixture fetch and client harness
+for connector API preview parity when the test needs the `IngestSearchClient`
+surface without a live API process.
 
 Public helper names:
 
@@ -295,6 +301,27 @@ The derived base URL is `http://127.0.0.1:7317/v1/`, but the harness uses
 in-memory fixture responses only. It never starts an API server, never opens a socket,
 and returns typed fixture errors for unmatched paths, method mismatches, and
 request body drift.
+
+Connector manifest replay uses
+`examples/ingest-search/connector-api-requests.json` through the connector API
+client, CLI/API replay tests, and the connector-specific SDK fixture harness in
+`packages/sdk-js/src/ingestConnectorFixtureFetch.ts`.
+
+Connector fixture helper names:
+
+- `DEFAULT_INGEST_CONNECTOR_FIXTURE_PATH`
+- `loadIngestConnectorFixtureBundle`
+- `createIngestConnectorFixtureFetch`
+- `createIngestConnectorFixtureClient`
+- `createIngestConnectorFixtureClientHarness`
+- `baseUrlFromIngestConnectorFixtureBundle`
+- `IngestConnectorFixtureError`
+- `IngestConnectorFixtureFetch`
+- `IngestConnectorFixtureClientHarness`
+
+Keep connector fixture harnesses on the same local-only pattern: injected
+fetch, checked-in JSON, no global fetch fallback, JSON-only errors, and
+negative replay cases for unsupported method, path, and request-body coverage.
 
 ## Workspace Session Snapshot Retention Cleanup API Preview
 
@@ -637,6 +664,7 @@ node packages\sdk-js\tests\ingest-fixture-fetch.test.mjs
 node packages\sdk-js\tests\local-ingest.test.mjs
 node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs
 node packages\sdk-js\tests\ingest-connector-client.test.mjs
+node packages\sdk-js\tests\ingest-connector-fixture-fetch.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention.test.mjs
