@@ -1,0 +1,172 @@
+{
+  "repositorySourceSnapshot": {
+    "source_uri": "file:///workspace/notes/alpha.txt",
+    "relative_path": "notes/alpha.txt",
+    "media_type": "text/plain",
+    "size_bytes": 18,
+    "checksum": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "citation": {
+      "source_uri": "file:///workspace/notes/alpha.txt",
+      "range": {
+        "path": "notes/alpha.txt"
+      },
+      "trusted": false
+    },
+    "metadata": {
+      "connector": "repository",
+      "root_uri": "file:///workspace",
+      "relative_path": "notes/alpha.txt",
+      "file_name": "alpha.txt",
+      "extension": ".txt",
+      "content_included": true,
+      "text_like": true
+    },
+    "content": "Alpha\nBeta"
+  },
+  "logSourceSnapshot": {
+    "source_uri": "file:///workspace/logs/app.log",
+    "content": "INFO alpha ready",
+    "media_type": "text/plain",
+    "message": "alpha ready",
+    "citation": {
+      "source_uri": "file:///workspace/logs/app.log",
+      "range": {
+        "start_line": 1,
+        "end_line": 1
+      },
+      "trusted": false
+    },
+    "metadata": {
+      "format": "text-log",
+      "line": 1,
+      "line_count": 1,
+      "level": "INFO",
+      "message": "alpha ready",
+      "raw_line": "INFO alpha ready"
+    },
+    "level": "INFO"
+  },
+  "normalizedDocument": {
+    "source_uri": "stdin://text",
+    "checksum": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "normalized_text": "Alpha\nBeta",
+    "untrusted": true
+  },
+  "searchQuery": {
+    "text": "alpha beta",
+    "tags": [
+      "notes"
+    ],
+    "media_types": [
+      "text/plain"
+    ],
+    "source_uris": [
+      "file:///workspace/notes/alpha.txt"
+    ],
+    "limit": 10
+  },
+  "searchResult": {
+    "document": {
+      "source_uri": "file:///workspace/notes/alpha.txt",
+      "content": "Alpha beta content",
+      "media_type": "text/plain",
+      "citation": {
+        "source_uri": "file:///workspace/notes/alpha.txt",
+        "range": {
+          "start_line": 1,
+          "end_line": 2
+        },
+        "trusted": false
+      },
+      "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "tags": [
+        "notes"
+      ],
+      "metadata": {
+        "length": 18
+      },
+      "updated_at": "2026-04-27T00:00:00Z"
+    },
+    "score": 3,
+    "matched_terms": [
+      "alpha",
+      "beta"
+    ],
+    "snippet": "Alpha beta content",
+    "citation": {
+      "source_uri": "file:///workspace/notes/alpha.txt",
+      "range": {
+        "start_line": 1,
+        "end_line": 2
+      },
+      "trusted": false
+    }
+  },
+  "quarantineDecision": {
+    "action": "reject",
+    "actor_id": "worker-1",
+    "timestamp": "2026-04-27T09:25:00Z",
+    "reason": "duplicate sample",
+    "from_state": "open",
+    "to_state": "rejected",
+    "override": false,
+    "audit_event_summary": {
+      "event_type": "quarantine_decision",
+      "case_id": "q_0123456789abcdefabcd",
+      "source_uri": "file:///workspace/items.csv",
+      "action": "reject",
+      "actor_id": "worker-1",
+      "timestamp": "2026-04-27T09:25:00Z",
+      "from_state": "open",
+      "to_state": "rejected",
+      "reason": "duplicate sample",
+      "severity": "low",
+      "override": false
+    }
+  },
+  "quarantineRecord": {
+    "id": "q_0123456789abcdefabcd",
+    "source_uri": "file:///workspace/items.csv",
+    "reason_codes": [
+      "duplicate_record"
+    ],
+    "severity": "low",
+    "citation_snapshots": [
+      {
+        "source_uri": "file:///workspace/items.csv",
+        "range": {
+          "row": 2,
+          "column": "name"
+        },
+        "trusted": false
+      }
+    ],
+    "suggested_next_action": "review_if_relevant",
+    "preview_text": "duplicate sample row",
+    "state": "rejected",
+    "decisions": [
+      {
+        "action": "reject",
+        "actor_id": "worker-1",
+        "timestamp": "2026-04-27T09:25:00Z",
+        "reason": "duplicate sample",
+        "from_state": "open",
+        "to_state": "rejected",
+        "override": false,
+        "audit_event_summary": {
+          "event_type": "quarantine_decision",
+          "case_id": "q_0123456789abcdefabcd",
+          "source_uri": "file:///workspace/items.csv",
+          "action": "reject",
+          "actor_id": "worker-1",
+          "timestamp": "2026-04-27T09:25:00Z",
+          "from_state": "open",
+          "to_state": "rejected",
+          "reason": "duplicate sample",
+          "severity": "low",
+          "override": false
+        }
+      }
+    ]
+  }
+}

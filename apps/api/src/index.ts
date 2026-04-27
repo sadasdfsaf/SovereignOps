@@ -1,4 +1,5 @@
 export * from "./auditExportRoutes.ts";
+export * from "./ingestRoutes.ts";
 export * from "./mcpRoutes.ts";
 export * from "./mcpRuntime.ts";
 export * from "./lifecycleRoutes.ts";

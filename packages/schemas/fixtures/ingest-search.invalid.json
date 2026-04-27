@@ -1,0 +1,112 @@
+{
+  "repositorySourceSnapshot": {
+    "source_uri": "file uri",
+    "relative_path": "../alpha.txt",
+    "media_type": "text",
+    "size_bytes": -1,
+    "checksum": "not-a-digest",
+    "citation": {
+      "source_uri": "",
+      "range": {
+        "path": ""
+      },
+      "trusted": "false"
+    },
+    "metadata": [],
+    "content": 7
+  },
+  "logSourceSnapshot": {
+    "source_uri": "file:///workspace/logs/app.log",
+    "content": 42,
+    "media_type": "text/plain",
+    "message": {},
+    "citation": {
+      "source_uri": "file:///workspace/logs/app.log",
+      "range": {
+        "start_line": 2,
+        "end_line": 1
+      },
+      "trusted": false
+    },
+    "metadata": {
+      "bad": null
+    },
+    "level": ""
+  },
+  "normalizedDocument": {
+    "source_uri": "",
+    "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+    "normalized_text": 123,
+    "untrusted": "true"
+  },
+  "searchQuery": {
+    "text": 7,
+    "tags": [
+      ""
+    ],
+    "media_types": [
+      "plain"
+    ],
+    "source_uris": [
+      "missing-scheme"
+    ],
+    "limit": 0
+  },
+  "searchResult": {
+    "document": {
+      "source_uri": "file:///workspace/notes/alpha.txt",
+      "content": "Alpha beta content",
+      "media_type": "text/plain",
+      "citation": {
+        "source_uri": "file:///workspace/notes/alpha.txt",
+        "range": {},
+        "trusted": false
+      },
+      "checksum": "bad",
+      "tags": [
+        "notes"
+      ],
+      "metadata": {}
+    },
+    "score": -1,
+    "matched_terms": [],
+    "snippet": "Alpha beta content",
+    "citation": {
+      "source_uri": "file:///workspace/notes/alpha.txt",
+      "range": {},
+      "trusted": false
+    }
+  },
+  "quarantineDecision": {
+    "action": "release",
+    "actor_id": "",
+    "timestamp": "",
+    "reason": "",
+    "from_state": "open",
+    "to_state": "rejected",
+    "override": "yes",
+    "audit_event_summary": []
+  },
+  "quarantineRecord": {
+    "id": "case-1",
+    "source_uri": "file:///workspace/items.csv",
+    "reason_codes": [],
+    "severity": "urgent",
+    "citation_snapshots": [],
+    "suggested_next_action": "",
+    "preview_text": 5,
+    "state": "done",
+    "decisions": [
+      {
+        "action": "release",
+        "actor_id": "worker-1",
+        "timestamp": "2026-04-27T09:25:00Z",
+        "reason": "sample",
+        "from_state": "open",
+        "to_state": "rejected",
+        "override": false,
+        "audit_event_summary": {}
+      }
+    ]
+  }
+}

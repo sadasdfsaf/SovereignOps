@@ -1,0 +1,310 @@
+{
+  "schemaVersion": "ingest-search-api-requests.v1",
+  "generatedAt": "2026-04-27T08:00:00.000Z",
+  "apiBase": "http://127.0.0.1:7317",
+  "requests": [
+    {
+      "id": "api_ingest_normalize",
+      "title": "Normalize local text",
+      "route": {
+        "method": "POST",
+        "path": "/v1/ingest/normalize"
+      },
+      "request": {
+        "body": {
+          "workspaceId": "wsp_ingest_demo",
+          "sourceUri": "fixture://ingest-search/notes.md",
+          "mediaType": "text/markdown",
+          "content": "# Notebook Import\n\nLocal-first search import with citations and checksums.\n",
+          "options": {
+            "trusted": false
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "sourceUri": "fixture://ingest-search/notes.md",
+          "mediaType": "text/markdown",
+          "checksum": "c6a91ee2a9789110ebb39cbd27c7f48c26087c5c13aff8bda69da669ada3cda7",
+          "normalizedText": "# Notebook Import\n\nLocal-first search import with citations and checksums.",
+          "untrusted": true
+        }
+      }
+    },
+    {
+      "id": "api_ingest_structured_csv",
+      "title": "Parse CSV with review hold",
+      "route": {
+        "method": "POST",
+        "path": "/v1/ingest/structured"
+      },
+      "request": {
+        "body": {
+          "workspaceId": "wsp_ingest_demo",
+          "sourceUri": "fixture://ingest-search/records.csv",
+          "mediaType": "text/csv",
+          "content": "id,title,owner,status\ndoc_alpha,Notebook import,Avery,indexed\ndoc_beta,Metric recap,Blake,quarantine\ndoc_gamma,Local checklist,Casey,indexed\n",
+          "options": {
+            "requiredColumns": ["id", "title"],
+            "uniqueColumns": ["id"],
+            "trusted": false
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "sourceUri": "fixture://ingest-search/records.csv",
+          "mediaType": "text/csv",
+          "summary": {
+            "documentCount": 3,
+            "indexedCount": 2,
+            "quarantineCount": 1,
+            "validationErrorCount": 0
+          },
+          "documents": [
+            {
+              "id": "idx_csv_alpha",
+              "sourceUri": "fixture://ingest-search/records.csv",
+              "mediaType": "text/csv",
+              "checksum": "42a535013f7103d295d7e9156b1cb748178d3bc3a0fe00079c6546f40db93e6a",
+              "title": "Notebook import",
+              "untrusted": true,
+              "quarantineState": "clear",
+              "citations": [
+                {
+                  "sourceUri": "fixture://ingest-search/records.csv",
+                  "range": {
+                    "row": 2,
+                    "column": "title"
+                  },
+                  "trusted": false
+                }
+              ]
+            }
+          ],
+          "quarantine": {
+            "items": [
+              {
+                "id": "qtn_csv_beta_status",
+                "sourceUri": "fixture://ingest-search/records.csv",
+                "checksum": "42a535013f7103d295d7e9156b1cb748178d3bc3a0fe00079c6546f40db93e6a",
+                "reasonCode": "needs_local_review",
+                "citation": {
+                  "sourceUri": "fixture://ingest-search/records.csv",
+                  "range": {
+                    "row": 3,
+                    "column": "status"
+                  },
+                  "trusted": false
+                },
+                "untrusted": true,
+                "quarantineState": "open"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "api_ingest_repository_scan",
+      "title": "Scan allowed fixture paths",
+      "route": {
+        "method": "POST",
+        "path": "/v1/ingest/repository/scan"
+      },
+      "request": {
+        "body": {
+          "workspaceId": "wsp_ingest_demo",
+          "localPath": "examples/ingest-search",
+          "options": {
+            "includePaths": ["notes.md", "records.csv", "records.json"],
+            "maxTextBytes": 5242880,
+            "trusted": false
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "workspaceId": "wsp_ingest_demo",
+          "sources": [
+            {
+              "sourceUri": "fixture://ingest-search/notes.md",
+              "path": "examples/ingest-search/notes.md",
+              "mediaType": "text/markdown",
+              "checksum": "c6a91ee2a9789110ebb39cbd27c7f48c26087c5c13aff8bda69da669ada3cda7",
+              "state": "indexed",
+              "untrusted": true
+            },
+            {
+              "sourceUri": "fixture://ingest-search/records.csv",
+              "path": "examples/ingest-search/records.csv",
+              "mediaType": "text/csv",
+              "checksum": "42a535013f7103d295d7e9156b1cb748178d3bc3a0fe00079c6546f40db93e6a",
+              "state": "partly_quarantined",
+              "untrusted": true
+            },
+            {
+              "sourceUri": "fixture://ingest-search/records.json",
+              "path": "examples/ingest-search/records.json",
+              "mediaType": "application/json",
+              "checksum": "ecd867eb7c3f7043c7cfcb6e23d6776cad0543b287621cb892449ac45aa90063",
+              "state": "indexed",
+              "untrusted": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "api_search_query",
+      "title": "Search local index",
+      "route": {
+        "method": "POST",
+        "path": "/v1/search/query"
+      },
+      "request": {
+        "body": {
+          "workspaceId": "wsp_ingest_demo",
+          "query": "checksum",
+          "filters": {
+            "mediaTypes": ["application/json"],
+            "sourceUris": ["fixture://ingest-search/records.json"]
+          },
+          "limit": 5
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "workspaceId": "wsp_ingest_demo",
+          "query": "checksum",
+          "results": [
+            {
+              "id": "idx_json_beta",
+              "score": 1,
+              "matchedTerms": ["checksum"],
+              "sourceUri": "fixture://ingest-search/records.json",
+              "mediaType": "application/json",
+              "checksum": "ecd867eb7c3f7043c7cfcb6e23d6776cad0543b287621cb892449ac45aa90063",
+              "title": "Checksum recap",
+              "snippet": "Checksums detect repeated source content before indexing.",
+              "citations": [
+                {
+                  "sourceUri": "fixture://ingest-search/records.json",
+                  "range": {
+                    "path": "$.items[1].summary"
+                  },
+                  "trusted": false
+                }
+              ],
+              "untrusted": true,
+              "quarantineState": "clear"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "api_quarantine_cases",
+      "title": "Build review cases",
+      "route": {
+        "method": "POST",
+        "path": "/v1/quarantine/cases"
+      },
+      "request": {
+        "body": {
+          "workspaceId": "wsp_ingest_demo",
+          "items": [
+            {
+              "id": "qtn_csv_beta_status",
+              "sourceUri": "fixture://ingest-search/records.csv",
+              "checksum": "42a535013f7103d295d7e9156b1cb748178d3bc3a0fe00079c6546f40db93e6a",
+              "reasonCode": "needs_local_review",
+              "content": "Metric recap requires local review before indexing.",
+              "citation": {
+                "sourceUri": "fixture://ingest-search/records.csv",
+                "range": {
+                  "row": 3,
+                  "column": "status"
+                },
+                "trusted": false
+              },
+              "untrusted": true
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "cases": [
+            {
+              "id": "qtn_csv_beta_status",
+              "sourceUri": "fixture://ingest-search/records.csv",
+              "state": "open",
+              "reasonCodes": ["needs_local_review"],
+              "severity": "medium",
+              "citationSnapshots": [
+                {
+                  "sourceUri": "fixture://ingest-search/records.csv",
+                  "range": {
+                    "row": 3,
+                    "column": "status"
+                  },
+                  "trusted": false
+                }
+              ],
+              "previewText": "Metric recap requires local review before indexing.",
+              "allowedActions": ["release", "reject"]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "api_quarantine_decision",
+      "title": "Release a reviewed case",
+      "route": {
+        "method": "POST",
+        "path": "/v1/quarantine/cases/qtn_csv_beta_status/decision"
+      },
+      "request": {
+        "body": {
+          "workspaceId": "wsp_ingest_demo",
+          "actorId": "local_reviewer",
+          "decision": "release",
+          "reason": "Status accepted for local indexing.",
+          "override": false,
+          "decidedAt": "2026-04-27T08:05:00.000Z"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "case": {
+            "id": "qtn_csv_beta_status",
+            "sourceUri": "fixture://ingest-search/records.csv",
+            "fromState": "open",
+            "state": "released",
+            "decision": {
+              "action": "release",
+              "actorId": "local_reviewer",
+              "timestamp": "2026-04-27T08:05:00.000Z",
+              "reason": "Status accepted for local indexing.",
+              "override": false
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -61,6 +61,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "docs/dependency-review.md",
             "docs/fuzzing.md",
             "docs/ingest-search.md",
+            "docs/ingest-api.md",
             "examples/ingest-search/notes.md",
             "examples/ingest-search/records.csv",
             "examples/ingest-search/records.json",
@@ -68,7 +69,9 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "examples/ingest-search/ingest-log.json",
             "examples/ingest-search/search-index.json",
             "examples/ingest-search/quarantine.json",
+            "examples/ingest-search/api-requests.json",
             "tests/test_ingest_search_docs.py",
+            "tests/test_ingest_api_docs.py",
         ),
     ),
     CheckSpec(
