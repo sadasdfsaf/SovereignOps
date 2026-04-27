@@ -45,6 +45,8 @@ def make_release_root(root: Path) -> None:
     (root / "services" / "ingest" / "tests").mkdir(parents=True)
     (root / "services" / "mcp-gateway" / "src").mkdir(parents=True)
     (root / "services" / "mcp-gateway" / "tests").mkdir(parents=True)
+    (root / "services" / "sync" / "src").mkdir(parents=True)
+    (root / "services" / "sync" / "tests").mkdir(parents=True)
     (root / "tests").mkdir()
     for path in (
         "scripts/loc_budget.py",
@@ -57,6 +59,7 @@ def make_release_root(root: Path) -> None:
         "scripts/validate_openapi.py",
         "scripts/validate_mcp_gateway_fixtures.py",
         "scripts/node-check.mjs",
+        *release_check.LOCAL_EVENT_CATALOG_REQUIRED_PATHS,
         "docs/openapi.yaml",
         "docs/schema-alignment.md",
         "docs/local-data-lifecycle.md",
@@ -272,6 +275,7 @@ def make_release_root(root: Path) -> None:
         "pnpm-workspace.yaml",
         "Cargo.toml",
     ):
+        (root / path).parent.mkdir(parents=True, exist_ok=True)
         (root / path).write_text("placeholder\n", encoding="utf-8")
 
 
@@ -293,6 +297,7 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertTrue(by_name["status-dashboard"].available)
         self.assertTrue(by_name["bootstrap-docs"].available)
         self.assertTrue(by_name["schema-contract-alignment"].available)
+        self.assertTrue(by_name["local-event-catalog-integration"].available)
         self.assertTrue(by_name["plugin-automation-alignment"].available)
         self.assertTrue(by_name["mcp-approval-evidence-api-alignment"].available)
         self.assertTrue(by_name["mcp-approval-evidence-records-api-alignment"].available)
@@ -353,6 +358,7 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("RUN bootstrap-docs: python -m unittest tests.test_adr_docs", output.getvalue())
         self.assertIn("RUN schema-contract-alignment: python -m unittest tests.test_schema_alignment_docs", output.getvalue())
         self.assertIn("RUN loc-integrity: python scripts/loc_integrity.py", output.getvalue())
+        self.assertIn("SKIP local-event-catalog-integration: missing tool: node", output.getvalue())
         self.assertIn("SKIP release-notes-smoke:", output.getvalue())
         self.assertIn("SKIP cargo-check: missing tool: cargo", output.getvalue())
 

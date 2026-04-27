@@ -1,0 +1,234 @@
+{
+  "schemaVersion": "local-event-replay-session/v1",
+  "generatedAt": "2026-04-27T12:30:30.000Z",
+  "workspaceId": "wsp_local_catalog",
+  "deviceId": "dev_local_catalog",
+  "catalog": {
+    "path": "examples/local-events/catalog.json",
+    "schemaVersion": "canonical-local-event-catalog/v1",
+    "eventCount": 5,
+    "eventIds": [
+      "evt_catalog_001",
+      "evt_catalog_002",
+      "evt_catalog_003",
+      "evt_catalog_004",
+      "evt_catalog_005"
+    ]
+  },
+  "sdk": {
+    "package": "packages/sdk-js",
+    "entrypoints": [
+      "createInMemoryWorkspaceClient",
+      "appendEvent",
+      "listEvents"
+    ],
+    "resultShape": {
+      "success": "ok",
+      "errorCode": "error.code",
+      "issueList": "error.details.issues"
+    }
+  },
+  "cli": {
+    "package": "packages/cli",
+    "entrypoint": "packages/cli/src/commands.ts",
+    "argv": [
+      "ingest",
+      "event",
+      "--workspace-id",
+      "wsp_local_catalog",
+      "--type",
+      "canonicalLocalEvent.append",
+      "--payload-json",
+      "-"
+    ],
+    "stdinRef": "catalog.events[0]"
+  },
+  "web": {
+    "packages": [
+      "apps/web/src/documents.ts",
+      "apps/web/src/auditTimeline.ts"
+    ],
+    "timelineFields": [
+      "actorId",
+      "operation",
+      "recordedAt",
+      "redactionMetadata"
+    ],
+    "visibleEventIds": [
+      "evt_catalog_002",
+      "evt_catalog_004"
+    ]
+  },
+  "sync": {
+    "service": "services/sync/src/replay.ts",
+    "afterCursor": "cur_v1:0000000000000000:origin",
+    "nextCursor": "cur_v1:0000000000000005:evt_catalog_005",
+    "hasMore": false,
+    "acceptedEvents": [
+      {
+        "id": "evt_catalog_001",
+        "workspaceId": "wsp_local_catalog",
+        "deviceId": "dev_local_catalog",
+        "sequence": 1,
+        "type": "canonicalLocalEvent.append",
+        "payload": {
+          "catalogEventId": "evt_catalog_001",
+          "catalogSequence": 1,
+          "operation": "append",
+          "payloadDigest": "52cadbd6440da90efd2e528ac78ab86dc071b86df9be93df23ed9fa9c5d8bf0a",
+          "redactionMetadata": {
+            "redacted": true,
+            "redactedFieldCount": 1,
+            "redactedPaths": [
+              "payload.after.body"
+            ],
+            "retainedMetadataKeys": [
+              "operation",
+              "recordId",
+              "schemaKind"
+            ]
+          }
+        },
+        "createdAt": "2026-04-27T12:00:01.000Z",
+        "cursor": "cur_v1:0000000000000001:evt_catalog_001"
+      },
+      {
+        "id": "evt_catalog_002",
+        "workspaceId": "wsp_local_catalog",
+        "deviceId": "dev_local_catalog",
+        "sequence": 2,
+        "type": "canonicalLocalEvent.update",
+        "payload": {
+          "catalogEventId": "evt_catalog_002",
+          "catalogSequence": 2,
+          "operation": "update",
+          "payloadDigest": "f21ce56c9bbe144740cdd7a82e93df806fc4a29bfaf0167847a807018bcad4d6",
+          "redactionMetadata": {
+            "redacted": false,
+            "redactedFieldCount": 0,
+            "redactedPaths": [],
+            "retainedMetadataKeys": [
+              "operation",
+              "recordId",
+              "schemaKind"
+            ]
+          }
+        },
+        "createdAt": "2026-04-27T12:05:01.000Z",
+        "cursor": "cur_v1:0000000000000002:evt_catalog_002"
+      },
+      {
+        "id": "evt_catalog_003",
+        "workspaceId": "wsp_local_catalog",
+        "deviceId": "dev_local_catalog",
+        "sequence": 3,
+        "type": "canonicalLocalEvent.append",
+        "payload": {
+          "catalogEventId": "evt_catalog_003",
+          "catalogSequence": 3,
+          "operation": "append",
+          "payloadDigest": "7d7465b3af5f874c0817d346d25107dd00eba47d830aef1044450cc0fd5057aa",
+          "redactionMetadata": {
+            "redacted": true,
+            "redactedFieldCount": 1,
+            "redactedPaths": [
+              "payload.after.body"
+            ],
+            "retainedMetadataKeys": [
+              "operation",
+              "recordId",
+              "schemaKind"
+            ]
+          }
+        },
+        "createdAt": "2026-04-27T12:10:01.000Z",
+        "cursor": "cur_v1:0000000000000003:evt_catalog_003"
+      },
+      {
+        "id": "evt_catalog_004",
+        "workspaceId": "wsp_local_catalog",
+        "deviceId": "dev_local_catalog",
+        "sequence": 4,
+        "type": "canonicalLocalEvent.approval_requested",
+        "payload": {
+          "catalogEventId": "evt_catalog_004",
+          "catalogSequence": 4,
+          "operation": "approval_requested",
+          "payloadDigest": "1267bcd39fdffa627bd7d92cdfbcf04ac17b691ac27315afad59499c7da0da48",
+          "redactionMetadata": {
+            "redacted": false,
+            "redactedFieldCount": 0,
+            "redactedPaths": [],
+            "retainedMetadataKeys": [
+              "approvalStatus",
+              "operation",
+              "recordId",
+              "schemaKind"
+            ]
+          }
+        },
+        "createdAt": "2026-04-27T12:15:01.000Z",
+        "cursor": "cur_v1:0000000000000004:evt_catalog_004"
+      },
+      {
+        "id": "evt_catalog_005",
+        "workspaceId": "wsp_local_catalog",
+        "deviceId": "dev_local_catalog",
+        "sequence": 5,
+        "type": "canonicalLocalEvent.approval_rejected",
+        "payload": {
+          "catalogEventId": "evt_catalog_005",
+          "catalogSequence": 5,
+          "operation": "approval_rejected",
+          "payloadDigest": "37664abee453139e6cd75b23dce5219b98210777ca782603062452ab412e61c7",
+          "redactionMetadata": {
+            "redacted": true,
+            "redactedFieldCount": 1,
+            "redactedPaths": [
+              "payload.after.reason"
+            ],
+            "retainedMetadataKeys": [
+              "approvalStatus",
+              "decision",
+              "operation",
+              "recordId",
+              "schemaKind"
+            ]
+          }
+        },
+        "createdAt": "2026-04-27T12:20:01.000Z",
+        "cursor": "cur_v1:0000000000000005:evt_catalog_005"
+      }
+    ]
+  },
+  "apiErrors": [
+    {
+      "when": "catalog validation fails before replay",
+      "response": {
+        "schemaVersion": "api-error/v1",
+        "error": {
+          "code": "validation_failed",
+          "status": 422,
+          "message": "Replay request validation failed.",
+          "requestId": "req_local_catalog_0001",
+          "issues": [
+            {
+              "code": "invalid_format",
+              "path": "body.events[0].payloadDigest",
+              "message": "payloadDigest must be a lowercase sha256 digest.",
+              "expected": "string",
+              "received": "string"
+            },
+            {
+              "code": "too_large",
+              "path": "body.limit",
+              "message": "limit must be at most 500.",
+              "expected": "allowed_value",
+              "received": "integer"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

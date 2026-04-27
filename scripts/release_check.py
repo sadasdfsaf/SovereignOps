@@ -35,6 +35,27 @@ SCHEMA_CONTRACT_REQUIRED_PATHS: tuple[str, ...] = (
     "packages/schemas/fixtures/schema-compatibility.v1.json",
 )
 
+LOCAL_EVENT_CATALOG_REQUIRED_PATHS: tuple[str, ...] = (
+    "docs/local-event-catalog.md",
+    "examples/local-events/catalog.json",
+    "examples/local-events/replay-session.json",
+    "tests/test_local_event_catalog_docs.py",
+    "packages/sdk-js/package.json",
+    "packages/sdk-js/src/index.ts",
+    "packages/sdk-js/src/localEvents.ts",
+    "packages/sdk-js/tests/local-events.test.mjs",
+    "packages/cli/package.json",
+    "packages/cli/src/index.ts",
+    "packages/cli/src/localEvents.ts",
+    "packages/cli/tests/local-events.test.mjs",
+    "apps/web/package.json",
+    "apps/web/src/localEventCatalog.ts",
+    "apps/web/tests/local-event-catalog.test.mjs",
+    "services/sync/package.json",
+    "services/sync/src/eventCatalog.ts",
+    "services/sync/tests/event-catalog.test.mjs",
+)
+
 
 @dataclass(frozen=True)
 class CheckSpec:
@@ -78,6 +99,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
         command=(PYTHON, "scripts/repo_health.py", "--json"),
         required_paths=(
             "scripts/repo_health.py",
+            *LOCAL_EVENT_CATALOG_REQUIRED_PATHS,
             "docs/local-data-lifecycle.md",
             "docs/maintainership.md",
             "docs/security-checklist.md",
@@ -247,6 +269,20 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "tests.test_validate_openapi_schema_components",
         ),
         required_paths=SCHEMA_CONTRACT_REQUIRED_PATHS,
+    ),
+    CheckSpec(
+        name="local-event-catalog-integration",
+        description="Validate local event catalog SDK, CLI, Web, sync, and docs wiring.",
+        command=(
+            "node",
+            "--test",
+            "packages/sdk-js/tests/local-events.test.mjs",
+            "packages/cli/tests/local-events.test.mjs",
+            "apps/web/tests/local-event-catalog.test.mjs",
+            "services/sync/tests/event-catalog.test.mjs",
+        ),
+        required_paths=LOCAL_EVENT_CATALOG_REQUIRED_PATHS,
+        tool_candidates=("node",),
     ),
     CheckSpec(
         name="mcp-gateway-fixtures",

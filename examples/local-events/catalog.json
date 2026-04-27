@@ -1,0 +1,181 @@
+{
+  "schemaVersion": "canonical-local-event-catalog/v1",
+  "generatedAt": "2026-04-27T12:30:00.000Z",
+  "workspaceId": "wsp_local_catalog",
+  "localOnly": true,
+  "events": [
+    {
+      "schemaVersion": "canonical-local-event/v1",
+      "id": "evt_catalog_001",
+      "workspaceId": "wsp_local_catalog",
+      "actorId": "act_local_author",
+      "sequence": 1,
+      "occurredAt": "2026-04-27T12:00:00.000Z",
+      "recordedAt": "2026-04-27T12:00:01.000Z",
+      "localOnly": true,
+      "operation": "append",
+      "payload": {
+        "schemaKind": "docs",
+        "recordId": "doc_support_handoff",
+        "summary": "Create support handoff note.",
+        "afterDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payloadDigest": "52cadbd6440da90efd2e528ac78ab86dc071b86df9be93df23ed9fa9c5d8bf0a",
+      "previousDigest": null,
+      "redactionMetadata": {
+        "redacted": true,
+        "redactedFieldCount": 1,
+        "redactedPaths": [
+          "payload.after.body"
+        ],
+        "retainedMetadataKeys": [
+          "operation",
+          "recordId",
+          "schemaKind"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "canonical-local-event/v1",
+      "id": "evt_catalog_002",
+      "workspaceId": "wsp_local_catalog",
+      "actorId": "act_local_author",
+      "sequence": 2,
+      "occurredAt": "2026-04-27T12:05:00.000Z",
+      "recordedAt": "2026-04-27T12:05:01.000Z",
+      "localOnly": true,
+      "operation": "update",
+      "payload": {
+        "schemaKind": "docs",
+        "recordId": "doc_support_handoff",
+        "summary": "Mark support handoff ready for review.",
+        "beforeDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "afterDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "fields": [
+          "status",
+          "updatedAt"
+        ]
+      },
+      "payloadDigest": "f21ce56c9bbe144740cdd7a82e93df806fc4a29bfaf0167847a807018bcad4d6",
+      "previousDigest": "646913e3c08aebe1d76d37a50e348d5ccafe701de0d102195663b5eaf4f0b4db",
+      "redactionMetadata": {
+        "redacted": false,
+        "redactedFieldCount": 0,
+        "redactedPaths": [],
+        "retainedMetadataKeys": [
+          "operation",
+          "recordId",
+          "schemaKind"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "canonical-local-event/v1",
+      "id": "evt_catalog_003",
+      "workspaceId": "wsp_local_catalog",
+      "actorId": "act_local_reviewer",
+      "sequence": 3,
+      "occurredAt": "2026-04-27T12:10:00.000Z",
+      "recordedAt": "2026-04-27T12:10:01.000Z",
+      "localOnly": true,
+      "operation": "append",
+      "payload": {
+        "schemaKind": "comments",
+        "recordId": "cmt_support_review",
+        "targetId": "doc_support_handoff",
+        "summary": "Add review comment.",
+        "afterDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "payloadDigest": "7d7465b3af5f874c0817d346d25107dd00eba47d830aef1044450cc0fd5057aa",
+      "previousDigest": "c720ece927843295d7ca246622603f2ccea5c221b34b1f008188b24197d9d666",
+      "redactionMetadata": {
+        "redacted": true,
+        "redactedFieldCount": 1,
+        "redactedPaths": [
+          "payload.after.body"
+        ],
+        "retainedMetadataKeys": [
+          "operation",
+          "recordId",
+          "schemaKind"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "canonical-local-event/v1",
+      "id": "evt_catalog_004",
+      "workspaceId": "wsp_local_catalog",
+      "actorId": "act_local_author",
+      "sequence": 4,
+      "occurredAt": "2026-04-27T12:15:00.000Z",
+      "recordedAt": "2026-04-27T12:15:01.000Z",
+      "localOnly": true,
+      "operation": "approval_requested",
+      "payload": {
+        "schemaKind": "approvals",
+        "recordId": "apv_support_handoff",
+        "targetId": "doc_support_handoff",
+        "summary": "Request approval for support handoff.",
+        "approvalId": "apv_support_handoff",
+        "approvalStatus": "requested",
+        "afterDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "payloadDigest": "1267bcd39fdffa627bd7d92cdfbcf04ac17b691ac27315afad59499c7da0da48",
+      "previousDigest": "be28b6c6252aeefd3759593dcdea5adc72a1b0cace659c66bffd4cd5d42efa35",
+      "redactionMetadata": {
+        "redacted": false,
+        "redactedFieldCount": 0,
+        "redactedPaths": [],
+        "retainedMetadataKeys": [
+          "approvalStatus",
+          "operation",
+          "recordId",
+          "schemaKind"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "canonical-local-event/v1",
+      "id": "evt_catalog_005",
+      "workspaceId": "wsp_local_catalog",
+      "actorId": "act_local_reviewer",
+      "sequence": 5,
+      "occurredAt": "2026-04-27T12:20:00.000Z",
+      "recordedAt": "2026-04-27T12:20:01.000Z",
+      "localOnly": true,
+      "operation": "approval_rejected",
+      "payload": {
+        "schemaKind": "approvals",
+        "recordId": "apv_support_handoff",
+        "targetId": "doc_support_handoff",
+        "summary": "Reject approval until follow-up notes are added.",
+        "approvalId": "apv_support_handoff",
+        "approvalStatus": "rejected",
+        "decision": "rejected",
+        "beforeDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "afterDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "fields": [
+          "decision",
+          "status",
+          "updatedAt"
+        ]
+      },
+      "payloadDigest": "37664abee453139e6cd75b23dce5219b98210777ca782603062452ab412e61c7",
+      "previousDigest": "79cc29149a3121642ebaa20c70ecbc585da4d9548109c6b4ae103810a839345f",
+      "redactionMetadata": {
+        "redacted": true,
+        "redactedFieldCount": 1,
+        "redactedPaths": [
+          "payload.after.reason"
+        ],
+        "retainedMetadataKeys": [
+          "approvalStatus",
+          "decision",
+          "operation",
+          "recordId",
+          "schemaKind"
+        ]
+      }
+    }
+  ]
+}
