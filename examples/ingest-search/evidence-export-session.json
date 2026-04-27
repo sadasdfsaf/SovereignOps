@@ -1,0 +1,260 @@
+{
+  "schemaVersion": "ingest-evidence-export-session.v1",
+  "generatedAt": "2026-04-27T08:20:00.000Z",
+  "workspaceId": "wsp_ingest_demo",
+  "sessionId": "sess_ingest_search_local_001",
+  "localOnly": true,
+  "network": {
+    "mode": "disabled",
+    "allowedUrlPrefixes": [
+      "http://127.0.0.1:7317"
+    ],
+    "allowedUriPrefixes": [
+      "fixture://ingest-search/"
+    ],
+    "notes": "Export reads checked-in fixtures, local API request bodies, and workspace-local package entrypoints only."
+  },
+  "evidence": {
+    "fixturePath": "examples/ingest-search/audit-evidence.json",
+    "schemaVersion": "ingest-search-audit-evidence.v1",
+    "sha256": "582ffdf85628e0584af37df39aa85d94d78dd3d8209abc88e9d9ef01978f7980",
+    "summary": {
+      "sourceCount": 3,
+      "evidenceFileCount": 9,
+      "citationCount": 4,
+      "quarantineDecisionCount": 1,
+      "apiRequestTraceCount": 6,
+      "clientSessionTraceCount": 4
+    },
+    "sourceUris": [
+      "fixture://ingest-search/notes.md",
+      "fixture://ingest-search/records.csv",
+      "fixture://ingest-search/records.json"
+    ]
+  },
+  "referencedFiles": [
+    "docs/ingest-evidence-export.md",
+    "examples/ingest-search/audit-evidence.json",
+    "apps/api/src/ingestEvidenceRoutes.ts",
+    "packages/cli/src/ingestEvidence.ts",
+    "packages/cli/src/index.ts",
+    "packages/ingest-evidence/src/index.ts",
+    "packages/schemas/src/ingestEvidence.ts",
+    "packages/sdk-js/src/localIngestEvidence.ts"
+  ],
+  "expectedFormats": [
+    {
+      "format": "summary",
+      "mediaType": "application/json",
+      "surface": "cli",
+      "route": "/v1/ingest/evidence/export",
+      "manifestDescriptor": "evidenceSummary",
+      "commandId": "cli_summary"
+    },
+    {
+      "format": "jsonl",
+      "mediaType": "application/jsonl",
+      "surface": "package",
+      "route": "local-package-helper",
+      "manifestDescriptor": "jsonl",
+      "commandId": "cli_jsonl"
+    },
+    {
+      "format": "csv",
+      "mediaType": "text/csv",
+      "surface": "package",
+      "route": "local-package-helper",
+      "manifestDescriptor": "csv",
+      "commandId": "cli_csv"
+    },
+    {
+      "format": "package",
+      "mediaType": "application/json",
+      "surface": "api",
+      "route": "/v1/ingest/evidence/package",
+      "manifestDescriptor": "manifest",
+      "commandId": "cli_package"
+    }
+  ],
+  "commands": [
+    {
+      "id": "cli_summary",
+      "surface": "cli",
+      "format": "summary",
+      "command": "node packages\\cli\\src\\index.ts ingest evidence summary --input examples\\ingest-search\\audit-evidence.json"
+    },
+    {
+      "id": "cli_jsonl",
+      "surface": "cli",
+      "format": "jsonl",
+      "command": "node packages\\cli\\src\\index.ts ingest evidence export --input examples\\ingest-search\\audit-evidence.json --format jsonl"
+    },
+    {
+      "id": "cli_csv",
+      "surface": "cli",
+      "format": "csv",
+      "command": "node packages\\cli\\src\\index.ts ingest evidence export --input examples\\ingest-search\\audit-evidence.json --format csv"
+    },
+    {
+      "id": "cli_package",
+      "surface": "cli",
+      "format": "package",
+      "command": "node packages\\cli\\src\\index.ts ingest evidence package --input examples\\ingest-search\\audit-evidence.json"
+    },
+    {
+      "id": "api_json",
+      "surface": "api",
+      "format": "json",
+      "method": "POST",
+      "url": "http://127.0.0.1:7317/v1/ingest/evidence/export"
+    },
+    {
+      "id": "api_manifest",
+      "surface": "api",
+      "format": "manifest",
+      "method": "POST",
+      "url": "http://127.0.0.1:7317/v1/ingest/evidence/export"
+    },
+    {
+      "id": "api_package",
+      "surface": "api",
+      "format": "package",
+      "method": "POST",
+      "url": "http://127.0.0.1:7317/v1/ingest/evidence/package"
+    },
+    {
+      "id": "sdk_preview",
+      "surface": "sdk",
+      "format": "preview",
+      "entryPoint": "buildLocalIngestEvidenceExportPreview",
+      "packagePath": "packages/sdk-js/src/localIngestEvidence.ts"
+    },
+    {
+      "id": "package_jsonl",
+      "surface": "package",
+      "format": "jsonl",
+      "entryPoint": "renderIngestEvidenceJsonl",
+      "packagePath": "packages/ingest-evidence/src/index.ts"
+    },
+    {
+      "id": "package_csv",
+      "surface": "package",
+      "format": "csv",
+      "entryPoint": "renderIngestEvidenceCsv",
+      "packagePath": "packages/ingest-evidence/src/index.ts"
+    },
+    {
+      "id": "schema_validate",
+      "surface": "schema",
+      "format": "validation",
+      "entryPoint": "validateIngestEvidence",
+      "packagePath": "packages/schemas/src/ingestEvidence.ts"
+    }
+  ],
+  "validationCommands": [
+    "python -m json.tool examples\\ingest-search\\evidence-export-session.json",
+    "python -m unittest tests.test_ingest_evidence_export_docs",
+    "npm.cmd --workspace @sovereignops/ingest-evidence run check",
+    "npm.cmd --workspace @sovereignops/cli run check",
+    "npm.cmd --workspace @sovereignops/sdk-js run check"
+  ],
+  "exportInput": {
+    "evidenceFixture": "examples/ingest-search/audit-evidence.json",
+    "selectedSections": [
+      "evidenceFiles",
+      "sourceSnapshots",
+      "citationEvidence",
+      "quarantineDecisions",
+      "apiRequestTrace",
+      "clientSessionTrace"
+    ],
+    "apiPreviewFormats": [
+      "json",
+      "summary",
+      "manifest"
+    ],
+    "packageFormats": [
+      "jsonl",
+      "csv",
+      "package"
+    ],
+    "filters": {
+      "sourceUris": [
+        "fixture://ingest-search/records.csv"
+      ],
+      "citationKinds": [
+        "quarantineItem"
+      ],
+      "evidenceFileIds": [
+        "recordsCsv",
+        "recordsJson"
+      ]
+    }
+  },
+  "redaction": {
+    "marker": "[REDACTED]",
+    "appliesBefore": [
+      "jsonl",
+      "csv",
+      "manifest",
+      "packageFingerprint"
+    ],
+    "scopes": [
+      "sessionId",
+      "credentialLikeKeys",
+      "credentialLikeValues",
+      "requestErrorDetails"
+    ]
+  },
+  "packageMetadata": {
+    "kind": "ingest-evidence.package",
+    "version": 1,
+    "fingerprint": "fnv1a64:4c86fe3a3e9c66cc",
+    "manifest": {
+      "kind": "ingest-evidence.manifest",
+      "version": 1,
+      "packageId": "ingest_evidence_demo_001",
+      "createdAt": "2026-04-27T08:20:00.000Z",
+      "recordCount": 28,
+      "recordTypes": [
+        "evidenceSummary",
+        "evidenceFile",
+        "sourceSnapshot",
+        "citationEvidence",
+        "quarantineDecision",
+        "apiRequestTrace",
+        "clientSessionTrace"
+      ],
+      "evidence": {
+        "schemaVersion": "ingest-search-audit-evidence.v1",
+        "generatedAt": "2026-04-27T08:15:00.000Z",
+        "workspaceId": "wsp_ingest_demo",
+        "sessionId": "[REDACTED]",
+        "localOnly": true,
+        "fingerprint": "fnv1a64:19194235a1285631"
+      },
+      "jsonl": {
+        "fingerprint": "fnv1a64:2e60846d48e5bb45",
+        "mediaType": "application/jsonl",
+        "bytes": 15981,
+        "lines": 28
+      },
+      "csv": {
+        "fingerprint": "fnv1a64:cb4ede0470052a8b",
+        "mediaType": "text/csv",
+        "bytes": 12742,
+        "rows": 28,
+        "columns": [
+          "recordType",
+          "recordId",
+          "sourceUri",
+          "fixturePath",
+          "checksum",
+          "payload",
+          "fingerprint"
+        ]
+      },
+      "fingerprint": "fnv1a64:e705c60717adb0dc"
+    }
+  }
+}

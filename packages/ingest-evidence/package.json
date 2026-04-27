@@ -1,0 +1,11 @@
+{
+  "name": "@sovereignops/ingest-evidence",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "check": "node ../../scripts/node-check.mjs --package && node tests/ingest-evidence.test.mjs",
+    "test": "node tests/ingest-evidence.test.mjs"
+  }
+}

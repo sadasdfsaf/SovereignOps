@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "ingest-search-audit-evidence.v0",
+  "generatedAt": "2026-99-27T08:15:00.000Z",
+  "workspaceId": "workspace_ingest_demo",
+  "sessionId": "ingest_search_local_001",
+  "localOnly": false,
+  "evidenceSummary": {
+    "sourceCount": 99,
+    "evidenceFileCount": 1,
+    "citationCount": 0,
+    "quarantineDecisionCount": 0,
+    "apiRequestTraceCount": 0,
+    "clientSessionTraceCount": 0
+  },
+  "evidenceFiles": [
+    {
+      "id": "notes",
+      "fixturePath": "../ingest-search/notes.md",
+      "sha256": "C6A91EE2A9789110EBB39CBD27C7F48C26087C5C13AFF8BDA69DA669ADA3CDA7"
+    },
+    {
+      "id": "notes",
+      "fixturePath": "examples/ingest-search/notes.md",
+      "sha256": "c6a91ee2a9789110ebb39cbd27c7f48c26087c5c13aff8bda69da669ada3cda7"
+    }
+  ],
+  "sourceSnapshots": [
+    {
+      "sourceUri": "https://example.test/notes.md",
+      "path": "examples/ingest-search/records.csv",
+      "mediaType": "text csv",
+      "checksum": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "repositoryState": "ready",
+      "logEntryIds": ["log_0001", ""],
+      "indexDocumentIds": ["idx_notes_intro"],
+      "quarantineItemIds": []
+    }
+  ],
+  "citationEvidence": [
+    {
+      "id": "cite_idx_notes_intro_1",
+      "kind": "indexDocument",
+      "quarantineItemId": "qtn_missing",
+      "sourceUri": "fixture://ingest-search/missing.md",
+      "checksum": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "range": {
+        "start_line": 4,
+        "end_line": 1
+      },
+      "trusted": "false"
+    }
+  ],
+  "quarantineDecisions": [
+    {
+      "decisionId": "decision_qtn_csv_beta_status_release",
+      "requestId": "api_missing",
+      "itemId": "qtn_missing",
+      "sourceUri": "fixture://ingest-search/records.csv",
+      "checksum": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "fromState": "open",
+      "toState": "rejected",
+      "actorId": "",
+      "action": "release",
+      "reason": "",
+      "decidedAt": "not-a-timestamp",
+      "override": "no"
+    }
+  ],
+  "apiRequestTrace": [
+    {
+      "requestId": "api_search_query",
+      "fixtureFileId": "missingFile",
+      "method": "FETCH",
+      "path": "v1/search/query",
+      "responseStatus": 700,
+      "sourceUris": ["fixture://ingest-search/records.csv"],
+      "checksums": [],
+      "documentIds": ["idx_missing"]
+    }
+  ],
+  "clientSessionTrace": [
+    {
+      "traceId": "client_api_search",
+      "fixtureFileId": "clientSession",
+      "kind": "apiRoute",
+      "command": "node packages/cli/src/index.ts ingest search",
+      "relatedRequestIds": ["api_missing"],
+      "sourceUris": ["fixture://ingest-search/records.csv"],
+      "documentIds": ["idx_missing"]
+    }
+  ],
+  "unexpected": true
+}

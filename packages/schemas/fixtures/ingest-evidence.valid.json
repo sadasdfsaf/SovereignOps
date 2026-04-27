@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "ingest-search-audit-evidence.v1",
+  "generatedAt": "2026-04-27T08:15:00.000Z",
+  "workspaceId": "wsp_ingest_demo",
+  "sessionId": "sess_ingest_search_local_001",
+  "localOnly": true,
+  "evidenceSummary": {
+    "sourceCount": 2,
+    "evidenceFileCount": 4,
+    "citationCount": 3,
+    "quarantineDecisionCount": 1,
+    "apiRequestTraceCount": 2,
+    "clientSessionTraceCount": 2
+  },
+  "evidenceFiles": [
+    {
+      "id": "notes",
+      "fixturePath": "examples/ingest-search/notes.md",
+      "sha256": "c6a91ee2a9789110ebb39cbd27c7f48c26087c5c13aff8bda69da669ada3cda7"
+    },
+    {
+      "id": "recordsCsv",
+      "fixturePath": "examples/ingest-search/records.csv",
+      "sha256": "42a535013f7103d295d7e9156b1cb748178d3bc3a0fe00079c6546f40db93e6a"
+    },
+    {
+      "id": "apiRequests",
+      "fixturePath": "examples/ingest-search/api-requests.json",
+      "schemaVersion": "ingest-search-api-requests.v1",
+      "sha256": "4428d91f86ef87b221a32d3e1daf6f33636939d4215ea13b50cca977d390870a"
+    },
+    {
+      "id": "clientSession",
+      "fixturePath": "examples/ingest-search/client-session.json",
+      "schemaVersion": "ingest-search-client-session.v1",
+      "sha256": "d92569559e15babbc90687a49926b3d9240d05db4a7cda76c012354e02c28156"
+    }
+  ],
+  "sourceSnapshots": [
+    {
+      "sourceUri": "fixture://ingest-search/notes.md",
+      "path": "examples/ingest-search/notes.md",
+      "mediaType": "text/markdown",
+      "checksum": "c6a91ee2a9789110ebb39cbd27c7f48c26087c5c13aff8bda69da669ada3cda7",
+      "repositoryState": "indexed",
+      "logEntryIds": ["log_0001"],
+      "indexDocumentIds": ["idx_notes_intro"],
+      "quarantineItemIds": []
+    },
+    {
+      "sourceUri": "fixture://ingest-search/records.csv",
+      "path": "examples/ingest-search/records.csv",
+      "mediaType": "text/csv",
+      "checksum": "42a535013f7103d295d7e9156b1cb748178d3bc3a0fe00079c6546f40db93e6a",
+      "repositoryState": "partly_quarantined",
+      "logEntryIds": ["log_0002"],
+      "indexDocumentIds": ["idx_csv_alpha"],
+      "quarantineItemIds": ["qtn_csv_beta_status"]
+    }
+  ],
+  "citationEvidence": [
+    {
+      "id": "cite_idx_notes_intro_1",
+      "kind": "indexDocument",
+      "documentId": "idx_notes_intro",
+      "sourceUri": "fixture://ingest-search/notes.md",
+      "checksum": "c6a91ee2a9789110ebb39cbd27c7f48c26087c5c13aff8bda69da669ada3cda7",
+      "range": {
+        "start_line": 1,
+        "end_line": 4
+      },
+      "trusted": false
+    },
+    {
+      "id": "cite_idx_csv_alpha_1",
+      "kind": "indexDocument",
+      "documentId": "idx_csv_alpha",
+      "sourceUri": "fixture://ingest-search/records.csv",
+      "checksum": "42a535013f7103d295d7e9156b1cb748178d3bc3a0fe00079c6546f40db93e6a",
+      "range": {
+        "row": 2,
+        "column": "title"
+      },
+      "trusted": false
+    },
+    {
+      "id": "cite_qtn_csv_beta_status_1",
+      "kind": "quarantineItem",
+      "quarantineItemId": "qtn_csv_beta_status",
+      "sourceUri": "fixture://ingest-search/records.csv",
+      "checksum": "42a535013f7103d295d7e9156b1cb748178d3bc3a0fe00079c6546f40db93e6a",
+      "range": {
+        "row": 3,
+        "column": "status"
+      },
+      "trusted": false
+    }
+  ],
+  "quarantineDecisions": [
+    {
+      "decisionId": "decision_qtn_csv_beta_status_release",
+      "requestId": "api_quarantine_decision",
+      "itemId": "qtn_csv_beta_status",
+      "sourceUri": "fixture://ingest-search/records.csv",
+      "checksum": "42a535013f7103d295d7e9156b1cb748178d3bc3a0fe00079c6546f40db93e6a",
+      "fromState": "open",
+      "toState": "released",
+      "actorId": "local_reviewer",
+      "action": "release",
+      "reason": "Status accepted for local indexing.",
+      "decidedAt": "2026-04-27T08:05:00.000Z",
+      "override": false
+    }
+  ],
+  "apiRequestTrace": [
+    {
+      "requestId": "api_search_query",
+      "fixtureFileId": "apiRequests",
+      "method": "POST",
+      "path": "/v1/search/query",
+      "responseStatus": 200,
+      "sourceUris": ["fixture://ingest-search/notes.md"],
+      "checksums": ["c6a91ee2a9789110ebb39cbd27c7f48c26087c5c13aff8bda69da669ada3cda7"],
+      "documentIds": ["idx_notes_intro"]
+    },
+    {
+      "requestId": "api_quarantine_decision",
+      "fixtureFileId": "apiRequests",
+      "method": "POST",
+      "path": "/v1/quarantine/cases/qtn_csv_beta_status/decision",
+      "responseStatus": 200,
+      "sourceUris": ["fixture://ingest-search/records.csv"],
+      "checksums": ["42a535013f7103d295d7e9156b1cb748178d3bc3a0fe00079c6546f40db93e6a"],
+      "quarantineItemIds": ["qtn_csv_beta_status"]
+    }
+  ],
+  "clientSessionTrace": [
+    {
+      "traceId": "client_api_search",
+      "fixtureFileId": "clientSession",
+      "kind": "apiRoute",
+      "method": "POST",
+      "routePath": "/v1/ingest/search",
+      "relatedRequestIds": ["api_search_query"],
+      "sourceUris": ["fixture://ingest-search/notes.md"],
+      "documentIds": ["idx_notes_intro"]
+    },
+    {
+      "traceId": "client_cli_decision",
+      "fixtureFileId": "clientSession",
+      "kind": "cliCommand",
+      "command": "node packages/cli/src/index.ts ingest search quarantine decide --item-id qtn_csv_beta_status --decision release",
+      "relatedRequestIds": ["api_quarantine_decision"],
+      "sourceUris": ["fixture://ingest-search/records.csv"],
+      "quarantineItemIds": ["qtn_csv_beta_status"]
+    }
+  ]
+}
