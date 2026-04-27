@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/sync.test.mjs",
+    "test": "node tests/sync.test.mjs"
   }
 }

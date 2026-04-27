@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -51,7 +52,46 @@ RESTRICTED_PUBLIC_TERM_PARTS = (
     ("pol", "ice"),
     ("regul", "atory"),
     ("public", " ", "policy"),
+    ("\u653f", "\u5e9c"),
+    ("\u653f", "\u6cbb"),
+    ("\u516c", "\u5171", "\u90e8", "\u95e8"),
+    ("\u653f", "\u52a1"),
+    ("\u9009", "\u4e3e"),
+    ("\u519b", "\u8b66"),
+    ("\u76d1", "\u7ba1"),
+    ("\u516c", "\u5171", "\u653f", "\u7b56"),
 )
+
+PUBLIC_SCAN_EXTENSIONS = {
+    ".json",
+    ".js",
+    ".md",
+    ".mjs",
+    ".py",
+    ".rs",
+    ".toml",
+    ".ts",
+    ".tsx",
+    ".yaml",
+    ".yml",
+}
+
+PUBLIC_SCAN_EXCLUDED_PARTS = {
+    ".codex-private",
+    ".codex-run",
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "build",
+    "coverage",
+    "dist",
+    "node_modules",
+    "target",
+    "venv",
+}
 
 
 @dataclass(frozen=True)
@@ -66,32 +106,37 @@ class HealthReport:
         return not self.missing_paths and not self.public_content_warnings
 
 
-def scan_public_terms(root: Path) -> list[str]:
-    warnings: list[str] = []
-    restricted_terms = {"".join(parts) for parts in RESTRICTED_PUBLIC_TERM_PARTS}
-    scanned_exts = {".md", ".py", ".rs", ".ts", ".tsx", ".js", ".mjs", ".json", ".toml", ".yaml", ".yml"}
-    excluded = {
-        ".git",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".venv",
-        "__pycache__",
-        "build",
-        "coverage",
-        "dist",
-        "node_modules",
-        "target",
-        "venv",
-    }
+def discover_public_files(root: Path) -> list[Path]:
+    files: list[Path] = []
     for path in root.rglob("*"):
         rel = path.relative_to(root)
-        if any(part in excluded for part in rel.parts) or not path.is_file() or path.suffix not in scanned_exts:
+        if (
+            any(part in PUBLIC_SCAN_EXCLUDED_PARTS for part in rel.parts)
+            or not path.is_file()
+            or path.suffix not in PUBLIC_SCAN_EXTENSIONS
+        ):
             continue
+        files.append(path)
+    return sorted(files)
+
+
+def scan_public_terms(root: Path) -> list[str]:
+    warnings: list[str] = []
+    restricted_terms = sorted({"".join(parts) for parts in RESTRICTED_PUBLIC_TERM_PARTS})
+    ascii_patterns = []
+    for term in restricted_terms:
+        if term.isascii():
+            escaped = re.escape(term).replace(r"\ ", r"\s+")
+            ascii_patterns.append(re.compile(rf"(?<![a-z0-9_]){escaped}(?![a-z0-9_])"))
+    localized_terms = [term for term in restricted_terms if not term.isascii()]
+    for path in discover_public_files(root):
+        rel = path.relative_to(root)
         text = path.read_text(encoding="utf-8", errors="ignore").lower()
-        for term in restricted_terms:
-            if term in text:
-                warnings.append(f"{rel.as_posix()} contains restricted term: {term}")
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            if any(pattern.search(line) for pattern in ascii_patterns) or any(
+                term in line for term in localized_terms
+            ):
+                warnings.append(f"{rel.as_posix()}:{line_number} contains restricted public-content term")
     return warnings
 
 

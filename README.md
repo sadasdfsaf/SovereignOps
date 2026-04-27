@@ -27,10 +27,13 @@ The repository now has the first public bootstrap: root toolchain metadata, cros
 
 - `crates/sovereign_core`: canonical IDs, event ordering, policy decisions, and audit redaction helpers.
 - `packages/schemas`: shared TypeScript contracts for workspace, agent action, and audit data.
-- `packages/sdk-js` and `packages/plugin-sdk`: early SDK surfaces for clients and plugins.
+- `apps/web`: framework-free local workflow models for routes, onboarding, tasks, Markdown drafts, approvals, and audit timelines.
+- `packages/sdk-js` and `packages/plugin-sdk`: workspace client and plugin manifest contracts.
 - `services/ingest`: Python normalization helpers for untrusted imported content.
+- `services/sync`: deterministic sync cursors, upload batches, validation, and download window selection.
 - `scripts`: smoke, repository health, task queue, environment guard, package baseline, and LOC tools.
 - `docs/core-model.md`: public overview of identifiers, events, reducers, sync, and audit primitives.
+- `docs/local-workflows.md`: public overview of the current Web, sync, SDK, and plugin workflow modules.
 - `docs/STATUS.md`: generated repository health summary.
 
 ## Local Checks
