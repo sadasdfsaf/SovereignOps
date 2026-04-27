@@ -17,9 +17,18 @@ REQUIRED_PATHS = [
     "pyproject.toml",
     "scripts/smoke.py",
     "scripts/loc_budget.py",
+    "scripts/task_queue.py",
+    "scripts/env_guard.py",
+    ".env.example",
     "crates/sovereign_core/Cargo.toml",
     "packages/schemas/package.json",
     "services/ingest/src/sovereignops_ingest/__init__.py",
+    "services/ingest/.env.example",
+    "services/mcp-gateway/.env.example",
+    "services/sync/.env.example",
+    "docs/release-checklist.md",
+    "docs/adr/000-template.md",
+    "docs/adr/001-local-first-event-model.md",
 ]
 
 OPTIONAL_COMMANDS = {
@@ -56,7 +65,20 @@ def scan_public_terms(root: Path) -> list[str]:
     warnings: list[str] = []
     restricted_terms = {"".join(parts) for parts in RESTRICTED_PUBLIC_TERM_PARTS}
     scanned_exts = {".md", ".py", ".rs", ".ts", ".tsx", ".js", ".mjs", ".json", ".toml", ".yaml", ".yml"}
-    excluded = {".git", "node_modules", "target", "dist", "build", "coverage", ".venv", "venv"}
+    excluded = {
+        ".git",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".venv",
+        "__pycache__",
+        "build",
+        "coverage",
+        "dist",
+        "node_modules",
+        "target",
+        "venv",
+    }
     for path in root.rglob("*"):
         rel = path.relative_to(root)
         if any(part in excluded for part in rel.parts) or not path.is_file() or path.suffix not in scanned_exts:

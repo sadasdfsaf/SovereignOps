@@ -24,5 +24,12 @@ __pycache__/
 .env.*
 !.env.example
 .codex-run/
+.codex-private/
 *.log
 
+# Private planning bundle exclusions
+CODEX_START_HERE.zh-CN.md
+PLANS.md
+tasks/backlog.jsonl
+docs/LINE_COUNT_TARGET.md
+sovereignops-codex-pack/

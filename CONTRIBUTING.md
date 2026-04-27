@@ -25,6 +25,7 @@ git clone <repo-url>
 Set-Location SovereignOps
 python scripts\smoke.py
 python -m unittest discover -s tests
+python scripts\env_guard.py
 ```
 
 Optional checks run when their tools are installed:
@@ -33,6 +34,14 @@ Optional checks run when their tools are installed:
 cargo test --workspace
 pnpm -r --if-present check
 ```
+
+## Environment Examples
+
+Use `.env.example` files to document local settings. Secret-like values must stay blank or use obvious example-only placeholders, and `python scripts\env_guard.py` enforces that rule.
+
+## Task Queue Helper
+
+The public `scripts\task_queue.py` helper can inspect a JSONL queue supplied with `--queue`. It does not store or vendor private planning queues.
 
 ## Documentation Style
 

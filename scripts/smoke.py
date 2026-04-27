@@ -43,6 +43,7 @@ def main() -> int:
 
     run([sys.executable, "scripts/loc_budget.py", "--summary"], cwd=root)
     run([sys.executable, "scripts/repo_health.py", "--json"], cwd=root)
+    run([sys.executable, "scripts/env_guard.py"], cwd=root)
 
     source_dirs = [root / "scripts", root / "services" / "ingest" / "src"]
     for source_dir in source_dirs:
@@ -64,4 +65,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -29,7 +29,7 @@ The repository now has the first public bootstrap: root toolchain metadata, cros
 - `packages/schemas`: shared TypeScript contracts for workspace, agent action, and audit data.
 - `packages/sdk-js` and `packages/plugin-sdk`: early SDK surfaces for clients and plugins.
 - `services/ingest`: Python normalization helpers for untrusted imported content.
-- `scripts`: smoke, repository health, package baseline, and LOC tools.
+- `scripts`: smoke, repository health, task queue, environment guard, package baseline, and LOC tools.
 - `docs/STATUS.md`: generated repository health summary.
 
 ## Local Checks
@@ -38,6 +38,7 @@ The repository now has the first public bootstrap: root toolchain metadata, cros
 python scripts\smoke.py
 python -m unittest discover -s tests
 python scripts\loc_budget.py --summary
+python scripts\env_guard.py
 ```
 
 Rust and pnpm checks are wired into the smoke flow and run automatically when those tools are installed.

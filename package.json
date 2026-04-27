@@ -6,9 +6,11 @@
   "type": "module",
   "scripts": {
     "check": "node scripts/node-check.mjs",
+    "env:check": "python scripts/env_guard.py",
     "smoke": "python scripts/smoke.py",
     "health": "python scripts/repo_health.py --markdown docs/STATUS.md",
     "loc": "python scripts/loc_budget.py --summary",
+    "queue": "python scripts/task_queue.py",
     "test": "python -m unittest discover -s tests"
   },
   "engines": {
@@ -22,4 +24,3 @@
   ],
   "devDependencies": {}
 }
-
