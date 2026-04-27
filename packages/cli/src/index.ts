@@ -16,6 +16,7 @@ export * from "./mcpApprovalEvidenceReplay.ts";
 export * from "./mcpReplay.ts";
 export * from "./pluginReviewArtifact.ts";
 export * from "./pluginReviewArtifactApiReplay.ts";
+export * from "./pluginReviewArtifactRecordsReplay.ts";
 
 import { runAuditExportCli } from "./auditExport.ts";
 import { runCli as runCoreCli } from "./commands.ts";
@@ -31,6 +32,7 @@ import { runMcpApprovalEvidenceReplayCli } from "./mcpApprovalEvidenceReplay.ts"
 import { runMcpDemoCli } from "./mcpDemo.ts";
 import { runMcpReplayCli } from "./mcpReplay.ts";
 import { runPluginReviewArtifactApiReplayCli } from "./pluginReviewArtifactApiReplay.ts";
+import { runPluginReviewArtifactRecordsReplayCli } from "./pluginReviewArtifactRecordsReplay.ts";
 import { runPluginReviewArtifactCli } from "./pluginReviewArtifact.ts";
 
 export async function runCli(
@@ -49,10 +51,12 @@ export async function runCli(
     Parameters<typeof runMcpApiCli>[1] &
     Parameters<typeof runMcpDemoCli>[1] &
     Parameters<typeof runPluginReviewArtifactApiReplayCli>[1] &
+    Parameters<typeof runPluginReviewArtifactRecordsReplayCli>[1] &
     Parameters<typeof runPluginReviewArtifactCli>[1] = {},
 ): ReturnType<typeof runCoreCli> {
   return (
     (await runAuditExportCli(argv, options)) ??
+    (await runPluginReviewArtifactRecordsReplayCli(argv, options)) ??
     (await runPluginReviewArtifactApiReplayCli(argv, options)) ??
     (await runPluginReviewArtifactCli(argv, options)) ??
     (await runIngestEvidenceApiReplayCli(argv, options)) ??

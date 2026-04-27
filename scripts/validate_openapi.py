@@ -19,6 +19,16 @@ REQUIRED_PATH_OPERATIONS = {
     "/v1/ingest/evidence/export": ("exportIngestEvidence",),
     "/v1/ingest/evidence/package": ("packageIngestEvidence",),
     "/v1/plugins/review-artifacts/preview": ("previewPluginReviewArtifact",),
+    "/v1/plugins/review-artifacts/records": (
+        "listPluginReviewArtifactRecords",
+        "createPluginReviewArtifactRecord",
+    ),
+    "/v1/plugins/review-artifacts/records/{recordId}": (
+        "getPluginReviewArtifactRecord",
+    ),
+    "/v1/plugins/review-artifacts/records/{recordId}/compare": (
+        "comparePluginReviewArtifactRecord",
+    ),
     "/v1/mcp/approval-evidence/preview": ("previewMcpApprovalEvidence",),
     "/v1/mcp/approval-evidence/records": (
         "listMcpApprovalEvidenceRecords",

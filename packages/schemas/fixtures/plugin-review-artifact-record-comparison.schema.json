@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sovereignops.local/plugin-review/artifact-record-comparison.schema.json",
+  "title": "Persisted plugin review artifact record comparison",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "createdAt",
+    "workspaceId",
+    "localOnly",
+    "redacted",
+    "baseRecordId",
+    "candidateRecordId",
+    "baseArtifactFingerprint",
+    "candidateArtifactFingerprint",
+    "baseDecision",
+    "candidateDecision",
+    "compatible",
+    "comparisonSummary",
+    "differences"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "plugin-review-artifact-record-comparison/v1"
+    },
+    "createdAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$"
+    },
+    "workspaceId": {
+      "type": "string",
+      "pattern": "^wsp_[A-Za-z0-9_-]{1,88}$"
+    },
+    "localOnly": {
+      "type": "boolean",
+      "const": true
+    },
+    "redacted": {
+      "type": "boolean",
+      "const": true
+    },
+    "baseRecordId": {
+      "type": "string",
+      "pattern": "^prar_[a-f0-9]{24}$"
+    },
+    "candidateRecordId": {
+      "type": "string",
+      "pattern": "^prar_[a-f0-9]{24}$"
+    },
+    "baseArtifactFingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}$"
+    },
+    "candidateArtifactFingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}$"
+    },
+    "baseDecision": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "approval_required",
+        "denied"
+      ]
+    },
+    "candidateDecision": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "approval_required",
+        "denied"
+      ]
+    },
+    "compatible": {
+      "type": "boolean"
+    },
+    "comparisonSummary": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Plugin review artifact record comparison summary",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "added",
+        "removed",
+        "changed",
+        "total"
+      ],
+      "properties": {
+        "added": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "removed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "changed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "differences": {
+      "type": "array",
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Plugin review artifact record comparison difference",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "change"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z][A-Za-z0-9_.\\[\\]-]{0,191}$"
+          },
+          "change": {
+            "type": "string",
+            "enum": [
+              "added",
+              "removed",
+              "changed"
+            ]
+          },
+          "baseArtifactFingerprint": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          },
+          "candidateArtifactFingerprint": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        }
+      }
+    }
+  }
+}

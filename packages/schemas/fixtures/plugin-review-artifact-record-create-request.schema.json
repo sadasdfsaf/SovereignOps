@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sovereignops.local/plugin-review/artifact-record-create-request.schema.json",
+  "title": "Plugin review artifact record create request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "requestedAt",
+    "workspaceId",
+    "reviewId",
+    "pluginId",
+    "artifactId",
+    "artifactFingerprint",
+    "source",
+    "localOnly",
+    "redacted",
+    "decision",
+    "summary"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "plugin-review-artifact-record-create-request/v1"
+    },
+    "requestedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$"
+    },
+    "workspaceId": {
+      "type": "string",
+      "pattern": "^wsp_[A-Za-z0-9_-]{1,88}$"
+    },
+    "reviewId": {
+      "type": "string",
+      "pattern": "^prv_[A-Za-z0-9_-]{1,88}$"
+    },
+    "pluginId": {
+      "type": "string",
+      "pattern": "^plug_[A-Za-z0-9_-]{1,88}$"
+    },
+    "artifactId": {
+      "type": "string",
+      "pattern": "^art_[A-Za-z0-9_-]{1,88}$"
+    },
+    "artifactFingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}$"
+    },
+    "source": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Plugin review artifact record source",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "previewSchemaVersion",
+        "previewFingerprint",
+        "artifactPath"
+      ],
+      "properties": {
+        "previewSchemaVersion": {
+          "type": "string",
+          "const": "plugin-review-artifact-preview.v1"
+        },
+        "previewFingerprint": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "artifactPath": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]+$"
+        }
+      }
+    },
+    "localOnly": {
+      "type": "boolean",
+      "const": true
+    },
+    "redacted": {
+      "type": "boolean",
+      "const": true
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "approval_required",
+        "denied"
+      ]
+    },
+    "summary": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Plugin review artifact record summary",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gateCount",
+        "passedGateCount",
+        "failedGateCount",
+        "pendingGateCount",
+        "warningGateCount",
+        "skippedGateCount",
+        "sandboxFindingCount",
+        "blockingFindingCount",
+        "evidenceCount",
+        "redactionCount",
+        "externalCallProposalCount"
+      ],
+      "properties": {
+        "gateCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passedGateCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failedGateCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pendingGateCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warningGateCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skippedGateCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sandboxFindingCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blockingFindingCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "evidenceCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "redactionCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "externalCallProposalCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!.*(?:[aA][pP][iI][_-]?[kK][eE][yY]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[pP][aA][sS][sS][wW][oO][rR][dD]|[pP][rR][iI][vV][aA][tT][eE][_-]?[kK][eE][yY]|[rR][aA][wW]|[sS][eE][cC][rR][eE][tT]|[tT][oO][kK][eE][nN]))[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean",
+          "null"
+        ],
+        "pattern": "^(?!.*(?:(?:[aA][pP][iI][_-]?[kK][eE][yY]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[bB][eE][aA][rR][eE][rR]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[pP][aA][sS][sS][wW][oO][rR][dD]|[pP][rR][iI][vV][aA][tT][eE][_-]?[kK][eE][yY]|[sS][eE][cC][rR][eE][tT]|[tT][oO][kK][eE][nN])\\s*[:=]|[bB][eE][aA][rR][eE][rR]\\s+\\S+|-----BEGIN [A-Z ]*PRIVATE KEY-----|sk-[A-Za-z0-9_-]{16,}|(?:[A-Za-z]:[\\\\/]|\\\\\\\\|file://|(?:^|\\s)/))).*$"
+      }
+    }
+  }
+}

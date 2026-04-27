@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "plugin-review-artifact-record-comparison/v1",
+  "createdAt": "2026-04-27T14:07:00.000Z",
+  "workspaceId": "wsp_localReview",
+  "localOnly": true,
+  "redacted": true,
+  "baseRecordId": "prar_222222222222222222222222",
+  "candidateRecordId": "prar_222222222222222222222222",
+  "baseArtifactFingerprint": "22222222222222222222222222222222",
+  "candidateArtifactFingerprint": "22222222222222222222222222222222",
+  "baseDecision": "approval_required",
+  "candidateDecision": "approval_required",
+  "compatible": true,
+  "comparisonSummary": {
+    "added": 0,
+    "removed": 0,
+    "changed": 0,
+    "total": 0
+  },
+  "differences": []
+}

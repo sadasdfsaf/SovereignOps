@@ -50,6 +50,17 @@ paths:
   /v1/plugins/review-artifacts/preview:
     post:
       operationId: previewPluginReviewArtifact
+  /v1/plugins/review-artifacts/records:
+    get:
+      operationId: listPluginReviewArtifactRecords
+    post:
+      operationId: createPluginReviewArtifactRecord
+  /v1/plugins/review-artifacts/records/{recordId}:
+    get:
+      operationId: getPluginReviewArtifactRecord
+  /v1/plugins/review-artifacts/records/{recordId}/compare:
+    post:
+      operationId: comparePluginReviewArtifactRecord
   /v1/mcp/approval-evidence/preview:
     post:
       operationId: previewMcpApprovalEvidence

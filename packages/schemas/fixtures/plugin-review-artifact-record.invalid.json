@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "plugin-review-artifact-record/v0",
+  "id": "prar_bad",
+  "artifactFingerprint": "NOT_A_32_CHAR_FINGERPRINT",
+  "createdAt": "2026-04-27 14:05:00",
+  "workspaceId": "workspace_localReview",
+  "reviewId": "round30notes",
+  "pluginId": "offlineNotes",
+  "artifactId": "notesReviewBundle",
+  "source": {
+    "previewSchemaVersion": "plugin-review-artifact-preview.v0",
+    "previewFingerprint": "aaaa",
+    "artifactPath": "C:\\Users\\DELL\\plugin-review\\artifact.json",
+    "extra": true
+  },
+  "localOnly": false,
+  "redacted": false,
+  "decision": "Approved",
+  "summary": {
+    "gateCount": 1,
+    "passedGateCount": 1,
+    "failedGateCount": 1,
+    "pendingGateCount": -1,
+    "warningGateCount": 0,
+    "skippedGateCount": 0,
+    "sandboxFindingCount": 0,
+    "blockingFindingCount": 1,
+    "evidenceCount": -1,
+    "redactionCount": 1.5,
+    "externalCallProposalCount": "0",
+    "extra": true
+  },
+  "metadata": {
+    "clientLabel": "offline-notes",
+    "apiToken": "token=visible-value",
+    "localPath": "C:\\Users\\DELL\\plugin-review\\artifact.json",
+    "safeLabel": "/tmp/artifact.json",
+    "nested": {
+      "unsafe": true
+    }
+  },
+  "unexpected": true
+}

@@ -13,6 +13,7 @@ import { mountMcpApprovalEvidenceRoutes } from "../src/mcpApprovalEvidenceRoutes
 import { mountMcpApprovalEvidenceRecordRoutes } from "../src/mcpApprovalEvidenceRecordRoutes.ts";
 import { mountMcpRoutes } from "../src/mcpRoutes.ts";
 import { mountPluginReviewArtifactRoutes } from "../src/pluginReviewArtifactRoutes.ts";
+import { mountPluginReviewArtifactRecordRoutes } from "../src/pluginReviewArtifactRecordRoutes.ts";
 import { mountSyncRoutes } from "../src/syncRoutes.ts";
 import {
   createUploadBatch,
@@ -77,6 +78,10 @@ test("documented OpenAPI sync and MCP operations are mounted by public routes", 
     "GET /v1/mcp/approval-evidence/records/:recordId",
     "POST /v1/mcp/approval-evidence/records",
     "POST /v1/mcp/approval-evidence/records/:recordId/compare",
+    "GET /v1/plugins/review-artifacts/records",
+    "GET /v1/plugins/review-artifacts/records/:recordId",
+    "POST /v1/plugins/review-artifacts/records",
+    "POST /v1/plugins/review-artifacts/records/:recordId/compare",
   ]) {
     assert.ok(routeKeys.has(expectedRouteKey), `${expectedRouteKey} is not mounted`);
   }
@@ -419,6 +424,8 @@ test("index exports MCP approval evidence route helpers", async () => {
   assert.equal(typeof api.mountMcpApprovalEvidenceRoutes, "function");
   assert.equal(typeof api.createMcpApprovalEvidenceRecordRoutes, "function");
   assert.equal(typeof api.mountMcpApprovalEvidenceRecordRoutes, "function");
+  assert.equal(typeof api.createPluginReviewArtifactRecordRoutes, "function");
+  assert.equal(typeof api.mountPluginReviewArtifactRecordRoutes, "function");
 });
 
 test("router dispatch normalizes requests deterministically without mutating callers", async () => {
@@ -515,6 +522,7 @@ function createPublicContractRouter(options = {}) {
   mountMcpApprovalEvidenceRoutes(router);
   mountMcpApprovalEvidenceRecordRoutes(router);
   mountPluginReviewArtifactRoutes(router);
+  mountPluginReviewArtifactRecordRoutes(router);
 
   return router;
 }

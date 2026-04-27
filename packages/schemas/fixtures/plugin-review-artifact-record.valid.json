@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "plugin-review-artifact-record/v1",
+  "id": "prar_222222222222222222222222",
+  "artifactFingerprint": "22222222222222222222222222222222",
+  "createdAt": "2026-04-27T14:05:00.000Z",
+  "workspaceId": "wsp_localReview",
+  "reviewId": "prv_round30notes",
+  "pluginId": "plug_offlineNotes",
+  "artifactId": "art_notesReviewBundle",
+  "source": {
+    "previewSchemaVersion": "plugin-review-artifact-preview.v1",
+    "previewFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "artifactPath": "artifacts/plugin-review/offline-notes/review-artifact.json"
+  },
+  "localOnly": true,
+  "redacted": true,
+  "decision": "approval_required",
+  "summary": {
+    "gateCount": 3,
+    "passedGateCount": 2,
+    "failedGateCount": 0,
+    "pendingGateCount": 1,
+    "warningGateCount": 0,
+    "skippedGateCount": 0,
+    "sandboxFindingCount": 1,
+    "blockingFindingCount": 0,
+    "evidenceCount": 2,
+    "redactionCount": 1,
+    "externalCallProposalCount": 0
+  },
+  "metadata": {
+    "clientLabel": "offline-notes",
+    "maskedValue": "[REDACTED]",
+    "workflowId": "wf_plugin_review_record",
+    "retryCount": 0
+  }
+}

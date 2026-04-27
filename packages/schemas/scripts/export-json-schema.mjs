@@ -13,6 +13,12 @@ import {
   mcpApprovalEvidenceRecordSchema,
 } from "../src/mcpApprovalEvidenceRecord.ts";
 import { pluginReviewArtifactPreviewSchema } from "../src/pluginReviewArtifact.ts";
+import {
+  pluginReviewArtifactRecordComparisonSchema,
+  pluginReviewArtifactRecordCreateRequestSchema,
+  pluginReviewArtifactRecordListSchema,
+  pluginReviewArtifactRecordSchema,
+} from "../src/pluginReviewArtifactRecord.ts";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const fixturesDir = join(packageDir, "fixtures");
@@ -27,6 +33,10 @@ const outputs = [
   ["mcp-approval-evidence-record-comparison.schema.json", mcpApprovalEvidenceRecordComparisonSchema],
   ["mcp-approval-evidence-record-create-request.schema.json", mcpApprovalEvidenceRecordCreateRequestSchema],
   ["plugin-review-artifact-preview.schema.json", pluginReviewArtifactPreviewSchema],
+  ["plugin-review-artifact-record.schema.json", pluginReviewArtifactRecordSchema],
+  ["plugin-review-artifact-record-list.schema.json", pluginReviewArtifactRecordListSchema],
+  ["plugin-review-artifact-record-comparison.schema.json", pluginReviewArtifactRecordComparisonSchema],
+  ["plugin-review-artifact-record-create-request.schema.json", pluginReviewArtifactRecordCreateRequestSchema],
 ];
 
 await mkdir(fixturesDir, { recursive: true });

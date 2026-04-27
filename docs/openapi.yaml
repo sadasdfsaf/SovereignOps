@@ -802,6 +802,113 @@ paths:
           $ref: "#/components/responses/Error"
         default:
           $ref: "#/components/responses/Error"
+  /v1/plugins/review-artifacts/records:
+    get:
+      tags:
+        - plugins
+      summary: List stored local plugin review artifact records.
+      description: Local-only listing of redacted plugin review artifact record baselines.
+      operationId: listPluginReviewArtifactRecords
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PluginReviewArtifactRecordListRequest"
+      responses:
+        "200":
+          description: Stored plugin review artifact record summaries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PluginReviewArtifactRecordListResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags:
+        - plugins
+      summary: Store a local plugin review artifact record.
+      description: Stores a redacted local plugin review artifact preview baseline in memory.
+      operationId: createPluginReviewArtifactRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PluginReviewArtifactRecordCreateRequest"
+      responses:
+        "201":
+          description: Stored plugin review artifact record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PluginReviewArtifactRecordCreateResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/plugins/review-artifacts/records/{recordId}:
+    get:
+      tags:
+        - plugins
+      summary: Retrieve one stored plugin review artifact record.
+      description: Reads a redacted local plugin review artifact record by id.
+      operationId: getPluginReviewArtifactRecord
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Stored plugin review artifact record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PluginReviewArtifactRecordGetResponse"
+        "404":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /v1/plugins/review-artifacts/records/{recordId}/compare:
+    post:
+      tags:
+        - plugins
+      summary: Compare a fresh plugin review artifact with a stored record.
+      description: Compares redacted candidate artifact output against a stored local baseline.
+      operationId: comparePluginReviewArtifactRecord
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PluginReviewArtifactRecordCompareRequest"
+      responses:
+        "200":
+          description: Plugin review artifact record comparison.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PluginReviewArtifactRecordCompareResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
   /v1/mcp/approval-evidence/preview:
     post:
       tags:
@@ -4107,6 +4214,322 @@ components:
             - approval_required
             - denied
         artifact:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+    PluginReviewArtifactRecordListRequest:
+      type: object
+      properties:
+        filters:
+          type: object
+          additionalProperties: true
+        recordIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        fingerprints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        reviewIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        pluginIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        decisions:
+          type: array
+          items:
+            type: string
+            enum:
+              - approved
+              - approval_required
+              - denied
+        labels:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        createdAfter:
+          type: string
+          format: date-time
+        createdBefore:
+          type: string
+          format: date-time
+        offset:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+      additionalProperties: false
+    PluginReviewArtifactRecordCreateRequest:
+      type: object
+      properties:
+        recordId:
+          type: string
+          minLength: 1
+        id:
+          type: string
+          minLength: 1
+        label:
+          type: string
+          minLength: 1
+        metadata:
+          type: object
+          additionalProperties: true
+        payload:
+          type: object
+          additionalProperties: true
+        preview:
+          $ref: "#/components/schemas/PluginReviewArtifactPreviewResponse"
+        baseline:
+          $ref: "#/components/schemas/PluginReviewArtifactPreviewResponse"
+        artifactPayload:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+    PluginReviewArtifactRecord:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - localOnly
+        - redacted
+        - recordId
+        - createdAt
+        - updatedAt
+        - fingerprint
+        - baselineFingerprint
+        - baseline
+      properties:
+        kind:
+          type: string
+          const: plugin-review-artifact.record
+        schemaVersion:
+          type: string
+          const: plugin-review-artifact-record/v1
+        localOnly:
+          type: boolean
+          const: true
+        redacted:
+          type: boolean
+          const: true
+        recordId:
+          type: string
+          minLength: 1
+        label:
+          type: string
+          minLength: 1
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        fingerprint:
+          type: string
+          pattern: "^[a-f0-9]{64}$"
+        baselineFingerprint:
+          type: string
+          pattern: "^[a-f0-9]{32}$"
+        baseline:
+          $ref: "#/components/schemas/PluginReviewArtifactPreviewResponse"
+      additionalProperties: false
+    PluginReviewArtifactRecordSummary:
+      type: object
+      required:
+        - recordId
+        - createdAt
+        - updatedAt
+        - fingerprint
+        - baselineFingerprint
+        - reviewId
+        - pluginId
+        - decision
+      properties:
+        recordId:
+          type: string
+          minLength: 1
+        label:
+          type: string
+          minLength: 1
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        fingerprint:
+          type: string
+          minLength: 1
+        baselineFingerprint:
+          type: string
+          minLength: 1
+        reviewId:
+          type: string
+          minLength: 1
+        pluginId:
+          type: string
+          minLength: 1
+        pluginName:
+          type: string
+          minLength: 1
+        pluginVersion:
+          type: string
+          minLength: 1
+        decision:
+          type: string
+          enum:
+            - approved
+            - approval_required
+            - denied
+        evidenceCount:
+          type: integer
+          minimum: 0
+        approvalGateCount:
+          type: integer
+          minimum: 0
+        missingCapabilityCount:
+          type: integer
+          minimum: 0
+        deniedHostApiCount:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+    PluginReviewArtifactRecordCreateResponse:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - localOnly
+        - record
+      properties:
+        kind:
+          type: string
+          const: plugin-review-artifact.record.created
+        schemaVersion:
+          type: string
+          const: plugin-review-artifact-record/v1
+        localOnly:
+          type: boolean
+          const: true
+        record:
+          $ref: "#/components/schemas/PluginReviewArtifactRecord"
+      additionalProperties: false
+    PluginReviewArtifactRecordListResponse:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - localOnly
+        - pagination
+        - records
+      properties:
+        kind:
+          type: string
+          const: plugin-review-artifact.record.list
+        schemaVersion:
+          type: string
+          const: plugin-review-artifact-record/v1
+        localOnly:
+          type: boolean
+          const: true
+        filters:
+          type: object
+          additionalProperties: true
+        pagination:
+          type: object
+          additionalProperties: true
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/PluginReviewArtifactRecordSummary"
+      additionalProperties: false
+    PluginReviewArtifactRecordGetResponse:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - localOnly
+        - record
+      properties:
+        kind:
+          type: string
+          const: plugin-review-artifact.record.read
+        schemaVersion:
+          type: string
+          const: plugin-review-artifact-record/v1
+        localOnly:
+          type: boolean
+          const: true
+        record:
+          $ref: "#/components/schemas/PluginReviewArtifactRecord"
+      additionalProperties: false
+    PluginReviewArtifactRecordCompareRequest:
+      type: object
+      properties:
+        payload:
+          type: object
+          additionalProperties: true
+        preview:
+          $ref: "#/components/schemas/PluginReviewArtifactPreviewResponse"
+        baseline:
+          $ref: "#/components/schemas/PluginReviewArtifactPreviewResponse"
+        artifactPayload:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+    PluginReviewArtifactRecordCompareResponse:
+      type: object
+      required:
+        - kind
+        - schemaVersion
+        - localOnly
+        - recordId
+        - equivalent
+        - stored
+        - candidate
+        - summary
+        - differences
+      properties:
+        kind:
+          type: string
+          const: plugin-review-artifact.record.compare
+        schemaVersion:
+          type: string
+          const: plugin-review-artifact-record/v1
+        localOnly:
+          type: boolean
+          const: true
+        recordId:
+          type: string
+          minLength: 1
+        equivalent:
+          type: boolean
+        stored:
+          type: object
+          additionalProperties: true
+        candidate:
+          type: object
+          additionalProperties: true
+        summary:
+          type: object
+          additionalProperties: true
+        differences:
           type: object
           additionalProperties: true
       additionalProperties: false

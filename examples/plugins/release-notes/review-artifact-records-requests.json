@@ -1,0 +1,195 @@
+{
+  "schemaVersion": "plugin-review-artifact-records-requests.v1",
+  "generatedAt": "2026-04-27T13:10:00.000Z",
+  "apiBase": "local://plugin-review-artifact-records",
+  "fixtureRefs": [
+    {
+      "id": "releaseNotesReviewArtifact",
+      "fixturePath": "examples/plugins/release-notes/review-artifact.json"
+    }
+  ],
+  "requests": [
+    {
+      "id": "api_plugin_review_artifact_records_create_release_notes",
+      "title": "Create a persisted release notes review artifact record",
+      "route": {
+        "method": "POST",
+        "path": "/v1/plugins/review-artifacts/records"
+      },
+      "request": {
+        "headers": {
+          "content-type": "application/json",
+          "x-fixture-scope": "public-release-notes-example"
+        },
+        "body": {
+          "record": {
+            "id": "prar_release_notes_001",
+            "status": "persisted",
+            "pluginId": "plugin.release-notes.local-draft",
+            "artifactId": "plugin_review_artifact.release_notes_local_draft.local_001",
+            "createdAt": "2026-04-27T13:00:00.000Z",
+            "updatedAt": "2026-04-27T13:05:00.000Z",
+            "actor": {
+              "id": "user_local_reviewer",
+              "roles": [
+                "plugin_review"
+              ]
+            },
+            "summary": {
+              "artifactKind": "plugin_review_artifact",
+              "proposalOnly": true,
+              "localOnly": true,
+              "externalCalls": 0,
+              "approvedCapabilityCount": 3,
+              "redactedExampleCount": 3
+            },
+            "artifact": {
+              "$fixtureRef": "releaseNotesReviewArtifact"
+            },
+            "metadata": {
+              "source": "examples/plugins/release-notes/review-artifact.json",
+              "retention": "example_only"
+            }
+          }
+        }
+      },
+      "expect": {
+        "status": 201,
+        "contentType": "application/json",
+        "kind": "plugin-review-artifact.record",
+        "schemaVersion": "plugin-review-artifact-record/v1",
+        "recordId": "prar_release_notes_001",
+        "pluginId": "plugin.release-notes.local-draft"
+      }
+    },
+    {
+      "id": "api_plugin_review_artifact_records_list_release_notes",
+      "title": "List persisted release notes review artifact records",
+      "route": {
+        "method": "GET",
+        "path": "/v1/plugins/review-artifacts/records"
+      },
+      "request": {
+        "headers": {
+          "x-fixture-scope": "public-release-notes-example"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "kind": "plugin-review-artifact.records.list",
+        "schemaVersion": "plugin-review-artifact-records/v1",
+        "recordCount": 1,
+        "statuses": {
+          "persisted": 1
+        },
+        "pluginIds": {
+          "plugin.release-notes.local-draft": 1
+        }
+      }
+    },
+    {
+      "id": "api_plugin_review_artifact_records_get_release_notes",
+      "title": "Get a persisted release notes review artifact record",
+      "route": {
+        "method": "GET",
+        "path": "/v1/plugins/review-artifacts/records/prar_release_notes_001"
+      },
+      "request": {
+        "headers": {
+          "x-fixture-scope": "public-release-notes-example"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "kind": "plugin-review-artifact.record",
+        "schemaVersion": "plugin-review-artifact-record/v1",
+        "recordId": "prar_release_notes_001",
+        "pluginId": "plugin.release-notes.local-draft"
+      }
+    },
+    {
+      "id": "api_plugin_review_artifact_records_compare_release_notes",
+      "title": "Compare matching persisted release notes review artifact records",
+      "route": {
+        "method": "POST",
+        "path": "/v1/plugins/review-artifacts/records/compare"
+      },
+      "request": {
+        "headers": {
+          "content-type": "application/json",
+          "x-fixture-scope": "public-release-notes-example"
+        },
+        "body": {
+          "leftRecord": {
+            "id": "prar_release_notes_001",
+            "status": "persisted",
+            "pluginId": "plugin.release-notes.local-draft",
+            "artifactId": "plugin_review_artifact.release_notes_local_draft.local_001",
+            "createdAt": "2026-04-27T13:00:00.000Z",
+            "updatedAt": "2026-04-27T13:05:00.000Z",
+            "actor": {
+              "id": "user_local_reviewer",
+              "roles": [
+                "plugin_review"
+              ]
+            },
+            "summary": {
+              "artifactKind": "plugin_review_artifact",
+              "proposalOnly": true,
+              "localOnly": true,
+              "externalCalls": 0,
+              "approvedCapabilityCount": 3,
+              "redactedExampleCount": 3
+            },
+            "artifact": {
+              "$fixtureRef": "releaseNotesReviewArtifact"
+            },
+            "metadata": {
+              "source": "examples/plugins/release-notes/review-artifact.json",
+              "retention": "example_only"
+            }
+          },
+          "rightRecord": {
+            "id": "prar_release_notes_001",
+            "status": "persisted",
+            "pluginId": "plugin.release-notes.local-draft",
+            "artifactId": "plugin_review_artifact.release_notes_local_draft.local_001",
+            "createdAt": "2026-04-27T13:00:00.000Z",
+            "updatedAt": "2026-04-27T13:05:00.000Z",
+            "actor": {
+              "id": "user_local_reviewer",
+              "roles": [
+                "plugin_review"
+              ]
+            },
+            "summary": {
+              "artifactKind": "plugin_review_artifact",
+              "proposalOnly": true,
+              "localOnly": true,
+              "externalCalls": 0,
+              "approvedCapabilityCount": 3,
+              "redactedExampleCount": 3
+            },
+            "artifact": {
+              "$fixtureRef": "releaseNotesReviewArtifact"
+            },
+            "metadata": {
+              "source": "examples/plugins/release-notes/review-artifact.json",
+              "retention": "example_only"
+            }
+          }
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "kind": "plugin-review-artifact.records.compare",
+        "schemaVersion": "plugin-review-artifact-record-compare/v1",
+        "matches": true,
+        "differenceCount": 0
+      }
+    }
+  ]
+}
