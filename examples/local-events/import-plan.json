@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "local-event-replay-import-plan/v1",
+  "generatedAt": "2026-04-27T12:32:00.000Z",
+  "workspaceId": "wsp_local_catalog",
+  "planId": "plan_local_event_import_001",
+  "targetDeviceId": "dev_local_import",
+  "localOnly": true,
+  "source": {
+    "exportPath": "examples/local-events/export-session.json",
+    "exportSessionId": "sess_local_event_export_001",
+    "catalogPath": "examples/local-events/catalog.json",
+    "expectedEventCount": 5,
+    "expectedLastEventDigest": "a875d09c6cb2a44dd60c1becda474949418e9275e4901d1649958fa78c72c0cf"
+  },
+  "encryption": {
+    "requiresEndToEndEnvelope": true,
+    "acceptedEnvelopeKind": "local-event-replay.sealed-export",
+    "payloadStorage": "ciphertext-only",
+    "contentDigest": "sha256:2b4685d8a6f5d1d8d9be89c942cf54f4168105f0b23b1d15ac6c5a6fa4cde421",
+    "decryptAt": "local replay worker"
+  },
+  "preflightChecks": [
+    {
+      "id": "load_export_session",
+      "kind": "json_shape",
+      "status": "required",
+      "inputPath": "examples/local-events/export-session.json",
+      "expects": "local-event-replay-export-session/v1"
+    },
+    {
+      "id": "load_catalog",
+      "kind": "schema",
+      "status": "required",
+      "inputPath": "examples/local-events/catalog.json",
+      "expects": "canonical-local-event-catalog/v1"
+    },
+    {
+      "id": "verify_digest_chain",
+      "kind": "integrity",
+      "status": "required",
+      "inputPath": "examples/local-events/catalog.json",
+      "expects": "previousDigest and finalDigest match canonical event digests"
+    },
+    {
+      "id": "verify_cursor_window",
+      "kind": "replay_window",
+      "status": "required",
+      "inputPath": "examples/local-events/export-session.json",
+      "expects": "cur_v1 cursor order is contiguous"
+    },
+    {
+      "id": "verify_ciphertext_payload",
+      "kind": "encryption",
+      "status": "required",
+      "inputPath": "examples/local-events/export-session.json",
+      "expects": "ciphertext-only payload storage"
+    }
+  ],
+  "replayPlan": {
+    "strategy": "stage-then-apply",
+    "dryRun": true,
+    "baseCursor": "cur_v1:0000000000000000:origin",
+    "nextCursor": "cur_v1:0000000000000005:evt_catalog_005",
+    "maxBatchEvents": 3,
+    "integrityFailureMode": "block_import",
+    "duplicateEventHandling": "skip_when_digest_matches",
+    "batches": [
+      {
+        "batchId": "local_event_replay_export_001_1_3",
+        "sourceRef": "exportSession.replayBatches[0]",
+        "eventIds": [
+          "evt_catalog_001",
+          "evt_catalog_002",
+          "evt_catalog_003"
+        ],
+        "stage": "ready"
+      },
+      {
+        "batchId": "local_event_replay_export_002_4_5",
+        "sourceRef": "exportSession.replayBatches[1]",
+        "eventIds": [
+          "evt_catalog_004",
+          "evt_catalog_005"
+        ],
+        "stage": "ready"
+      }
+    ]
+  },
+  "audit": {
+    "kind": "local-event-replay.import.audit-plan",
+    "records": [
+      "manifest_checked",
+      "catalog_validated",
+      "batch_staged",
+      "replay_window_verified"
+    ],
+    "redactedFields": [
+      "payload.after.body",
+      "payload.after.reason"
+    ],
+    "retainedFields": [
+      "eventIds",
+      "payloadDigest",
+      "previousDigest",
+      "redactionMetadata"
+    ]
+  },
+  "validationCommands": [
+    "python -m json.tool examples\\local-events\\export-session.json",
+    "python -m json.tool examples\\local-events\\import-plan.json",
+    "python -m unittest tests.test_local_event_replay_integrations_docs"
+  ]
+}

@@ -5,7 +5,7 @@
   "private": true,
   "main": "src/index.ts",
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package && node tests/audit-export.test.mjs",
-    "test": "node tests/audit-export.test.mjs"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/audit-export.test.mjs && node tests/local-event-replay-export.test.mjs",
+    "test": "node tests/audit-export.test.mjs && node tests/local-event-replay-export.test.mjs"
   }
 }

@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "local-event-replay-export-session/v1",
+  "generatedAt": "2026-04-27T12:31:00.000Z",
+  "workspaceId": "wsp_local_catalog",
+  "sessionId": "sess_local_event_export_001",
+  "deviceId": "dev_local_catalog",
+  "localOnly": true,
+  "catalog": {
+    "path": "examples/local-events/catalog.json",
+    "schemaVersion": "canonical-local-event-catalog/v1",
+    "eventCount": 5,
+    "eventIds": [
+      "evt_catalog_001",
+      "evt_catalog_002",
+      "evt_catalog_003",
+      "evt_catalog_004",
+      "evt_catalog_005"
+    ],
+    "lastEventDigest": "a875d09c6cb2a44dd60c1becda474949418e9275e4901d1649958fa78c72c0cf"
+  },
+  "encryption": {
+    "mode": "end-to-end",
+    "envelopeKind": "local-event-replay.sealed-export",
+    "keyScope": "workspace-device",
+    "payloadStorage": "ciphertext-only",
+    "contentDigest": "sha256:2b4685d8a6f5d1d8d9be89c942cf54f4168105f0b23b1d15ac6c5a6fa4cde421",
+    "cleartextFields": [
+      "schemaVersion",
+      "workspaceId",
+      "eventIds",
+      "cursorWindow",
+      "payloadDigest",
+      "previousDigest",
+      "redactionMetadata"
+    ]
+  },
+  "network": {
+    "mode": "disabled",
+    "allowedUriPrefixes": [
+      "fixture://local-events/",
+      "local://",
+      "workspace://"
+    ]
+  },
+  "replayBatches": [
+    {
+      "batchId": "local_event_replay_export_001_1_3",
+      "batchIndex": 1,
+      "eventCount": 3,
+      "firstSequence": 1,
+      "lastSequence": 3,
+      "firstEventId": "evt_catalog_001",
+      "lastEventId": "evt_catalog_003",
+      "previousDigest": null,
+      "finalDigest": "be28b6c6252aeefd3759593dcdea5adc72a1b0cace659c66bffd4cd5d42efa35",
+      "operations": {
+        "append": 2,
+        "update": 1,
+        "delete": 0,
+        "approval_requested": 0,
+        "approval_approved": 0,
+        "approval_rejected": 0
+      },
+      "schemaKinds": {
+        "docs": 2,
+        "projects": 0,
+        "incidents": 0,
+        "comments": 1,
+        "attachments": 0,
+        "approvals": 0
+      },
+      "eventRefs": [
+        "catalog.events[0]",
+        "catalog.events[1]",
+        "catalog.events[2]"
+      ],
+      "payloadDigests": [
+        "52cadbd6440da90efd2e528ac78ab86dc071b86df9be93df23ed9fa9c5d8bf0a",
+        "f21ce56c9bbe144740cdd7a82e93df806fc4a29bfaf0167847a807018bcad4d6",
+        "7d7465b3af5f874c0817d346d25107dd00eba47d830aef1044450cc0fd5057aa"
+      ]
+    },
+    {
+      "batchId": "local_event_replay_export_002_4_5",
+      "batchIndex": 2,
+      "eventCount": 2,
+      "firstSequence": 4,
+      "lastSequence": 5,
+      "firstEventId": "evt_catalog_004",
+      "lastEventId": "evt_catalog_005",
+      "previousDigest": "be28b6c6252aeefd3759593dcdea5adc72a1b0cace659c66bffd4cd5d42efa35",
+      "finalDigest": "a875d09c6cb2a44dd60c1becda474949418e9275e4901d1649958fa78c72c0cf",
+      "operations": {
+        "append": 0,
+        "update": 0,
+        "delete": 0,
+        "approval_requested": 1,
+        "approval_approved": 0,
+        "approval_rejected": 1
+      },
+      "schemaKinds": {
+        "docs": 0,
+        "projects": 0,
+        "incidents": 0,
+        "comments": 0,
+        "attachments": 0,
+        "approvals": 2
+      },
+      "eventRefs": [
+        "catalog.events[3]",
+        "catalog.events[4]"
+      ],
+      "payloadDigests": [
+        "1267bcd39fdffa627bd7d92cdfbcf04ac17b691ac27315afad59499c7da0da48",
+        "37664abee453139e6cd75b23dce5219b98210777ca782603062452ab412e61c7"
+      ]
+    }
+  ],
+  "surfaces": {
+    "sdk": {
+      "package": "packages/sdk-js",
+      "entryPoints": [
+        "loadLocalEventCatalogFixture",
+        "summarizeLocalEventCatalog",
+        "createLocalEventReplayBatches",
+        "createLocalEventCatalogFixtureFetch"
+      ]
+    },
+    "cli": {
+      "package": "packages/cli",
+      "commands": [
+        "node packages\\cli\\src\\index.ts local-events catalog inspect --input-path examples\\local-events\\catalog.json",
+        "node packages\\cli\\src\\index.ts local-events catalog replay --input-path examples\\local-events\\catalog.json --from-sequence 1 --limit 5"
+      ]
+    },
+    "web": {
+      "package": "apps/web",
+      "stateBuilders": [
+        "buildLocalEventCatalogState",
+        "filterCanonicalLocalEvents",
+        "summarizeLocalEvents"
+      ]
+    },
+    "sync": {
+      "service": "services/sync/src/replay.ts",
+      "entryPoints": [
+        "replayAcceptedEvents",
+        "detectReplayIntegrityIssues",
+        "createReplayAuditSummary"
+      ]
+    }
+  },
+  "auditSummary": {
+    "kind": "local-event-replay.export.audit",
+    "exportedAt": "2026-04-27T12:31:00.000Z",
+    "eventCount": 5,
+    "redactedEventCount": 3,
+    "redactedFieldCount": 3,
+    "cursorWindow": {
+      "afterCursor": "cur_v1:0000000000000000:origin",
+      "nextCursor": "cur_v1:0000000000000005:evt_catalog_005",
+      "hasMore": false
+    },
+    "includedEventIds": [
+      "evt_catalog_001",
+      "evt_catalog_002",
+      "evt_catalog_003",
+      "evt_catalog_004",
+      "evt_catalog_005"
+    ]
+  },
+  "validationCommands": [
+    "python -m json.tool examples\\local-events\\export-session.json",
+    "python -m json.tool examples\\local-events\\import-plan.json",
+    "python -m unittest tests.test_local_event_replay_integrations_docs"
+  ]
+}

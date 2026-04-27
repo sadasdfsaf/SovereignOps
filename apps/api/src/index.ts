@@ -3,6 +3,7 @@ export * from "./ingestEvidenceRoutes.ts";
 export * from "./ingestFixtureServices.ts";
 export * from "./ingestOpenApiRoutes.ts";
 export * from "./ingestRoutes.ts";
+export * from "./localEventCatalogRoutes.ts";
 export * from "./mcpApprovalEvidenceRoutes.ts";
 export * from "./mcpApprovalEvidenceRecordRoutes.ts";
 export * from "./mcpRoutes.ts";

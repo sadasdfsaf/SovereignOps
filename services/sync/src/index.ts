@@ -10,6 +10,7 @@ export function isOpaqueBundle(bundle: SyncBundleDescriptor): boolean {
 }
 
 export * from "./bundles.ts";
+export * from "./catalogImport.ts";
 export * from "./cursors.ts";
 export * from "./devices.ts";
 export * from "./eventCatalog.ts";

@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package && node tests/sync.test.mjs && node tests/devices-invites.test.mjs && node tests/repository.test.mjs && node tests/http-rate-limit.test.mjs && node tests/sync-replay.test.mjs && node tests/event-catalog.test.mjs",
-    "test": "node tests/sync.test.mjs && node tests/devices-invites.test.mjs && node tests/repository.test.mjs && node tests/http-rate-limit.test.mjs && node tests/sync-replay.test.mjs && node tests/event-catalog.test.mjs"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/sync.test.mjs && node tests/devices-invites.test.mjs && node tests/repository.test.mjs && node tests/http-rate-limit.test.mjs && node tests/sync-replay.test.mjs && node tests/event-catalog.test.mjs && node tests/catalog-import.test.mjs",
+    "test": "node tests/sync.test.mjs && node tests/devices-invites.test.mjs && node tests/repository.test.mjs && node tests/http-rate-limit.test.mjs && node tests/sync-replay.test.mjs && node tests/event-catalog.test.mjs && node tests/catalog-import.test.mjs"
   }
 }
