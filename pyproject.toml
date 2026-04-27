@@ -1,0 +1,20 @@
+[project]
+name = "sovereignops"
+version = "0.1.0"
+description = "Developer tooling and ingestion utilities for SovereignOps."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+
+[tool.pytest.ini_options]
+addopts = "-p no:pytest_flask"
+testpaths = ["tests", "services/ingest/tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S"]
+ignore = ["S101"]
+

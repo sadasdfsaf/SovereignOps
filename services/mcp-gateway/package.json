@@ -1,0 +1,9 @@
+{
+  "name": "@sovereignops/mcp-gateway",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "check": "node ../../scripts/node-check.mjs --package"
+  }
+}

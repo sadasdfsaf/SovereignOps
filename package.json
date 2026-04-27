@@ -1,0 +1,25 @@
+{
+  "name": "@sovereignops/root",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Local-first encrypted workspace with policy-gated AI agent operations.",
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/node-check.mjs",
+    "smoke": "python scripts/smoke.py",
+    "health": "python scripts/repo_health.py --markdown docs/STATUS.md",
+    "loc": "python scripts/loc_budget.py --summary",
+    "test": "python -m unittest discover -s tests"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/mcp-gateway",
+    "services/sync"
+  ],
+  "devDependencies": {}
+}
+

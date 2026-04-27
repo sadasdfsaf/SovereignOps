@@ -1,0 +1,28 @@
+.DS_Store
+Thumbs.db
+
+# Build outputs
+build/
+dist/
+target/
+coverage/
+generated/
+
+# Dependency directories
+node_modules/
+.venv/
+venv/
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+.mypy_cache/
+
+# Local runtime data
+.env
+.env.*
+!.env.example
+.codex-run/
+*.log
+
