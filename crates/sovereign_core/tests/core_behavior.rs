@@ -1,3 +1,5 @@
+//! Integration coverage for core policy and event-log behavior.
+
 use sovereign_core::{
     ActorId, Capability, Decision, EventEnvelope, EventLog, ObjectId, PolicyRequest, PolicyRule,
     RiskLevel, WorkspaceId,

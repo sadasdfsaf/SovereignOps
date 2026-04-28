@@ -1,3 +1,5 @@
+//! Integration coverage for local sync conflict classification.
+
 use sovereign_core::{
     classify_conflict, ClockOrdering, ConflictKind, SyncChange, SyncChangeKind, VectorClock,
     VectorClockError,

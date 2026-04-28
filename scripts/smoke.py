@@ -57,12 +57,15 @@ def main() -> int:
             if not ok:
                 raise SystemExit(f"Python compile check failed for {source_dir}")
 
-    if optional_tool("cargo"):
-        run(["cargo", "check", "--workspace"], cwd=root, required=False)
-    if optional_tool("node"):
-        run(["node", "scripts/node-check.mjs"], cwd=root, required=False)
-    if optional_tool("pnpm"):
-        run(["pnpm", "-r", "--if-present", "check"], cwd=root, required=False)
+    cargo = optional_tool("cargo")
+    if cargo:
+        run([cargo, "check", "--workspace"], cwd=root, required=False)
+    node = optional_tool("node")
+    if node:
+        run([node, "scripts/node-check.mjs"], cwd=root, required=False)
+    pnpm = optional_tool("pnpm")
+    if pnpm:
+        run([pnpm, "-r", "--if-present", "check"], cwd=root, required=False)
 
     print("Smoke check completed.")
     return 0

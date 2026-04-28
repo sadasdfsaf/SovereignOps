@@ -231,7 +231,10 @@ impl fmt::Display for SearchFixtureError {
             }
             Self::InvalidDocument { source } => fmt::Display::fmt(source, f),
             Self::TrailingData { offset } => {
-                write!(f, "trailing data after fixture document at byte offset {offset}")
+                write!(
+                    f,
+                    "trailing data after fixture document at byte offset {offset}"
+                )
             }
         }
     }
@@ -627,9 +630,7 @@ impl<'a> JsonCursor<'a> {
                     offset: slash_offset,
                 });
             }
-            0x10000_u32
-                + (((first - 0xd800_u16) as u32) << 10)
-                + ((second - 0xdc00_u16) as u32)
+            0x10000_u32 + (((first - 0xd800_u16) as u32) << 10) + ((second - 0xdc00_u16) as u32)
         } else if (0xdc00_u16..=0xdfff_u16).contains(&first) {
             return Err(SearchFixtureError::InvalidUnicodeEscape { offset });
         } else {
@@ -643,9 +644,9 @@ impl<'a> JsonCursor<'a> {
         let mut value = 0_u16;
         for _ in 0..4 {
             let ch_offset = self.offset;
-            let ch = self.read_char().ok_or(SearchFixtureError::InvalidUnicodeEscape {
-                offset,
-            })?;
+            let ch = self
+                .read_char()
+                .ok_or(SearchFixtureError::InvalidUnicodeEscape { offset })?;
             let digit = ch
                 .to_digit(16)
                 .ok_or(SearchFixtureError::InvalidUnicodeEscape { offset: ch_offset })?;

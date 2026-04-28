@@ -228,12 +228,7 @@ impl CryptoProvider for DeterministicTestProvider {
         plaintext: &[u8],
     ) -> Result<Ciphertext, CryptoError> {
         let key_material = self.key_material(key_ref)?;
-        let body = xor_payload(
-            key_material,
-            nonce.as_bytes(),
-            aad.as_bytes(),
-            plaintext,
-        );
+        let body = xor_payload(key_material, nonce.as_bytes(), aad.as_bytes(), plaintext);
         let tag = make_tag(key_material, nonce.as_bytes(), aad.as_bytes(), &body);
         let mut output = Vec::with_capacity(TAG_LEN + body.len());
         output.extend_from_slice(&tag);
@@ -252,13 +247,13 @@ impl CryptoProvider for DeterministicTestProvider {
         let bytes = ciphertext.as_bytes();
         let tag_bytes = bytes
             .get(..TAG_LEN)
-            .ok_or_else(|| CryptoError::MalformedCiphertext {
+            .ok_or(CryptoError::MalformedCiphertext {
                 min_len: TAG_LEN,
                 actual_len: bytes.len(),
             })?;
         let body = bytes
             .get(TAG_LEN..)
-            .ok_or_else(|| CryptoError::MalformedCiphertext {
+            .ok_or(CryptoError::MalformedCiphertext {
                 min_len: TAG_LEN,
                 actual_len: bytes.len(),
             })?;

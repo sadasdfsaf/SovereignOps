@@ -1080,10 +1080,14 @@ fn require_text(
 }
 
 fn normalize_tags(tags: &[String]) -> Vec<String> {
-    let mut normalized = Vec::new();
+    let mut normalized: Vec<String> = Vec::new();
     for tag in tags {
         let trimmed = tag.trim();
-        if trimmed.is_empty() || normalized.iter().any(|existing| existing.as_str() == trimmed) {
+        if trimmed.is_empty()
+            || normalized
+                .iter()
+                .any(|existing| existing.as_str() == trimmed)
+        {
             continue;
         }
         normalized.push(trimmed.to_owned());

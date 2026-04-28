@@ -90,8 +90,7 @@ impl WorkspaceManifest {
             return Err(WorkspaceManifestError::DuplicateCapability { capability });
         }
 
-        self.default_policy_summary
-            .validate_for(&self.capabilities)
+        self.default_policy_summary.validate_for(&self.capabilities)
     }
 }
 
@@ -289,7 +288,10 @@ impl fmt::Display for WorkspaceManifestError {
             }
             Self::NoCapabilities => write!(f, "workspace manifest must declare capabilities"),
             Self::DuplicateCapability { capability } => {
-                write!(f, "workspace manifest declares {capability:?} more than once")
+                write!(
+                    f,
+                    "workspace manifest declares {capability:?} more than once"
+                )
             }
             Self::EmptyCapabilityDescription { capability } => {
                 write!(
@@ -308,7 +310,10 @@ impl fmt::Display for WorkspaceManifestError {
                 )
             }
             Self::EmptyDefaultPolicySummary => {
-                write!(f, "workspace manifest default policy summary must not be empty")
+                write!(
+                    f,
+                    "workspace manifest default policy summary must not be empty"
+                )
             }
             Self::DefaultPolicySummaryTooLong { max, actual } => {
                 write!(

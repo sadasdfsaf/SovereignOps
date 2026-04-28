@@ -1,3 +1,5 @@
+//! Integration coverage for deterministic crypto provider behavior.
+
 use core::fmt;
 use std::error::Error;
 
@@ -77,10 +79,8 @@ fn encrypt_is_deterministic_for_same_inputs() -> Result<(), Box<dyn Error>> {
 }
 
 fn provider() -> Result<DeterministicTestProvider, Box<dyn Error>> {
-    let provider = DeterministicTestProvider::new().with_key(
-        key_ref()?,
-        b"test-key-material".to_vec(),
-    )?;
+    let provider =
+        DeterministicTestProvider::new().with_key(key_ref()?, b"test-key-material".to_vec())?;
     Ok(provider)
 }
 

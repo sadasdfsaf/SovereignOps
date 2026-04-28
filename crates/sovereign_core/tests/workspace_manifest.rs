@@ -1,6 +1,8 @@
+//! Integration coverage for workspace manifest validation.
+
 use sovereign_core::{
-    DefaultCapabilityPolicy, DefaultPolicySummary, ManifestCapability, WorkspaceManifest,
-    WorkspaceManifestError, Capability, RiskLevel, WORKSPACE_MANIFEST_VERSION,
+    Capability, DefaultCapabilityPolicy, DefaultPolicySummary, ManifestCapability, RiskLevel,
+    WorkspaceManifest, WorkspaceManifestError, WORKSPACE_MANIFEST_VERSION,
 };
 
 fn one_capability_manifest(
@@ -9,10 +11,7 @@ fn one_capability_manifest(
 ) -> WorkspaceManifest {
     WorkspaceManifest::new(
         WORKSPACE_MANIFEST_VERSION,
-        vec![ManifestCapability::new(
-            capability,
-            "read workspace data",
-        )],
+        vec![ManifestCapability::new(capability, "read workspace data")],
         DefaultPolicySummary::new(
             "Read-only requests can run automatically.",
             vec![DefaultCapabilityPolicy::new(

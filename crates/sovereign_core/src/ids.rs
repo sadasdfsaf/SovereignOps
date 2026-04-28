@@ -12,13 +12,25 @@ pub enum IdParseError {
     /// The provided identifier was empty.
     Empty,
     /// The identifier had a valid shape but the wrong type prefix.
-    WrongPrefix { expected: &'static str },
+    WrongPrefix {
+        /// Expected identifier prefix without the trailing separator.
+        expected: &'static str,
+    },
     /// The identifier ended immediately after the required prefix separator.
-    MissingBody { expected: &'static str },
+    MissingBody {
+        /// Expected identifier prefix without the trailing separator.
+        expected: &'static str,
+    },
     /// The identifier exceeded the maximum accepted length.
-    TooLong { max: usize },
+    TooLong {
+        /// Maximum accepted identifier length.
+        max: usize,
+    },
     /// The identifier contained a character outside the portable safe set.
-    InvalidChar { ch: char },
+    InvalidChar {
+        /// Rejected character.
+        ch: char,
+    },
 }
 
 impl fmt::Display for IdParseError {
@@ -26,7 +38,9 @@ impl fmt::Display for IdParseError {
         match self {
             Self::Empty => write!(f, "identifier is empty"),
             Self::WrongPrefix { expected } => write!(f, "identifier must start with {expected}_"),
-            Self::MissingBody { expected } => write!(f, "identifier must include a value after {expected}_"),
+            Self::MissingBody { expected } => {
+                write!(f, "identifier must include a value after {expected}_")
+            }
             Self::TooLong { max } => write!(f, "identifier exceeds {max} characters"),
             Self::InvalidChar { ch } => write!(f, "identifier contains invalid character {ch:?}"),
         }
@@ -117,13 +131,19 @@ mod tests {
     #[test]
     fn rejects_wrong_prefix() {
         let result = ActorId::parse("wsp_local");
-        assert!(matches!(result, Err(IdParseError::WrongPrefix { expected: "act" })));
+        assert!(matches!(
+            result,
+            Err(IdParseError::WrongPrefix { expected: "act" })
+        ));
     }
 
     #[test]
     fn rejects_missing_body() {
         let result = DeviceId::parse("dev_");
-        assert!(matches!(result, Err(IdParseError::MissingBody { expected: "dev" })));
+        assert!(matches!(
+            result,
+            Err(IdParseError::MissingBody { expected: "dev" })
+        ));
     }
 
     #[test]

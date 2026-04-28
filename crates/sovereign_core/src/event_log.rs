@@ -85,7 +85,10 @@ impl fmt::Display for EventLogError {
                 write!(f, "event sequence gap: expected {expected}, got {actual}")
             }
             Self::BrokenChain { expected, actual } => {
-                write!(f, "event chain mismatch: expected previous digest {expected:?}, got {actual:?}")
+                write!(
+                    f,
+                    "event chain mismatch: expected previous digest {expected:?}, got {actual:?}"
+                )
             }
             Self::EmptyOperation => write!(f, "event operation must not be empty"),
             Self::EmptyPayloadDigest => write!(f, "event payload digest must not be empty"),
@@ -186,7 +189,10 @@ fn stable_digest(bytes: &[u8]) -> String {
 mod tests {
     use super::*;
 
-    fn event(sequence: u64, previous_digest: Option<String>) -> Result<EventEnvelope, Box<dyn std::error::Error>> {
+    fn event(
+        sequence: u64,
+        previous_digest: Option<String>,
+    ) -> Result<EventEnvelope, Box<dyn std::error::Error>> {
         Ok(EventEnvelope {
             workspace_id: WorkspaceId::parse("wsp_demo")?,
             sequence,
@@ -214,7 +220,10 @@ mod tests {
         let result = log.append(event(2, None)?);
         assert!(matches!(
             result,
-            Err(EventLogError::SequenceGap { expected: 1, actual: 2 })
+            Err(EventLogError::SequenceGap {
+                expected: 1,
+                actual: 2
+            })
         ));
         Ok(())
     }
@@ -222,7 +231,10 @@ mod tests {
     #[test]
     fn canonical_string_uses_stable_field_order() -> Result<(), Box<dyn std::error::Error>> {
         let canonical = event(1, None)?.canonical_string();
-        let names: Vec<&str> = canonical.lines().filter_map(|line| line.split_once('=').map(|pair| pair.0)).collect();
+        let names: Vec<&str> = canonical
+            .lines()
+            .filter_map(|line| line.split_once('=').map(|pair| pair.0))
+            .collect();
         assert_eq!(
             names,
             vec![

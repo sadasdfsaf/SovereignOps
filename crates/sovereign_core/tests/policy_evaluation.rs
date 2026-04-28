@@ -1,3 +1,5 @@
+//! Integration coverage for policy evaluation rule behavior.
+
 use sovereign_core::{
     policy::{DecisionKind, PolicyEvaluationRule, PolicyMatcher, PolicyRuleSet, RuleEffect},
     ActorId, Capability, ObjectId, PolicyRequest, RiskLevel, WorkspaceId,
@@ -147,8 +149,18 @@ fn evaluates_decision_branches_from_table() -> Result<(), Box<dyn std::error::Er
             case.risk,
         )?);
 
-        assert_eq!(case.expected, evaluation.decision.kind(), "case {}", case.name);
-        assert_eq!(case.reason, evaluation.decision.reason(), "case {}", case.name);
+        assert_eq!(
+            case.expected,
+            evaluation.decision.kind(),
+            "case {}",
+            case.name
+        );
+        assert_eq!(
+            case.reason,
+            evaluation.decision.reason(),
+            "case {}",
+            case.name
+        );
         assert_eq!(
             Some(case.rule_id),
             evaluation.matched_rule_id.as_deref(),

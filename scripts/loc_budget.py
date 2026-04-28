@@ -7,10 +7,12 @@ from pathlib import Path
 
 EXCLUDED_DIRS = {
     ".git",
+    ".codex-private",
     ".codex-run",
     ".mypy_cache",
     ".pytest_cache",
     ".ruff_cache",
+    ".tools",
     ".venv",
     "__pycache__",
     "build",
@@ -121,4 +123,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

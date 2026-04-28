@@ -1,15 +1,17 @@
+//! Integration coverage for local object reducer behavior.
+
 use core::fmt;
 use std::error::Error;
 
 use sovereign_core::{
-    reduce_document_operations, reduce_incident_operations, reduce_task_operations, AttachmentAdded,
-    AttachmentOperation, CommentCreated, CommentOperation, DocumentArchived, DocumentBodyReplaced,
-    DocumentCreated, DocumentDeleted, DocumentOperation, DocumentTagsReplaced, DocumentTitleChanged,
-    IncidentEvidenceAdded,
-    IncidentEvidenceRemoved, IncidentOpened, IncidentOperation, IncidentSeverity,
-    IncidentSeverityChanged, IncidentStatus, IncidentStatusChanged, ObjectKind, ObjectOperation,
-    ObjectReducerError, ProjectCreated, ProjectOperation, TaskArchived, TaskAssigneeChanged,
-    TaskCreated, TaskOperation, TaskProjectChanged, TaskStatus, TaskStatusChanged, ActorId, ObjectId,
+    reduce_document_operations, reduce_incident_operations, reduce_task_operations, ActorId,
+    AttachmentAdded, AttachmentOperation, CommentCreated, CommentOperation, DocumentArchived,
+    DocumentBodyReplaced, DocumentCreated, DocumentDeleted, DocumentOperation,
+    DocumentTagsReplaced, DocumentTitleChanged, IncidentEvidenceAdded, IncidentEvidenceRemoved,
+    IncidentOpened, IncidentOperation, IncidentSeverity, IncidentSeverityChanged, IncidentStatus,
+    IncidentStatusChanged, ObjectId, ObjectKind, ObjectOperation, ObjectReducerError,
+    ProjectCreated, ProjectOperation, TaskArchived, TaskAssigneeChanged, TaskCreated,
+    TaskOperation, TaskProjectChanged, TaskStatus, TaskStatusChanged,
 };
 
 #[derive(Debug)]
@@ -33,7 +35,7 @@ fn object_operation_metadata_covers_supported_kinds() -> Result<(), Box<dyn Erro
     let attachment_id = object_id("obj_attachment-1")?;
     let actor_id = actor_id("act_member")?;
 
-    let operations = vec![
+    let operations = [
         ObjectOperation::Project(ProjectOperation::Create(ProjectCreated {
             project_id: project_id.clone(),
             name: "Product workspace".to_owned(),
@@ -93,14 +95,19 @@ fn object_operation_metadata_covers_supported_kinds() -> Result<(), Box<dyn Erro
             (ObjectKind::Document, "obj_document-1", "document.created"),
             (ObjectKind::Incident, "obj_incident-1", "incident.opened"),
             (ObjectKind::Comment, "obj_comment-1", "comment.created"),
-            (ObjectKind::Attachment, "obj_attachment-1", "attachment.added"),
+            (
+                ObjectKind::Attachment,
+                "obj_attachment-1",
+                "attachment.added",
+            ),
         ],
         "operation metadata",
     )
 }
 
 #[test]
-fn task_reducer_applies_status_project_assignee_and_archive_changes() -> Result<(), Box<dyn Error>> {
+fn task_reducer_applies_status_project_assignee_and_archive_changes() -> Result<(), Box<dyn Error>>
+{
     let task_id = object_id("obj_task-2")?;
     let project_a = object_id("obj_project-a")?;
     let project_b = object_id("obj_project-b")?;
@@ -291,7 +298,9 @@ where
     if actual == wanted {
         Ok(())
     } else {
-        Err(test_error(format!("{context}: wanted {wanted:?}, got {actual:?}")))
+        Err(test_error(format!(
+            "{context}: wanted {wanted:?}, got {actual:?}"
+        )))
     }
 }
 

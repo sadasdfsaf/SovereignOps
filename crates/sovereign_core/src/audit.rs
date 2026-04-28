@@ -81,7 +81,9 @@ pub fn redact_fields(fields: &[(String, String)]) -> (Vec<(String, String)>, Vec
 /// Return true when a field name should never be stored in plain audit metadata.
 pub fn is_sensitive_key(key: &str) -> bool {
     let normalized = key.to_ascii_lowercase();
-    SENSITIVE_KEYS.iter().any(|needle| normalized.contains(needle))
+    SENSITIVE_KEYS
+        .iter()
+        .any(|needle| normalized.contains(needle))
 }
 
 fn redaction_reason(key: &str, value: &str) -> Option<RedactionReason> {

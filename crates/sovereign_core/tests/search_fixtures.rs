@@ -1,3 +1,5 @@
+//! Integration coverage for search fixture parsing behavior.
+
 use core::fmt;
 
 use sovereign_core::{
@@ -84,8 +86,7 @@ fn fixture_parses_and_renders_without_drift() -> Result<(), Box<dyn std::error::
     require_eq(
         "checksum",
         &document.checksum,
-        &"sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-            .to_owned(),
+        &"sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_owned(),
     )?;
     require_eq("citation count", &document.citations.len(), &2_usize)?;
 

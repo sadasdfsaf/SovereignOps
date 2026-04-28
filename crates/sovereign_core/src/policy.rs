@@ -62,15 +62,30 @@ pub enum DecisionKind {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Decision {
     /// The request may execute immediately.
-    Allow { reason: String },
+    Allow {
+        /// Human-readable explanation for allowing the request.
+        reason: String,
+    },
     /// The request must be previewed and approved before execution.
-    RequireApproval { reason: String },
+    RequireApproval {
+        /// Human-readable explanation for requiring approval.
+        reason: String,
+    },
     /// The request needs a stronger actor context before execution.
-    RequireElevation { reason: String },
+    RequireElevation {
+        /// Human-readable explanation for requiring elevation.
+        reason: String,
+    },
     /// The request must be isolated before follow-up handling.
-    Quarantine { reason: String },
+    Quarantine {
+        /// Human-readable explanation for quarantining the request.
+        reason: String,
+    },
     /// The request must not execute.
-    Deny { reason: String },
+    Deny {
+        /// Human-readable explanation for denying the request.
+        reason: String,
+    },
 }
 
 impl Decision {
