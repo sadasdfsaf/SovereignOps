@@ -7,7 +7,7 @@ members = [
 [workspace.package]
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/sovereignops/sovereignops"
+repository = "https://github.com/sadasdfsaf/SovereignOps"
 rust-version = "1.76"
 
 [workspace.lints.rust]
@@ -18,4 +18,3 @@ missing_docs = "warn"
 unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"
-

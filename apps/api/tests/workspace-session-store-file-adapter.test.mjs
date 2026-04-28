@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import {
   existsSync,
   mkdirSync,
@@ -9,8 +10,10 @@ import {
   rmdirSync,
   writeFileSync,
 } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { join, parse, resolve } from "node:path";
 import test from "node:test";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { createApiRouter } from "../src/router.ts";
 import {
@@ -185,6 +188,85 @@ test("uses the optional lock file guard around snapshot writes", async () => {
   });
 });
 
+test("does not overwrite an existing snapshot file during duplicate creates", async () => {
+  await withTempDir(async (rootDir) => {
+    const firstStore = createWorkspaceSessionStoreFileAdapter({ rootDir });
+    const secondStore = createWorkspaceSessionStoreFileAdapter({ rootDir });
+    const first = {
+      ...(await createRecord("snapshot-exclusive")),
+      label: "first",
+    };
+    const second = {
+      ...first,
+      label: "second",
+    };
+
+    assert.equal(firstStore.create(first).ok, true);
+    assert.deepEqual(secondStore.create(second), { ok: false, reason: "duplicate" });
+
+    const files = snapshotFiles(rootDir);
+    assert.equal(files.length, 1);
+    const stored = JSON.parse(readFileSync(join(rootDir, files[0]), "utf8"));
+    assert.equal(stored.label, "first");
+    assert.deepEqual(
+      readdirSync(rootDir).filter((file) => file.startsWith(".tmp-snapshot-")),
+      [],
+    );
+  });
+});
+
+test("allows exactly one concurrent file-backed writer for a snapshot id", async () => {
+  await withTempDir(async (rootDir) => {
+    const workerCount = 8;
+    const record = await createRecord("snapshot-concurrent");
+    const helperPath = fileURLToPath(
+      new URL("./helpers/workspace-session-store-create-once.mjs", import.meta.url),
+    );
+    const recordPath = join(rootDir, "record.json");
+    const readyDir = join(rootDir, "ready");
+    const startFile = join(rootDir, "start");
+    mkdirSync(readyDir, { recursive: true });
+    writeFileSync(recordPath, `${JSON.stringify(record)}\n`, "utf8");
+
+    const workers = Array.from({ length: workerCount }, (_, index) =>
+      spawn(process.execPath, [
+        helperPath,
+        rootDir,
+        recordPath,
+        readyDir,
+        startFile,
+        `worker-${index}`,
+      ], {
+        stdio: ["ignore", "pipe", "pipe"],
+      })
+    );
+    const resultPromises = workers.map(collectWorkerResult);
+
+    await waitForReadyFiles(readyDir, workerCount);
+    writeFileSync(startFile, "go\n", "utf8");
+    const results = await Promise.all(resultPromises);
+
+    for (const result of results) {
+      assert.equal(result.exitCode, 0, result.stderr);
+    }
+
+    const outputs = results.map(({ stdout }) => JSON.parse(stdout));
+    const successes = outputs.filter((output) => output.result.ok);
+    const duplicates = outputs.filter((output) => output.result.reason === "duplicate");
+    assert.equal(successes.length, 1);
+    assert.equal(duplicates.length, workerCount - 1);
+
+    const files = snapshotFiles(rootDir);
+    assert.equal(files.length, 1);
+    const stored = JSON.parse(readFileSync(join(rootDir, files[0]), "utf8"));
+    assert.equal(stored.label, successes[0].label);
+    assert.deepEqual(
+      readdirSync(rootDir).filter((file) => file.startsWith(".tmp-snapshot-")),
+      [],
+    );
+  });
+});
+
 async function createRecord(snapshotId) {
   const router = createApiRouter(createWorkspaceSessionStoreRoutes({
     now: () => fixedNow,
@@ -245,6 +327,41 @@ async function withTempDir(callback) {
       // Another test may still be using the shared temporary parent.
     }
   }
+}
+
+async function waitForReadyFiles(readyDir, expectedCount) {
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    if (readdirSync(readyDir).filter((file) => file.endsWith(".ready")).length === expectedCount) {
+      return;
+    }
+    await delay(25);
+  }
+  assert.fail(`Timed out waiting for ${expectedCount} file-store workers to become ready.`);
+}
+
+function collectWorkerResult(worker) {
+  let stdout = "";
+  let stderr = "";
+  worker.stdout.setEncoding("utf8");
+  worker.stderr.setEncoding("utf8");
+  worker.stdout.on("data", (chunk) => {
+    stdout += chunk;
+  });
+  worker.stderr.on("data", (chunk) => {
+    stderr += chunk;
+  });
+
+  return new Promise((resolvePromise, rejectPromise) => {
+    worker.on("error", rejectPromise);
+    worker.on("close", (exitCode) => {
+      resolvePromise({
+        exitCode,
+        stdout: stdout.trim(),
+        stderr,
+      });
+    });
+  });
 }
 
 function assertJsonResponse(response, status) {

@@ -57,6 +57,61 @@ test("matches parameter routes and freezes request headers", async () => {
   });
 });
 
+test("returns a JSON error for malformed route parameter encoding", async () => {
+  const router = createApiRouter();
+  router.register({
+    method: "GET",
+    path: "/items/:itemId",
+    description: "Reads a local item.",
+    handler: ({ params }) => jsonResponse(200, { itemId: params.itemId }),
+  });
+
+  const response = await router.dispatch({ method: "GET", path: "/items/%E0%A4%A" });
+
+  assert.equal(response.status, 400);
+  assert.deepEqual(response.body, {
+    error: {
+      code: "API_ROUTE_PARAMETER_ENCODING_INVALID",
+      message: "API route parameter encoding is invalid.",
+      details: { parameter: "itemId" },
+    },
+  });
+});
+
+test("prioritizes static routes and rejects equivalent dynamic route patterns", async () => {
+  const router = createApiRouter();
+  router.register({
+    method: "GET",
+    path: "/items/:itemId",
+    description: "Reads an item by id.",
+    handler: ({ params }) => jsonResponse(200, { source: "dynamic", itemId: params.itemId }),
+  });
+  router.register({
+    method: "GET",
+    path: "/items/new",
+    description: "Creates an item draft.",
+    handler: () => jsonResponse(200, { source: "static" }),
+  });
+
+  assert.deepEqual((await router.dispatch({ method: "GET", path: "/items/new" })).body, {
+    source: "static",
+  });
+  assert.deepEqual((await router.dispatch({ method: "GET", path: "/items/abc" })).body, {
+    source: "dynamic",
+    itemId: "abc",
+  });
+  assert.throws(
+    () =>
+      router.register({
+        method: "GET",
+        path: "/items/:name",
+        description: "Conflicting item route.",
+        handler: () => jsonResponse(200, {}),
+      }),
+    RouteConflictError,
+  );
+});
+
 test("returns standard not-found and custom error bodies", async () => {
   const router = createApiRouter();
   const missing = await router.dispatch({ method: "GET", path: "/missing" });

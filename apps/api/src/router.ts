@@ -56,6 +56,9 @@ interface RegisteredRoute {
   description: string;
   pattern: RegExp;
   params: readonly string[];
+  structure: string;
+  staticSegmentCount: number;
+  order: number;
   handler: ApiRouteHandler;
 }
 
@@ -75,20 +78,23 @@ export class RouteValidationError extends TypeError {
 
 export function createApiRouter(routes: readonly ApiRoute[] = []): ApiRouter {
   const registered: RegisteredRoute[] = [];
+  let nextOrder = 0;
 
   const router: ApiRouter = {
     register(route) {
-      const normalized = normalizeRoute(route);
+      const normalized = normalizeRoute(route, nextOrder);
       if (
         registered.some(
           (candidate) =>
             candidate.method === normalized.method &&
-            candidate.path === normalized.path,
+            candidate.structure === normalized.structure,
         )
       ) {
         throw new RouteConflictError(normalized.method, normalized.path);
       }
       registered.push(normalized);
+      nextOrder += 1;
+      registered.sort(compareRegisteredRoutes);
     },
 
     async dispatch(request) {
@@ -105,16 +111,17 @@ export function createApiRouter(routes: readonly ApiRoute[] = []): ApiRouter {
           continue;
         }
 
-        const params = Object.freeze(
-          Object.fromEntries(
-            route.params.map((name, index) => [
-              name,
-              decodeURIComponent(match[index + 1]),
-            ]),
-          ),
-        );
+        const decoded = decodeRouteParams(route, match);
+        if (!decoded.ok) {
+          return jsonError(
+            400,
+            "API_ROUTE_PARAMETER_ENCODING_INVALID",
+            "API route parameter encoding is invalid.",
+            { parameter: decoded.parameter },
+          );
+        }
         return route.handler({
-          params,
+          params: decoded.params,
           request: {
             ...request,
             method,
@@ -225,7 +232,7 @@ function redactSensitiveValue(value: unknown, key?: string): unknown {
   return value;
 }
 
-function normalizeRoute(route: ApiRoute): RegisteredRoute {
+function normalizeRoute(route: ApiRoute, order: number): RegisteredRoute {
   const method = normalizeMethod(route.method);
   const path = normalizePath(route.path);
   if (typeof route.description !== "string" || route.description.trim().length === 0) {
@@ -235,13 +242,16 @@ function normalizeRoute(route: ApiRoute): RegisteredRoute {
     throw new RouteValidationError("API route handler must be a function.");
   }
 
-  const { pattern, params } = compilePath(path);
+  const { pattern, params, structure, staticSegmentCount } = compilePath(path);
   return {
     method,
     path,
     description: route.description.trim(),
     pattern,
     params,
+    structure,
+    staticSegmentCount,
+    order,
     handler: route.handler as ApiRouteHandler,
   };
 }
@@ -273,12 +283,22 @@ function normalizePath(path: string): string {
     : collapsed;
 }
 
-function compilePath(path: string): { pattern: RegExp; params: readonly string[] } {
+function compilePath(
+  path: string,
+): {
+  pattern: RegExp;
+  params: readonly string[];
+  structure: string;
+  staticSegmentCount: number;
+} {
   const params: string[] = [];
+  let staticSegmentCount = 0;
+  const structureSegments: string[] = [];
   const source = path
     .split("/")
     .map((segment) => {
       if (!segment) {
+        structureSegments.push("");
         return "";
       }
       if (segment.startsWith(":")) {
@@ -287,13 +307,47 @@ function compilePath(path: string): { pattern: RegExp; params: readonly string[]
           throw new RouteValidationError(`Invalid API path parameter: ${segment}`);
         }
         params.push(name);
+        structureSegments.push(":");
         return "([^/]+)";
       }
+      staticSegmentCount += 1;
+      structureSegments.push(segment);
       return escapeRegExp(segment);
     })
     .join("/");
 
-  return { pattern: new RegExp(`^${source}$`), params };
+  return {
+    pattern: new RegExp(`^${source}$`),
+    params,
+    structure: structureSegments.join("/"),
+    staticSegmentCount,
+  };
+}
+
+function compareRegisteredRoutes(left: RegisteredRoute, right: RegisteredRoute): number {
+  return (
+    right.staticSegmentCount - left.staticSegmentCount ||
+    left.params.length - right.params.length ||
+    left.order - right.order
+  );
+}
+
+function decodeRouteParams(
+  route: RegisteredRoute,
+  match: RegExpExecArray,
+): { ok: true; params: Readonly<Record<string, string>> } | { ok: false; parameter: string } {
+  const params: Record<string, string> = {};
+  for (const [index, name] of route.params.entries()) {
+    try {
+      params[name] = decodeURIComponent(match[index + 1] ?? "");
+    } catch (error) {
+      if (error instanceof URIError) {
+        return { ok: false, parameter: name };
+      }
+      throw error;
+    }
+  }
+  return { ok: true, params: Object.freeze(params) };
 }
 
 function escapeRegExp(value: string): string {

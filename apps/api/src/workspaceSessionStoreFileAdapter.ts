@@ -1,12 +1,12 @@
 import {
   closeSync,
   existsSync,
+  linkSync,
   mkdirSync,
   openSync,
   readdirSync,
   readFileSync,
   realpathSync,
-  renameSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -106,12 +106,7 @@ export const createWorkspaceSessionSnapshotFileStore =
 
 function writeRecordFile(rootDir: string, record: WorkspaceSessionSnapshotRecord): boolean {
   const filePath = snapshotPath(rootDir, record.snapshotId);
-  if (existsSync(filePath)) {
-    return false;
-  }
-
   const tempPath = snapshotTempPath(rootDir, record.snapshotId);
-  let moved = false;
   writeFileSync(tempPath, `${JSON.stringify(record, null, 2)}\n`, {
     encoding: "utf8",
     flag: "wx",
@@ -119,17 +114,15 @@ function writeRecordFile(rootDir: string, record: WorkspaceSessionSnapshotRecord
   });
 
   try {
-    if (existsSync(filePath)) {
+    linkSync(tempPath, filePath);
+    return true;
+  } catch (error) {
+    if (isNodeError(error) && error.code === "EEXIST") {
       return false;
     }
-
-    renameSync(tempPath, filePath);
-    moved = true;
-    return true;
+    throw error;
   } finally {
-    if (!moved) {
-      rmSync(tempPath, { force: true });
-    }
+    rmSync(tempPath, { force: true });
   }
 }
 

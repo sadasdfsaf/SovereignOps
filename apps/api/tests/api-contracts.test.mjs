@@ -428,6 +428,26 @@ test("index exports MCP approval evidence route helpers", async () => {
   assert.equal(typeof api.mountPluginReviewArtifactRecordRoutes, "function");
 });
 
+test("package export map covers public index subpaths", () => {
+  const packageJsonPath = fileURLToPath(new URL("../package.json", import.meta.url));
+  const indexPath = fileURLToPath(new URL("../src/index.ts", import.meta.url));
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+  const indexText = readFileSync(indexPath, "utf8");
+  const expectedExports = new Map([
+    [".", "./src/index.ts"],
+    ...Array.from(indexText.matchAll(/^export \* from "\.\/([A-Za-z0-9]+)\.ts";$/gm))
+      .map(([, name]) => [`./${name}`, `./src/${name}.ts`]),
+  ]);
+
+  assert.deepEqual(
+    Object.keys(packageJson.exports).sort(),
+    Array.from(expectedExports.keys()).sort(),
+  );
+  for (const [subpath, target] of expectedExports) {
+    assert.equal(packageJson.exports[subpath], target);
+  }
+});
+
 test("router dispatch normalizes requests deterministically without mutating callers", async () => {
   const router = createApiRouter();
   router.register({
