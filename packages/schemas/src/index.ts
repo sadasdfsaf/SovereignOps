@@ -347,6 +347,7 @@ export const validators = {
 export * from "./ingestEvidence.ts";
 export * from "./ingestConnectorApiManifest.ts";
 export * from "./ingestConnectorManifest.ts";
+export * from "./ingestConnectorMcpApi.ts";
 export * from "./ingestSearch.ts";
 export * from "./mcpApprovalEvidence.ts";
 export * from "./mcpApprovalEvidenceRecord.ts";

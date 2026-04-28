@@ -61,6 +61,7 @@ EXPECTED_ALIGNMENT_REFERENCES = (
     "`crates/sovereign_core`",
     "`packages/schemas/src/index.ts`",
     "`packages/schemas/src/jsonSchema.ts`",
+    "`packages/schemas/src/ingestConnectorMcpApi.ts`",
     "`docs/openapi.yaml`",
     "`docs/mcp-contract.md`",
     "`ValidationIssue`",
@@ -71,6 +72,17 @@ EXPECTED_ALIGNMENT_REFERENCES = (
     "`jsonSchemaCatalog`",
     "`schema-catalog.json`",
     "`mcp-gateway-fixtures.v1`",
+    "`IngestConnectorMcpResourceListResponse`",
+    "`IngestConnectorMcpResourceResponse`",
+    "`IngestConnectorMcpPreviewRequest`",
+    "`IngestConnectorMcpPreviewResponse`",
+    "`packages/schemas/fixtures/ingest-connector-mcp-resources.schema.json`",
+    "`packages/schemas/fixtures/ingest-connector-mcp-resource.schema.json`",
+    "`packages/schemas/fixtures/ingest-connector-mcp-preview.schema.json`",
+    "`packages/schemas/fixtures/ingest-connector-mcp-api-requests.schema.json`",
+    "`tests/test_validate_openapi_ingest_connector_mcp.py`",
+    "`tests/test_validate_openapi_ingest_connector_mcp_fixture.py`",
+    "`tests/test_ingest_connector_mcp_api_e2e.py`",
     "`[REDACTED]`",
     "`[redacted]`",
 )
@@ -114,6 +126,8 @@ class SchemaAlignmentDocsTests(unittest.TestCase):
             "JSON Schema exports are generated",
             "Compatibility tests should compare contracts across layers",
             "Do not hand-edit exported fixture schemas.",
+            "Shared ingest connector MCP schema validators",
+            "generated schemas, route contracts, or fixture replay",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, self.text)

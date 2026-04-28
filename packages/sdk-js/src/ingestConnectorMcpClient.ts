@@ -13,6 +13,15 @@ import {
   type ValidationIssue,
 } from "./client.ts";
 import type { DeepReadonly } from "./workspace.ts";
+import {
+  INGEST_CONNECTOR_MCP_PREVIEW_SCHEMA_VERSION as SHARED_PREVIEW_SCHEMA_VERSION,
+  INGEST_CONNECTOR_MCP_RESOURCES_SCHEMA_VERSION as SHARED_RESOURCES_SCHEMA_VERSION,
+  INGEST_CONNECTOR_MCP_RESOURCE_SCHEMA_VERSION as SHARED_RESOURCE_SCHEMA_VERSION,
+  validateIngestConnectorMcpPreview,
+  validateIngestConnectorMcpResource,
+  validateIngestConnectorMcpResources,
+  type IngestConnectorMcpApiValidationIssue,
+} from "../../schemas/src/ingestConnectorMcpApi.ts";
 
 export type IngestConnectorMcpClientOptions =
   Omit<SovereignOpsClientOptions, "fetch"> & {
@@ -136,6 +145,8 @@ const RESOURCE_CONTENT_SCHEMA_VERSION: IngestConnectorMcpResourceContentSchemaVe
   "ingest-connector-mcp-resource-content/v1";
 const PREVIEW_SCHEMA_VERSION: IngestConnectorMcpPreviewSchemaVersion =
   "ingest-connector-mcp-preview/v1";
+const SHARED_VALIDATION_GENERATED_AT = "1970-01-01T00:00:00.000Z";
+const SHARED_EXCLUDED_CONTENT_TEXT = "[content excluded]";
 const CONNECTOR_ID_PATTERN = /^local\.[A-Za-z0-9_.-]{1,96}$/;
 const PREVIEW_REQUEST_KEYS = ["connectorId", "resourceUri", "includeContent"] as const;
 
@@ -376,6 +387,7 @@ function parseResourceListResponse(
   collectMetadataIssues(value.metadata, "metadata", issues);
   collectResourceManifestArrayIssues(value.resources, "resources", issues);
   throwResponseIssues(issues, value);
+  throwResponseIssues(collectSharedResourceListResponseIssues(value), value);
 
   return deepFreezeClone(value) as DeepReadonly<IngestConnectorMcpResourceListResponse>;
 }
@@ -393,6 +405,7 @@ function parseResourceResponse(
   collectMetadataIssues(value.metadata, "metadata", issues);
   collectResourceManifestIssues(value.resource, "resource", issues);
   throwResponseIssues(issues, value);
+  throwResponseIssues(collectSharedResourceResponseIssues(value), value);
 
   return deepFreezeClone(value) as DeepReadonly<IngestConnectorMcpResourceResponse>;
 }
@@ -414,8 +427,286 @@ function parsePreviewResponse(
   collectPreviewSummaryIssues(value.preview, "preview", issues);
   collectPreviewConsistencyIssues(value, issues);
   throwResponseIssues(issues, value);
+  throwResponseIssues(collectSharedPreviewResponseIssues(value), value);
 
   return deepFreezeClone(value) as DeepReadonly<IngestConnectorMcpPreviewResponse>;
+}
+
+function collectSharedResourceListResponseIssues(
+  value: Record<string, unknown>,
+): ValidationIssue[] {
+  if (!Array.isArray(value.resources)) {
+    return [];
+  }
+
+  const generatedAt = sharedGeneratedAt(value);
+  return value.resources.flatMap((resource, index) => {
+    const resourcePath = `resources.${index}`;
+    const result = validateIngestConnectorMcpResources(
+      buildSharedResourcesEnvelope(resource, generatedAt),
+    );
+    return sharedValidationIssues(result, (path) =>
+      mapSharedResourcesIssuePath(path, resourcePath)
+    );
+  });
+}
+
+function collectSharedResourceResponseIssues(
+  value: Record<string, unknown>,
+): ValidationIssue[] {
+  const result = validateIngestConnectorMcpResource(
+    buildSharedResourceEnvelope(value.resource, sharedGeneratedAt(value)),
+  );
+  return sharedValidationIssues(result, (path) =>
+    mapSharedResourceEnvelopeIssuePath(path, "resource")
+  );
+}
+
+function collectSharedPreviewResponseIssues(
+  value: Record<string, unknown>,
+): ValidationIssue[] {
+  const result = validateIngestConnectorMcpPreview(buildSharedPreviewEnvelope(value));
+  return sharedValidationIssues(result, mapSharedPreviewIssuePath);
+}
+
+function buildSharedResourcesEnvelope(resource: unknown, generatedAt: unknown): unknown {
+  const sharedResource = buildSharedResourceEnvelope(resource, generatedAt);
+  return {
+    schemaVersion: SHARED_RESOURCES_SCHEMA_VERSION,
+    generatedAt,
+    connectorId: isRecord(sharedResource) ? sharedResource.connectorId : undefined,
+    localOnly: isRecord(resource) && Object.hasOwn(resource, "localOnly")
+      ? resource.localOnly
+      : true,
+    resources: isRecord(sharedResource) ? [sharedResource.resource] : [],
+  };
+}
+
+function buildSharedResourceEnvelope(resource: unknown, generatedAt: unknown): unknown {
+  const record = isRecord(resource) ? resource : {};
+  const descriptor = isRecord(record.resource) ? record.resource : {};
+  const content = isRecord(record.content) ? record.content : {};
+  const connectorId = stringValue(record.connectorId);
+  const text = sharedContentText(stringValue(content.text));
+
+  return {
+    schemaVersion: SHARED_RESOURCE_SCHEMA_VERSION,
+    generatedAt,
+    connectorId,
+    localOnly: Object.hasOwn(record, "localOnly") ? record.localOnly : true,
+    resource: {
+      id: connectorId,
+      uri: sharedResourceUri(descriptor.uri, connectorId),
+      name: stringValue(descriptor.name),
+      description: stringValue(descriptor.description),
+      mimeType: stringValue(descriptor.mimeType),
+      textBytes: text.length,
+    },
+    content: {
+      type: "text",
+      text,
+      truncated: false,
+    },
+  };
+}
+
+function buildSharedPreviewEnvelope(value: Record<string, unknown>): unknown {
+  const resource = isRecord(value.resource) ? value.resource : {};
+  const sharedResource = buildSharedResourceEnvelope(resource, sharedGeneratedAt(value));
+  const sharedTextBytes =
+    isRecord(sharedResource) &&
+    isRecord(sharedResource.resource) &&
+    typeof sharedResource.resource.textBytes === "number"
+      ? sharedResource.resource.textBytes
+      : 0;
+
+  return {
+    schemaVersion: SHARED_PREVIEW_SCHEMA_VERSION,
+    generatedAt: sharedGeneratedAt(value),
+    connectorId: value.connectorId,
+    localOnly: Object.hasOwn(value, "localOnly") ? value.localOnly : true,
+    dryRun: value.dryRun,
+    request: {
+      maxItems: sharedPreviewLimit(resource, "maxItems"),
+      maxTextBytes: sharedPreviewLimit(resource, "maxTextBytes"),
+    },
+    resources: [sharedResource],
+    summary: {
+      resourceCount: 1,
+      totalTextBytes: sharedTextBytes,
+      truncated: false,
+    },
+  };
+}
+
+function sharedValidationIssues(
+  result: { readonly ok: boolean; readonly issues: readonly IngestConnectorMcpApiValidationIssue[] },
+  mapPath: (path: string) => string,
+): ValidationIssue[] {
+  if (result.ok) {
+    return [];
+  }
+
+  return result.issues.map((issue) => ({
+    path: redactUnsafeText(mapPath(issue.path)),
+    message: `shared schema: ${redactUnsafeText(issue.message)}`,
+  }));
+}
+
+function mapSharedResourcesIssuePath(path: string, resourcePath: string): string {
+  const clean = normalizeSharedIssuePath(path);
+  if (clean === "" || clean === "resources" || clean === "resources.0") {
+    return resourcePath;
+  }
+  if (clean === "connectorId") {
+    return joinPath(resourcePath, "connectorId");
+  }
+  if (clean === "localOnly") {
+    return joinPath(resourcePath, "localOnly");
+  }
+  if (clean === "generatedAt") {
+    return "generatedAt";
+  }
+  if (clean.startsWith("resources.0.")) {
+    return mapSharedResourceSummaryIssuePath(
+      clean.slice("resources.0.".length),
+      resourcePath,
+    );
+  }
+  return joinPath("shared", clean);
+}
+
+function mapSharedResourceEnvelopeIssuePath(path: string, resourcePath: string): string {
+  return mapSharedResourceEnvelopeCleanPath(normalizeSharedIssuePath(path), resourcePath);
+}
+
+function mapSharedPreviewIssuePath(path: string): string {
+  const clean = normalizeSharedIssuePath(path);
+  if (clean === "" || clean === "resources" || clean === "resources.0") {
+    return "resource";
+  }
+  if (clean === "connectorId" || clean === "localOnly" || clean === "dryRun") {
+    return clean;
+  }
+  if (clean === "generatedAt") {
+    return "generatedAt";
+  }
+  if (clean === "request.maxItems") {
+    return "resource.connector.preview.maxItems";
+  }
+  if (clean === "request.maxTextBytes") {
+    return "resource.connector.preview.maxTextBytes";
+  }
+  if (clean.startsWith("resources.0.")) {
+    return mapSharedResourceEnvelopeCleanPath(
+      clean.slice("resources.0.".length),
+      "resource",
+    );
+  }
+  if (clean.startsWith("summary.")) {
+    return joinPath("preview", clean.slice("summary.".length));
+  }
+  return joinPath("shared", clean);
+}
+
+function mapSharedResourceEnvelopeCleanPath(clean: string, resourcePath: string): string {
+  if (clean === "") {
+    return resourcePath;
+  }
+  if (clean === "connectorId") {
+    return joinPath(resourcePath, "connectorId");
+  }
+  if (clean === "localOnly" || clean === "schemaVersion") {
+    return joinPath(resourcePath, clean);
+  }
+  if (clean === "generatedAt") {
+    return "generatedAt";
+  }
+  if (clean === "resource") {
+    return joinPath(resourcePath, "resource");
+  }
+  if (clean.startsWith("resource.")) {
+    return mapSharedResourceSummaryIssuePath(
+      clean.slice("resource.".length),
+      resourcePath,
+    );
+  }
+  if (clean === "content") {
+    return joinPath(resourcePath, "content");
+  }
+  if (clean === "content.text") {
+    return joinPath(resourcePath, "content.text");
+  }
+  if (clean === "content.type" || clean === "content.truncated") {
+    return joinPath(resourcePath, "content");
+  }
+  if (clean.startsWith("content.")) {
+    return joinPath(resourcePath, clean);
+  }
+  return joinPath("shared", clean);
+}
+
+function mapSharedResourceSummaryIssuePath(clean: string, resourcePath: string): string {
+  switch (clean) {
+    case "id":
+      return joinPath(resourcePath, "connectorId");
+    case "uri":
+      return joinPath(resourcePath, "resource.uri");
+    case "name":
+      return joinPath(resourcePath, "resource.name");
+    case "description":
+      return joinPath(resourcePath, "resource.description");
+    case "mimeType":
+      return joinPath(resourcePath, "resource.mimeType");
+    case "textBytes":
+      return joinPath(resourcePath, "content.text");
+    default:
+      return joinPath(resourcePath, `resource.${clean}`);
+  }
+}
+
+function normalizeSharedIssuePath(path: string): string {
+  const clean = path.trim();
+  const withoutRoot = clean === "$"
+    ? ""
+    : clean.startsWith("$.")
+      ? clean.slice(2)
+      : clean.startsWith("$")
+        ? clean.slice(1)
+        : clean;
+  return withoutRoot
+    .replace(/\[(\d+)\]/g, ".$1")
+    .replace(/^\./, "");
+}
+
+function sharedGeneratedAt(value: Record<string, unknown>): unknown {
+  return Object.hasOwn(value, "generatedAt")
+    ? value.generatedAt
+    : SHARED_VALIDATION_GENERATED_AT;
+}
+
+function sharedPreviewLimit(
+  resource: Record<string, unknown>,
+  field: "maxItems" | "maxTextBytes",
+): unknown {
+  const connector = isRecord(resource.connector) ? resource.connector : {};
+  const preview = isRecord(connector.preview) ? connector.preview : {};
+  return Object.hasOwn(preview, field) ? preview[field] : 1;
+}
+
+function sharedResourceUri(value: unknown, connectorId: string): string {
+  if (typeof value === "string" && value.startsWith("ingest://")) {
+    return value;
+  }
+  return `ingest://${connectorId}/manifest`;
+}
+
+function sharedContentText(value: string): string {
+  return value.length === 0 ? SHARED_EXCLUDED_CONTENT_TEXT : value;
+}
+
+function stringValue(value: unknown): string {
+  return typeof value === "string" ? value : "";
 }
 
 function collectLocalEnvelopeIssues(

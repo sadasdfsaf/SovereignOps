@@ -36,6 +36,9 @@ function testCheckedInFixtureBuildsDashboardSummary() {
   assert.equal(state.noNetwork, true);
   assert.equal(state.durableWrites, false);
   assert.equal(state.mismatchCount, 0);
+  assert.equal(state.malformedRequestCount, 0);
+  assert.equal(state.schemaIssueCount, 0);
+  assert.deepEqual(state.schemaIssues, []);
   assert.equal(state.warningCount, 0);
   assert.equal(state.redacted, false);
   assert.equal(state.rawBodyRetained, false);
@@ -152,6 +155,24 @@ function testCheckedInFixtureBuildsDashboardSummary() {
   ]);
 }
 
+function testCheckedInFixtureSummariesSurviveCliAndApiEnvelopes() {
+  const direct = fixtureSummaryFingerprint(
+    buildIngestConnectorMcpFixtureState(fixture),
+  );
+  const envelopes = [
+    { ok: true, data: fixture },
+    { status: 200, body: { fixture } },
+    { result: { value: fixture } },
+  ];
+
+  for (const envelope of envelopes) {
+    const state = buildIngestConnectorMcpFixtureState(envelope);
+    assert.deepEqual(fixtureSummaryFingerprint(state), direct);
+    assert.equal(state.malformedRequestCount, 0);
+    assert.equal(state.schemaIssueCount, 0);
+  }
+}
+
 function testFocusedBuildersAndFixtureLikeObject() {
   const cards = buildIngestConnectorMcpFixtureRequestCards(fixture);
   const summaryCards = buildIngestConnectorMcpFixtureSummaryCards(fixture);
@@ -193,6 +214,279 @@ function testFocusedBuildersAndFixtureLikeObject() {
   assert.deepEqual(single.connectorIds, ["local.manual"]);
   assert.equal(single.requestCards[0].method, "POST");
   assert.equal(single.requestCards[0].previewSuccess, true);
+}
+
+function testSharedSchemaBundleSemantics() {
+  const generatedAt = "2026-04-28T02:00:00.000Z";
+  const resource = {
+    id: "readme",
+    uri: "ingest://local.files/readme",
+    name: "Readme",
+    description: "Local readme text",
+    mimeType: "text/markdown",
+    textBytes: 42,
+  };
+  const resourceFixture = {
+    schemaVersion: "ingest-connector-mcp-resource/v1",
+    generatedAt,
+    connectorId: "local.files",
+    localOnly: true,
+    resource,
+    content: {
+      type: "text",
+      text: "Local preview text",
+      truncated: false,
+    },
+  };
+  const bundle = {
+    schemaVersion: "ingest-connector-mcp-api-requests.v1",
+    bundleId: "bundle.local.files",
+    generatedAt,
+    connectorId: "local.files",
+    localOnly: true,
+    requests: [
+      {
+        id: "resources_list",
+        requestedAt: generatedAt,
+        connectorId: "local.files",
+        operation: "resources/list",
+        responseSchemaVersion: "ingest-connector-mcp-resources/v1",
+        fixture: "fixtures/resources.json",
+      },
+      {
+        id: "resources_read",
+        requestedAt: generatedAt,
+        connectorId: "local.files",
+        operation: "resources/read",
+        resourceUri: "ingest://local.files/readme",
+        responseSchemaVersion: "ingest-connector-mcp-resource/v1",
+        fixture: "fixtures/readme.json",
+      },
+      {
+        id: "preview",
+        requestedAt: generatedAt,
+        connectorId: "local.files",
+        operation: "preview",
+        responseSchemaVersion: "ingest-connector-mcp-preview/v1",
+        fixture: "fixtures/preview.json",
+      },
+    ],
+    resources: {
+      schemaVersion: "ingest-connector-mcp-resources/v1",
+      generatedAt,
+      connectorId: "local.files",
+      localOnly: true,
+      resources: [resource],
+    },
+    resourceFixtures: [resourceFixture],
+    preview: {
+      schemaVersion: "ingest-connector-mcp-preview/v1",
+      generatedAt,
+      connectorId: "local.files",
+      localOnly: true,
+      dryRun: true,
+      request: {
+        maxItems: 5,
+        maxTextBytes: 1000,
+      },
+      resources: [resourceFixture],
+      summary: {
+        resourceCount: 1,
+        totalTextBytes: 42,
+        truncated: false,
+      },
+    },
+  };
+
+  const state = buildIngestConnectorMcpFixtureState({ ok: true, value: bundle });
+
+  assert.equal(state.status, "ready");
+  assert.equal(state.schemaVersion, "ingest-connector-mcp-api-requests.v1");
+  assert.equal(state.requestCount, 3);
+  assert.equal(state.successfulRequestCount, 3);
+  assert.equal(state.failedRequestCount, 0);
+  assert.equal(state.resourceCount, 1);
+  assert.equal(state.resourceSuccessCount, 2);
+  assert.equal(state.previewSuccessCount, 1);
+  assert.equal(state.connectorCount, 1);
+  assert.deepEqual(state.connectorIds, ["local.files"]);
+  assert.equal(state.localOnly, true);
+  assert.equal(state.noNetwork, true);
+  assert.equal(state.durableWrites, false);
+  assert.equal(state.malformedRequestCount, 0);
+  assert.equal(state.schemaIssueCount, 0);
+  assert.deepEqual(
+    state.methodCounts.map((count) => count.label),
+    ["GET: 2", "POST: 1"],
+  );
+  assert.deepEqual(
+    state.requestCards.map((card) => [
+      card.requestId,
+      card.method,
+      card.routePath,
+      card.status,
+      card.resourceSuccess,
+      card.previewSuccess,
+    ]),
+    [
+      [
+        "resources_list",
+        "GET",
+        "/v1/ingest/connectors/mcp/resources",
+        "success",
+        true,
+        false,
+      ],
+      [
+        "resources_read",
+        "GET",
+        "/v1/ingest/connectors/mcp/resources/local.files",
+        "success",
+        true,
+        false,
+      ],
+      [
+        "preview",
+        "POST",
+        "/v1/ingest/connectors/mcp/preview",
+        "success",
+        false,
+        true,
+      ],
+    ],
+  );
+  assertNoBodyLeak(state, ["Local preview text"]);
+}
+
+function testSchemaIssuesSurfaceAndRedactEnvelopeDetails() {
+  const secret = "sk-schemaissue1234567890";
+  const rawPath = "C:\\Users\\DELL\\.codex-private\\round52\\schema.json";
+  const state = buildIngestConnectorMcpFixtureState({
+    ok: false,
+    data: {
+      generatedAt: "2026-04-28T01:00:00.000Z",
+      requests: [
+        {
+          id: "schema_issue_request",
+          method: "GET",
+          path: "/v1/ingest/connectors/mcp/resources",
+          expectedStatus: 200,
+          expectedBody: {
+            schemaVersion: "ingest-connector-mcp-resources/v1",
+            localOnly: true,
+            noNetwork: true,
+            durableWrites: false,
+            resources: [],
+          },
+        },
+      ],
+    },
+    error: {
+      details: {
+        issues: [
+          {
+            path: `$.requests[0].${rawPath}`,
+            message: `schema file ${rawPath} exposed token ${secret}`,
+            requestId: "schema_issue_request",
+          },
+        ],
+      },
+    },
+    validation: {
+      issues: [
+        {
+          path: "$.requests[0].extraField",
+          message: "extraField is not allowed",
+        },
+      ],
+    },
+  });
+
+  assert.equal(state.status, "attention");
+  assert.equal(state.requestCount, 1);
+  assert.equal(state.successfulRequestCount, 1);
+  assert.equal(state.failedRequestCount, 0);
+  assert.equal(state.schemaIssueCount, 2);
+  assert.equal(state.schemaIssues.length, 2);
+  assert.equal(state.schemaIssues.some((issue) => issue.redacted), true);
+  assert.deepEqual(
+    state.warnings
+      .filter((warning) => warning.code === "schema_issue")
+      .map((warning) => [warning.code, warning.count]),
+    [["schema_issue", 2]],
+  );
+  assert.deepEqual(
+    [...new Set(state.warnings.map((warning) => warning.code))].sort(),
+    [
+      "private_marker_input",
+      "raw_path_input",
+      "schema_issue",
+      "secret_input",
+    ],
+  );
+  assert.equal(
+    state.schemaIssues.some(
+      (issue) =>
+        issue.requestId === "schema_issue_request" &&
+        issue.path.includes("[redacted-path]") &&
+        issue.message.includes("[redacted-secret]"),
+    ),
+    true,
+  );
+  assertNoBodyLeak(state, [secret, rawPath, "C:\\Users\\DELL", ".codex-private"]);
+}
+
+function testMalformedFixtureCountsAndDeclaredRequestCountIssues() {
+  const state = buildIngestConnectorMcpFixtureState(
+    {
+      generatedAt: "2026-04-28T01:30:00.000Z",
+      requestCount: 4,
+      requests: [
+        null,
+        {},
+        {
+          id: "valid_resource_fixture",
+          method: "GET",
+          path: "/v1/ingest/connectors/mcp/resources",
+          expectedStatus: 200,
+          expectedBody: {
+            schemaVersion: "ingest-connector-mcp-resources/v1",
+            localOnly: true,
+            noNetwork: true,
+            durableWrites: false,
+            resources: [],
+          },
+        },
+      ],
+    },
+    { expectedRequestCount: 4 },
+  );
+
+  assert.equal(state.status, "error");
+  assert.equal(state.requestCount, 3);
+  assert.equal(state.malformedRequestCount, 2);
+  assert.equal(state.successfulRequestCount, 1);
+  assert.equal(state.failedRequestCount, 2);
+  assert.equal(state.schemaIssueCount, 1);
+  assert.deepEqual(
+    state.requestCards.map((card) => card.status),
+    ["error", "error", "success"],
+  );
+  assert.deepEqual(
+    state.warnings.map((warning) => [warning.code, warning.count]),
+    [
+      ["malformed_request", 2],
+      ["schema_issue", 1],
+    ],
+  );
+  assert.equal(
+    state.schemaIssues[0].message,
+    "expected 4 requests but normalized 3 requests.",
+  );
+  assert.equal(
+    state.errorStates.filter((error) => error.context === "request").length,
+    2,
+  );
 }
 
 function testMalformedReplaySafetyAndRedactionSignals() {
@@ -338,13 +632,47 @@ function assertNoBodyLeak(value, rawValues) {
   }
 }
 
+function fixtureSummaryFingerprint(state) {
+  return {
+    generatedAt: state.generatedAt,
+    schemaVersion: state.schemaVersion,
+    status: state.status,
+    requestCount: state.requestCount,
+    successfulRequestCount: state.successfulRequestCount,
+    failedRequestCount: state.failedRequestCount,
+    resourceCount: state.resourceCount,
+    resourceSuccessCount: state.resourceSuccessCount,
+    previewSuccessCount: state.previewSuccessCount,
+    connectorCount: state.connectorCount,
+    connectorIds: state.connectorIds,
+    mismatchCount: state.mismatchCount,
+    warningCount: state.warningCount,
+    summary: {
+      valueLabel: state.summary.valueLabel,
+      detailLabels: state.summary.detailLabels,
+    },
+    methodCounts: state.methodCounts.map((count) => count.label),
+    statusCounts: state.statusCounts.map((count) => count.label),
+    routeCounts: state.routeCounts.map((count) => count.label),
+    summaryCards: state.summaryCards.map((card) => [
+      card.label,
+      card.value,
+      card.status,
+    ]),
+  };
+}
+
 function readFixture(name) {
   const url = new URL(`../../../examples/ingest-search/${name}`, import.meta.url);
   return JSON.parse(readFileSync(url, "utf8"));
 }
 
 testCheckedInFixtureBuildsDashboardSummary();
+testCheckedInFixtureSummariesSurviveCliAndApiEnvelopes();
 testFocusedBuildersAndFixtureLikeObject();
+testSharedSchemaBundleSemantics();
+testSchemaIssuesSurfaceAndRedactEnvelopeDetails();
+testMalformedFixtureCountsAndDeclaredRequestCountIssues();
 testMalformedReplaySafetyAndRedactionSignals();
 testInvalidInputAndFreezeBoundary();
 

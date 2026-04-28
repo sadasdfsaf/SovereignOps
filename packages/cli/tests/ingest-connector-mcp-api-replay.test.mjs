@@ -157,6 +157,150 @@ test("filters connector MCP API fixture replay by method, route, and id", async 
   });
 });
 
+test("rejects shared schema validation failures as JSON-only errors", async () => {
+  const rawSecret = "sk-sharedschema123";
+  const invalidPath = await writeFixture("shared-invalid-connector-mcp-api-requests.json", {
+    schemaVersion: "ingest-connector-mcp-api-requests.v1",
+    generatedAt: "2026-04-27T22:34:00.000Z",
+    localOnly: true,
+    durableWrites: false,
+    requests: [
+      {
+        id: "mcp_ingest_connector_shared_schema_failure",
+        method: "GET",
+        path: "/v1/ingest/connectors/mcp/resources",
+        expectedStatus: 200,
+        expectedBody: {
+          schemaVersion: "ingest-connector-mcp-resources/v1",
+        },
+      },
+    ],
+  });
+  const result = await runIngestConnectorMcpApiReplayCli(
+    [
+      "ingest",
+      "connectors",
+      "mcp",
+      "api",
+      "replay",
+      "--fixture",
+      invalidPath,
+    ],
+    {
+      sharedSchemaValidators: {
+        validateFixtureBundle: () => ({
+          ok: false,
+          issues: [
+            {
+              path: "$.network.mode",
+              message: "network.mode must be disabled",
+            },
+            {
+              path: "$.requests[0].expectedBody.error.message",
+              message: `failed with token=${rawSecret} at C:/Users/DELL/private-fixture.json`,
+            },
+          ],
+        }),
+      },
+    },
+  );
+  assert.ok(result);
+  const payload = JSON.parse(result.stderr);
+
+  assert.equal(result.exitCode, 2);
+  assert.equal(result.stdout, "");
+  assert.equal(payload.error.code, "invalid_fixture");
+  assert.match(payload.error.message, /shared schema validation/);
+  assert.deepEqual(payload.error.details.issues[0], {
+    path: "$.network.mode",
+    message: "network.mode must be disabled",
+  });
+  assert.equal(result.stderr.includes(rawSecret), false);
+  assert.equal(result.stderr.includes("C:/Users/DELL"), false);
+});
+
+test("uses checked-in shared MCP API validators for shared-shape fixture failures", async () => {
+  const invalidPath = await writeFixture("shared-shape-invalid-connector-mcp-api-requests.json", {
+    schemaVersion: "ingest-connector-mcp-api-requests.v1",
+    generatedAt: "2026-04-27T22:34:00.000Z",
+    connectorId: "local.files",
+    localOnly: true,
+    requests: [],
+    resources: null,
+    resourceFixtures: null,
+    preview: null,
+  });
+  const result = await runIngestConnectorMcpApiReplayCli([
+    "ingest",
+    "connectors",
+    "mcp",
+    "api",
+    "replay",
+    "--fixture",
+    invalidPath,
+  ]);
+  assert.ok(result);
+  const payload = JSON.parse(result.stderr);
+
+  assert.equal(result.exitCode, 2);
+  assert.equal(result.stdout, "");
+  assert.equal(payload.error.code, "invalid_fixture");
+  assert.match(payload.error.message, /shared schema validation/);
+  assert.equal(
+    payload.error.details.issues.some((issue) => issue.path === "bundleId"),
+    true,
+  );
+  assert.equal(
+    payload.error.details.issues.some((issue) => issue.path === "resources"),
+    true,
+  );
+});
+
+test("keeps replay output parity when shared fixture and response validators pass", async () => {
+  const baseline = await runIngestConnectorMcpApiReplayCli([
+    "ingest",
+    "connectors",
+    "mcp",
+    "api",
+    "replay",
+    "--fixture",
+    fixturePath,
+  ]);
+  const responsePhases = [];
+  let bundleValidationCount = 0;
+  const withSharedValidators = await runIngestConnectorMcpApiReplayCli(
+    [
+      "ingest",
+      "connectors",
+      "mcp",
+      "api",
+      "replay",
+      "--fixture",
+      fixturePath,
+    ],
+    {
+      sharedSchemaValidators: {
+        validateFixtureBundle: (value) => {
+          bundleValidationCount += 1;
+          return { ok: true, issues: [], value };
+        },
+        validateResponseBody: (body, context) => {
+          responsePhases.push(context.phase);
+          return { ok: true, issues: [], value: body };
+        },
+      },
+    },
+  );
+
+  assert.ok(baseline);
+  assert.ok(withSharedValidators);
+  assert.equal(bundleValidationCount, 1);
+  assert.deepEqual(countValues(responsePhases), { actual: 6, expected: 6 });
+  assert.equal(withSharedValidators.exitCode, baseline.exitCode);
+  assert.equal(withSharedValidators.stderr, baseline.stderr);
+  assert.equal(withSharedValidators.stdout, baseline.stdout);
+});
+
 test("reports malformed connector MCP API fixtures as JSON-only errors", async () => {
   const invalidPath = await writeFixture("invalid-connector-mcp-api-requests.json", {
     schemaVersion: "ingest-connector-mcp-api-requests.v1",
@@ -337,4 +481,13 @@ function assertNoLeak(text) {
   assert.equal(text.includes("Bearer fixture-secret"), false);
   assert.equal(text.includes("raw-local-secret"), false);
   assert.equal(text.includes("C:/Users/DELL"), false);
+}
+
+function countValues(values) {
+  return Object.fromEntries(
+    [...new Set(values)].sort().map((value) => [
+      value,
+      values.filter((entry) => entry === value).length,
+    ]),
+  );
 }

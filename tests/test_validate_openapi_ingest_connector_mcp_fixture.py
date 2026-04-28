@@ -18,6 +18,11 @@ EXPECTED_ROUTE_TEMPLATES = {
     ("GET", "/v1/ingest/connectors/mcp/resources/{connectorId}"),
     ("POST", "/v1/ingest/connectors/mcp/preview"),
 }
+EXPECTED_SUCCESS_SCHEMA_VERSIONS = {
+    "/v1/ingest/connectors/mcp/resources": "ingest-connector-mcp-resources/v1",
+    "/v1/ingest/connectors/mcp/resources/local.files": "ingest-connector-mcp-resource/v1",
+    "/v1/ingest/connectors/mcp/preview": "ingest-connector-mcp-preview/v1",
+}
 SAFE_CONNECTOR_ID = re.compile(r"^local\.[A-Za-z0-9_.-]{1,96}$")
 
 PRIVATE_PATH_MARKERS = (
@@ -99,6 +104,10 @@ class ValidateOpenApiIngestConnectorMcpFixtureTests(unittest.TestCase):
 
             body = entry["expectedBody"]
             with self.subTest(request=entry["id"]):
+                self.assertEqual(
+                    body["schemaVersion"],
+                    EXPECTED_SUCCESS_SCHEMA_VERSIONS[entry["path"]],
+                )
                 self.assertIs(body["localOnly"], True)
                 self.assertIs(body["noNetwork"], True)
                 self.assertIs(body["durableWrites"], False)

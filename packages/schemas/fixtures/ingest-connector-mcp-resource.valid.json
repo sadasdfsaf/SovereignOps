@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "ingest-connector-mcp-resource/v1",
+  "generatedAt": "2026-04-27T12:00:01.000Z",
+  "connectorId": "local.files",
+  "localOnly": true,
+  "resource": {
+    "id": "notes",
+    "uri": "ingest://local.files/resources/notes",
+    "name": "Release Notes",
+    "description": "Local release notes prepared for offline indexing.",
+    "mimeType": "text/markdown",
+    "textBytes": 39
+  },
+  "content": {
+    "type": "text",
+    "text": "Release notes ready for local indexing.",
+    "truncated": false
+  }
+}

@@ -198,6 +198,34 @@ test("rejects malformed success envelopes", async () => {
   );
 });
 
+test("rejects success envelopes that fail shared MCP schema validators", async () => {
+  const sharedInvalidRead = validReadResponse();
+  sharedInvalidRead.resource.resource.description = "Password reset content";
+  const fetch = fakeFetch([
+    jsonResponse(200, sharedInvalidRead),
+  ]);
+  const client = createIngestConnectorMcpClient({
+    baseUrl: "local://api/v1",
+    fetch,
+  });
+
+  await assert.rejects(
+    client.readResource("local.files"),
+    (error) => {
+      assert.equal(error instanceof ApiResponseValidationError, true);
+      assert.equal(
+        error.issues.some((issue) =>
+          issue.path === "resource.resource.description" &&
+          issue.message.startsWith("shared schema:")
+        ),
+        true,
+      );
+      assertNoSensitiveText(error);
+      return true;
+    },
+  );
+});
+
 test("keeps HTTP, parse, and network errors typed and redacted", async () => {
   const httpClient = createIngestConnectorMcpClient({
     baseUrl: "local://api/v1",

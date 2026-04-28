@@ -54,6 +54,16 @@ Preview surfaces share the same public contract:
 - SDK: `packages/sdk-js/src/ingestConnectorMcpClient.ts` exposes `createIngestConnectorMcpClient`, `listResources`, `listConnectorResources`, `listMcpConnectorResources`, `readResource`, `readConnectorResource`, `readMcpConnectorResource`, `preview`, `previewOutput`, and `previewManifestResources`.
 - Web: `apps/web/src/ingestConnectorMcpState.ts` turns the same local preview envelope into connector cards, preview rows, request cards, empty states, dry-run labels, safety status, and audit references.
 
+The shared schema validator surface is `packages/schemas/src/ingestConnectorMcpApi.ts`.
+It defines the public ingest connector MCP API schema names for
+`IngestConnectorMcpResourceListResponse`,
+`IngestConnectorMcpResourceResponse`, `IngestConnectorMcpPreviewRequest`, and
+`IngestConnectorMcpPreviewResponse`. Its generated JSON schema fixtures include
+`packages/schemas/fixtures/ingest-connector-mcp-resources.schema.json`,
+`packages/schemas/fixtures/ingest-connector-mcp-resource.schema.json`,
+`packages/schemas/fixtures/ingest-connector-mcp-preview.schema.json`, and
+`packages/schemas/fixtures/ingest-connector-mcp-api-requests.schema.json`.
+
 The preview path is local-only and dry-run by default. Fixture input must be a repository-local JSON file, and resource payloads may only describe `fixture://`, `file://`, `stdin://`, `workspace://`, or `local://` source URIs. The path must not open remote URLs, must not require remote credentials, and must report `localOnly: true`, `networkAccess: false`, `durableWrites: false`, and `dryRun: true` when preview status is present. Preview output is untrusted by default, so rendered content keeps the untrusted markers and callers must not convert preview rows into durable records without a separate approval step.
 
 The route replay fixture for this surface is
@@ -65,6 +75,25 @@ The route replay fixture for this surface is
 Web fixture state, and E2E parity checks should consume that same fixture so
 resource, preview, and validation-error envelopes stay aligned. The resource
 list request id is `mcp_ingest_connector_resources`.
+
+The local replay and fixture harnesses are public alignment surfaces:
+`packages/cli/src/ingestConnectorMcpApiReplay.ts` exports
+`runIngestConnectorMcpApiReplayCli`,
+`isIngestConnectorMcpApiReplayCommand`, and
+`createIngestConnectorMcpApiDispatcher`;
+`packages/sdk-js/src/ingestConnectorMcpFixtureFetch.ts` exports
+`DEFAULT_INGEST_CONNECTOR_MCP_FIXTURE_PATH`,
+`loadIngestConnectorMcpFixtureBundle`,
+`createIngestConnectorMcpFixtureFetch`,
+`createIngestConnectorMcpFixtureClient`,
+`createIngestConnectorMcpFixtureClientHarness`, and
+`baseUrlFromIngestConnectorMcpFixtureBundle`; and
+`apps/web/src/ingestConnectorMcpFixtureState.ts` exports
+`buildIngestConnectorMcpFixtureState`,
+`buildIngestConnectorMcpFixtureRequestCards`,
+`buildIngestConnectorMcpFixtureSummaryCards`,
+`buildIngestConnectorMcpFixtureSafetySummary`, and
+`buildIngestConnectorMcpFixtureEmptyState`.
 
 Resource reads and preview calls run through the policy gate with stable metadata such as `metadata.operation: "resources.read"` or `metadata.operation: "ingest.connector.preview"`, `metadata.registryKind: "resource"`, `metadata.connectorId`, `metadata.resourceUri`, and `metadata.dryRun: true`. `require_approval` and `deny` stop before connector execution. Audit rows must include the connector id, resource URI, redacted source URI when supplied, dry-run flag, local-only flag, no-network flag, and the terminal decision.
 

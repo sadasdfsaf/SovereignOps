@@ -64,6 +64,7 @@ Rust enum variants use PascalCase in code and map to snake_case strings on the w
 - `ValidationIssue` uses `path` and `message`; callers should not invent alternate issue keys.
 - `AgentActionPreview` and `AuditEntry` mirror OpenAPI component names and field casing.
 - `packages/schemas/src/jsonSchema.ts` exports JSON Schema definitions derived from the same metadata.
+- `packages/schemas/src/ingestConnectorMcpApi.ts` owns the shared ingest connector MCP API validators for resource lists, resource reads, and dry-run previews.
 
 TypeScript callers should emit the same camelCase JSON consumed by Python and described by OpenAPI. The MCP gateway uses the same capability and decision strings for resource and tool checks.
 
@@ -90,6 +91,7 @@ Python contract checks must use the standard library unless a service already ow
 - Validation responses put field-level failures in `issues`, and each issue uses `path` plus `message`.
 - Operation ids remain stable so SDK clients and CLI replay commands can target the same route names.
 - Enum values are copied from TypeScript constants, not reworded in route docs.
+- Ingest connector MCP components (`IngestConnectorMcpResourceListResponse`, `IngestConnectorMcpResourceResponse`, `IngestConnectorMcpPreviewRequest`, and `IngestConnectorMcpPreviewResponse`) stay aligned with `packages/schemas/src/ingestConnectorMcpApi.ts`.
 
 Run `python scripts\validate_openapi.py` after OpenAPI edits. Add focused validator tests when a route family introduces a new component, response status, or replay fixture.
 
@@ -102,6 +104,7 @@ Run `python scripts\validate_openapi.py` after OpenAPI edits. Add focused valida
 - Gateway data errors include `ok: false`, a stable `error.code`, and any audit intents collected before execution stops.
 - Known gateway error codes stay aligned with `resource_not_found`, `policy_denied`, `approval_required`, and `handler_failed`.
 - Audit replay rows preserve the documented `AuditReplayEntry` fields before any client-specific rendering.
+- Shared ingest connector MCP schema validators gate the `examples/ingest-search/connector-mcp-api-requests.json` fixture before SDK fixture fetches, CLI replay, Web fixture state, and E2E/OpenAPI parity checks consume it.
 
 When a value is visible in both OpenAPI and MCP, update the OpenAPI component, MCP contract table, SDK helper, CLI replay fixture, and tests in the same change.
 
@@ -161,6 +164,7 @@ JSON Schema exports are generated from `packages/schemas/src/jsonSchema.ts`. Do 
 - `jsonSchemaCatalog` writes `schema-catalog.json` with the draft URL and exported schema file names.
 - Exported files live in `packages/schemas/fixtures/*.schema.json`.
 - Valid record fixtures live beside their schemas and must pass both runtime validation and JSON Schema validation.
+- Generated ingest connector MCP schema fixtures include `packages/schemas/fixtures/ingest-connector-mcp-resources.schema.json`, `packages/schemas/fixtures/ingest-connector-mcp-resource.schema.json`, `packages/schemas/fixtures/ingest-connector-mcp-preview.schema.json`, and `packages/schemas/fixtures/ingest-connector-mcp-api-requests.schema.json`.
 
 Run `node packages\schemas\scripts\export-json-schema.mjs --check` before release. If it reports stale files, run `node packages\schemas\scripts\export-json-schema.mjs`, review the generated diff, and then run the schema tests.
 
@@ -173,6 +177,7 @@ Compatibility tests should compare contracts across layers instead of checking o
 - `packages/schemas/tests/json-schema.test.mjs` checks JSON Schema exports, catalogs, and valid fixtures.
 - `tests/test_validate_openapi.py` and route-family OpenAPI tests check operation ids, components, errors, and fixture paths.
 - `tests/test_mcp_contract_docs.py` locks MCP protocol sections, tools, error codes, audit output, replay fixtures, and CLI commands.
+- `tests/test_validate_openapi_ingest_connector_mcp.py`, `tests/test_validate_openapi_ingest_connector_mcp_fixture.py`, and `tests/test_ingest_connector_mcp_api_e2e.py` lock ingest connector MCP OpenAPI parity, fixture safety, SDK fixture harness replay, CLI replay, and Web fixture state.
 - Focused doc tests lock any public alignment process that would break consumers if silently removed.
 
 Before merging a schema change, run the narrow layer checks plus `python -m unittest discover -s tests`. Broaden to Rust and Node workspace checks when a change touches shared values, generated schemas, route contracts, or fixture replay.

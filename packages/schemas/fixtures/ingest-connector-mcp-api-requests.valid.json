@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "ingest-connector-mcp-api-requests.v1",
+  "bundleId": "local.files.fixture.bundle",
+  "generatedAt": "2026-04-27T12:00:04.000Z",
+  "connectorId": "local.files",
+  "localOnly": true,
+  "requests": [
+    {
+      "id": "list.resources",
+      "requestedAt": "2026-04-27T12:00:00.000Z",
+      "connectorId": "local.files",
+      "operation": "resources/list",
+      "responseSchemaVersion": "ingest-connector-mcp-resources/v1",
+      "fixture": "ingest-connector-mcp-resources.valid.json"
+    },
+    {
+      "id": "read.notes",
+      "requestedAt": "2026-04-27T12:00:01.000Z",
+      "connectorId": "local.files",
+      "operation": "resources/read",
+      "resourceUri": "ingest://local.files/resources/notes",
+      "responseSchemaVersion": "ingest-connector-mcp-resource/v1",
+      "fixture": "ingest-connector-mcp-resource.valid.json"
+    },
+    {
+      "id": "preview.local",
+      "requestedAt": "2026-04-27T12:00:03.000Z",
+      "connectorId": "local.files",
+      "operation": "preview",
+      "responseSchemaVersion": "ingest-connector-mcp-preview/v1",
+      "fixture": "ingest-connector-mcp-preview.valid.json"
+    }
+  ],
+  "resources": {
+    "schemaVersion": "ingest-connector-mcp-resources/v1",
+    "generatedAt": "2026-04-27T12:00:00.000Z",
+    "connectorId": "local.files",
+    "localOnly": true,
+    "resources": [
+      {
+        "id": "notes",
+        "uri": "ingest://local.files/resources/notes",
+        "name": "Release Notes",
+        "description": "Local release notes prepared for offline indexing.",
+        "mimeType": "text/markdown",
+        "textBytes": 39
+      },
+      {
+        "id": "summary",
+        "uri": "ingest://local.files/resources/summary",
+        "name": "JSON Summary",
+        "description": "Sanitized summary document for local preview.",
+        "mimeType": "application/json",
+        "textBytes": 28
+      }
+    ]
+  },
+  "resourceFixtures": [
+    {
+      "schemaVersion": "ingest-connector-mcp-resource/v1",
+      "generatedAt": "2026-04-27T12:00:01.000Z",
+      "connectorId": "local.files",
+      "localOnly": true,
+      "resource": {
+        "id": "notes",
+        "uri": "ingest://local.files/resources/notes",
+        "name": "Release Notes",
+        "description": "Local release notes prepared for offline indexing.",
+        "mimeType": "text/markdown",
+        "textBytes": 39
+      },
+      "content": {
+        "type": "text",
+        "text": "Release notes ready for local indexing.",
+        "truncated": false
+      }
+    },
+    {
+      "schemaVersion": "ingest-connector-mcp-resource/v1",
+      "generatedAt": "2026-04-27T12:00:02.000Z",
+      "connectorId": "local.files",
+      "localOnly": true,
+      "resource": {
+        "id": "summary",
+        "uri": "ingest://local.files/resources/summary",
+        "name": "JSON Summary",
+        "description": "Sanitized summary document for local preview.",
+        "mimeType": "application/json",
+        "textBytes": 28
+      },
+      "content": {
+        "type": "text",
+        "text": "{\"status\":\"ready\",\"items\":2}",
+        "truncated": false
+      }
+    }
+  ],
+  "preview": {
+    "schemaVersion": "ingest-connector-mcp-preview/v1",
+    "generatedAt": "2026-04-27T12:00:03.000Z",
+    "connectorId": "local.files",
+    "localOnly": true,
+    "dryRun": true,
+    "request": {
+      "maxItems": 2,
+      "maxTextBytes": 128
+    },
+    "resources": [
+      {
+        "schemaVersion": "ingest-connector-mcp-resource/v1",
+        "generatedAt": "2026-04-27T12:00:01.000Z",
+        "connectorId": "local.files",
+        "localOnly": true,
+        "resource": {
+          "id": "notes",
+          "uri": "ingest://local.files/resources/notes",
+          "name": "Release Notes",
+          "description": "Local release notes prepared for offline indexing.",
+          "mimeType": "text/markdown",
+          "textBytes": 39
+        },
+        "content": {
+          "type": "text",
+          "text": "Release notes ready for local indexing.",
+          "truncated": false
+        }
+      },
+      {
+        "schemaVersion": "ingest-connector-mcp-resource/v1",
+        "generatedAt": "2026-04-27T12:00:02.000Z",
+        "connectorId": "local.files",
+        "localOnly": true,
+        "resource": {
+          "id": "summary",
+          "uri": "ingest://local.files/resources/summary",
+          "name": "JSON Summary",
+          "description": "Sanitized summary document for local preview.",
+          "mimeType": "application/json",
+          "textBytes": 28
+        },
+        "content": {
+          "type": "text",
+          "text": "{\"status\":\"ready\",\"items\":2}",
+          "truncated": false
+        }
+      }
+    ],
+    "summary": {
+      "resourceCount": 2,
+      "totalTextBytes": 67,
+      "truncated": false
+    }
+  }
+}

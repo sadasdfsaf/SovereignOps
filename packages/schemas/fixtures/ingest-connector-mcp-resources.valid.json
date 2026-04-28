@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "ingest-connector-mcp-resources/v1",
+  "generatedAt": "2026-04-27T12:00:00.000Z",
+  "connectorId": "local.files",
+  "localOnly": true,
+  "resources": [
+    {
+      "id": "notes",
+      "uri": "ingest://local.files/resources/notes",
+      "name": "Release Notes",
+      "description": "Local release notes prepared for offline indexing.",
+      "mimeType": "text/markdown",
+      "textBytes": 39
+    },
+    {
+      "id": "summary",
+      "uri": "ingest://local.files/resources/summary",
+      "name": "JSON Summary",
+      "description": "Sanitized summary document for local preview.",
+      "mimeType": "application/json",
+      "textBytes": 28
+    }
+  ]
+}

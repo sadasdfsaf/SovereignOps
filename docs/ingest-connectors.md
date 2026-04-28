@@ -169,8 +169,11 @@ resource definitions and preview tool descriptor.
 | MCP preview tool | `ingest_connector.preview_manifest` | Returns manifest counts, readiness, and an optional connector profile with no side effects. |
 | API routes | `apps/api/src/ingestConnectorMcpRoutes.ts` | Lists resources, reads one resource, and runs dry-run previews. |
 | CLI preview | `packages/cli/src/ingestConnectorMcpPreview.ts` | Runs the local preview command and prints a JSON envelope. |
+| CLI replay | `packages/cli/src/ingestConnectorMcpApiReplay.ts` | Replays the MCP API fixture through in-memory route dispatch. |
 | SDK client | `packages/sdk-js/src/ingestConnectorMcpClient.ts` | Uses an injected local transport or fetch; it must not fall back to global fetch. |
+| SDK fixture harness | `packages/sdk-js/src/ingestConnectorMcpFixtureFetch.ts` | Replays checked-in MCP API fixture entries through an injected fetch and client harness. |
 | Web state | `apps/web/src/ingestConnectorMcpState.ts` | Builds connector cards, preview rows, approval labels, dry-run labels, and audit references from captured local JSON. |
+| Web fixture state | `apps/web/src/ingestConnectorMcpFixtureState.ts` | Builds request cards, mismatch indicators, safety summaries, and redacted error states from the MCP replay fixture. |
 
 The CLI preview commands stay local. Preview output reports dry-run safety
 state without needing a write flag:
@@ -212,6 +215,14 @@ CLI replay output, SDK responses, or route responses as captured JSON and
 builds frozen request cards, resource rows, dry-run labels, safety indicators,
 and redacted error states.
 
+The shared schema validator surface is
+`packages/schemas/src/ingestConnectorMcpApi.ts`. It is the public TypeScript
+contract for MCP API resource-list responses, resource-read responses, preview
+requests, preview responses, and their generated JSON schema fixtures. SDK
+fixture harnesses, CLI replay, Web fixture state, E2E parity, and OpenAPI parity
+should validate against those shared names instead of re-declaring the route
+shape.
+
 `packages/sdk-js/src/ingestConnectorMcpClient.ts` should expose
 `createIngestConnectorMcpClient`, `listResources`,
 `listConnectorResources`, `listMcpConnectorResources`, `readResource`,
@@ -220,6 +231,18 @@ and redacted error states.
 injected fetch for localhost tests, rejects remote URLs, never opens a socket by
 default, and redacts raw local paths and secret-shaped values in errors.
 
+`packages/sdk-js/src/ingestConnectorMcpFixtureFetch.ts` exposes
+`DEFAULT_INGEST_CONNECTOR_MCP_FIXTURE_PATH`,
+`loadIngestConnectorMcpFixtureBundle`,
+`createIngestConnectorMcpFixtureFetch`,
+`createIngestConnectorMcpFixtureClient`,
+`createIngestConnectorMcpFixtureClientHarness`,
+`baseUrlFromIngestConnectorMcpFixtureBundle`,
+`IngestConnectorMcpFixtureError`, `IngestConnectorMcpFixtureFetch`, and
+`IngestConnectorMcpFixtureClientHarness`. This SDK fixture harness consumes
+`examples/ingest-search/connector-mcp-api-requests.json`, records matched
+request ids, returns JSON-only fixture errors, and keeps global fetch unused.
+
 `apps/web/src/ingestConnectorMcpState.ts` should expose
 `buildIngestConnectorMcpState`, `buildIngestConnectorMcpCards`,
 `buildIngestConnectorMcpRows`, `buildIngestConnectorMcpSections`,
@@ -227,6 +250,16 @@ default, and redacts raw local paths and secret-shaped values in errors.
 `getIngestConnectorMcpStatusLabel`. Web state consumes captured local JSON
 only, labels every preview as dry-run, carries no-network indicators, and
 treats connector output as default untrusted.
+
+`apps/web/src/ingestConnectorMcpFixtureState.ts` should expose
+`buildIngestConnectorMcpFixtureState`,
+`buildIngestConnectorMcpFixtureRequestCards`,
+`buildIngestConnectorMcpFixtureSummaryCards`,
+`buildIngestConnectorMcpFixtureSafetySummary`, and
+`buildIngestConnectorMcpFixtureEmptyState`. The Web fixture state consumes the
+same checked-in MCP API replay fixture as the SDK fixture harness and CLI
+replay, redacts unsafe text, and surfaces local-only/no-network mismatch
+indicators for parity reviews.
 
 Every MCP connector resource read and preview request runs through the MCP
 policy gate before connector execution. `deny` and `require_approval` stop
@@ -238,13 +271,31 @@ fixture path, decision, `dryRun: true`, `localOnly: true`,
 
 Focused MCP connector parity checks:
 
+These commands cover `services/mcp-gateway/tests/ingest-connector-resources.test.mjs`,
+`apps/api/tests/ingest-connector-mcp-routes.test.mjs`,
+`apps/api/tests/ingest-connector-mcp-schema-alignment.test.mjs`,
+`packages/cli/tests/ingest-connector-mcp-api-replay.test.mjs`,
+`packages/cli/tests/ingest-connector-mcp-preview.test.mjs`,
+`packages/sdk-js/tests/ingest-connector-mcp-client.test.mjs`,
+`packages/sdk-js/tests/ingest-connector-mcp-fixture-fetch.test.mjs`,
+`apps/web/tests/ingest-connector-mcp-fixture-state.test.mjs`,
+`apps/web/tests/ingest-connector-mcp-state.test.mjs`,
+`tests/test_validate_openapi_ingest_connector_mcp_fixture.py`, and
+`tests/test_ingest_connector_mcp_api_e2e.py`.
+
 ```powershell
 python -m unittest tests.test_mcp_contract_docs tests.test_ingest_connectors_docs tests.test_agent_guide_docs
 python -m unittest tests.test_validate_openapi_ingest_connector_mcp
+python -m unittest tests.test_validate_openapi_ingest_connector_mcp_fixture
+python -m unittest tests.test_ingest_connector_mcp_api_e2e
 node services\mcp-gateway\tests\ingest-connector-resources.test.mjs
 node apps\api\tests\ingest-connector-mcp-routes.test.mjs
+node apps\api\tests\ingest-connector-mcp-schema-alignment.test.mjs
+node packages\cli\tests\ingest-connector-mcp-api-replay.test.mjs
 node packages\cli\tests\ingest-connector-mcp-preview.test.mjs
 node packages\sdk-js\tests\ingest-connector-mcp-client.test.mjs
+node packages\sdk-js\tests\ingest-connector-mcp-fixture-fetch.test.mjs
+node apps\web\tests\ingest-connector-mcp-fixture-state.test.mjs
 node apps\web\tests\ingest-connector-mcp-state.test.mjs
 node packages\cli\src\index.ts ingest connectors mcp api replay --fixture examples\ingest-search\connector-mcp-api-requests.json
 python scripts\release_check.py --dry-run
@@ -532,6 +583,46 @@ The connector API manifest schema fixtures are:
 - `packages/schemas/fixtures/ingest-connector-api-manifest.invalid.json`
 - `packages/schemas/fixtures/ingest-connector-api-manifest.schema.json`
 
+`packages/schemas/src/ingestConnectorMcpApi.ts` defines the shared
+ingest connector MCP API schema validators used by OpenAPI routes, SDK fixture
+harnesses, CLI replay, Web fixture state, and E2E parity. It exports
+the shared ingest connector MCP schema validators for resource and preview
+envelopes:
+`INGEST_CONNECTOR_MCP_RESOURCE_SCHEMA_VERSION`,
+`INGEST_CONNECTOR_MCP_RESOURCES_SCHEMA_VERSION`,
+`INGEST_CONNECTOR_MCP_PREVIEW_SCHEMA_VERSION`,
+`INGEST_CONNECTOR_MCP_API_REQUESTS_SCHEMA_VERSION`,
+`INGEST_CONNECTOR_MCP_API_JSON_SCHEMA_DRAFT`,
+`ingestConnectorMcpApiKinds`, `ingestConnectorMcpApiOperations`,
+`ingestConnectorMcpApiResponseSchemaVersions`,
+`ingestConnectorMcpResourcesSchema`, `ingestConnectorMcpResourceSchema`,
+`ingestConnectorMcpPreviewSchema`, `ingestConnectorMcpApiRequestsSchema`,
+`ingestConnectorMcpApiSchemaDefinitions`, `ingestConnectorMcpApiSchemas`,
+`ingestConnectorMcpApiValidators`, `getIngestConnectorMcpApiSchema`,
+`validateIngestConnectorMcpApiObject`, `assertIngestConnectorMcpApiObject`,
+`validateIngestConnectorMcpResources`, `validateIngestConnectorMcpResource`,
+`validateIngestConnectorMcpPreview`,
+`validateIngestConnectorMcpApiRequestBundle`,
+`assertIngestConnectorMcpResources`, `assertIngestConnectorMcpResource`,
+`assertIngestConnectorMcpPreview`,
+`assertIngestConnectorMcpApiRequestBundle`,
+`isIngestConnectorMcpConnectorId`, `isIngestConnectorMcpResourceId`,
+`isIngestConnectorMcpResourceUri`,
+`getIngestConnectorMcpResourceUriConnectorId`, and
+`isIngestConnectorMcpSafePublicString`.
+
+The generated JSON schema fixtures for the MCP API contract are:
+
+- `packages/schemas/fixtures/ingest-connector-mcp-resources.valid.json`
+- `packages/schemas/fixtures/ingest-connector-mcp-resources.schema.json`
+- `packages/schemas/fixtures/ingest-connector-mcp-resource.valid.json`
+- `packages/schemas/fixtures/ingest-connector-mcp-resource.schema.json`
+- `packages/schemas/fixtures/ingest-connector-mcp-preview.valid.json`
+- `packages/schemas/fixtures/ingest-connector-mcp-preview.schema.json`
+- `packages/schemas/fixtures/ingest-connector-mcp-api-requests.valid.json`
+- `packages/schemas/fixtures/ingest-connector-mcp-api-requests.invalid.json`
+- `packages/schemas/fixtures/ingest-connector-mcp-api-requests.schema.json`
+
 OpenAPI and schema alignment stay in the public repo. Use
 `tests/test_validate_openapi_ingest_search.py` for the ingest/search OpenAPI
 route and schema shape,
@@ -539,7 +630,10 @@ route and schema shape,
 manifest API OpenAPI/schema shape, `tests/test_ingest_contract_alignment.py`
 for API fixture, client-session, docs, and OpenAPI route parity,
 `tests/test_ingest_connector_api_e2e.py` for the cross-surface connector API E2E parity
-check, `tests/test_validate_openapi_schema_components.py` for shared OpenAPI
+check, `tests/test_validate_openapi_ingest_connector_mcp.py` and
+`tests/test_validate_openapi_ingest_connector_mcp_fixture.py` for MCP
+OpenAPI/fixture parity, `tests/test_ingest_connector_mcp_api_e2e.py` for MCP
+API E2E parity, `tests/test_validate_openapi_schema_components.py` for shared OpenAPI
 schema component wiring, `apps/api/tests/ingest-connector-schema-alignment.test.mjs`
 for API route schema fixture alignment, and `tests/test_schema_alignment_docs.py`
 with `docs/schema-alignment.md` for the release-facing schema alignment
@@ -550,10 +644,13 @@ Focused schema check:
 These commands cover `packages/schemas/tests/ingest-connector-manifest.test.mjs`
 and `packages/schemas/tests/ingest-search.test.mjs`. Connector API manifest
 schemas are covered by
-`packages/schemas/tests/ingest-connector-api-manifest.test.mjs`.
+`packages/schemas/tests/ingest-connector-api-manifest.test.mjs`. The shared
+MCP API schema validators are covered by
+`packages/schemas/tests/ingest-connector-mcp-api.test.mjs`.
 
 ```powershell
 node packages\schemas\tests\ingest-connector-api-manifest.test.mjs
+node packages\schemas\tests\ingest-connector-mcp-api.test.mjs
 node packages\schemas\tests\ingest-connector-manifest.test.mjs
 node packages\schemas\tests\ingest-search.test.mjs
 ```
@@ -596,6 +693,12 @@ Web fixture state, and E2E parity. It stays local-only, replays
 `GET /v1/ingest/connectors/mcp/resources/{connectorId}`, and
 `POST /v1/ingest/connectors/mcp/preview`, and keeps negative cases for missing
 resources and preview body validation.
+It is also the input for the SDK MCP fixture harness in
+`packages/sdk-js/src/ingestConnectorMcpFixtureFetch.ts`, the CLI replay module
+in `packages/cli/src/ingestConnectorMcpApiReplay.ts`, the Web fixture state
+builder in `apps/web/src/ingestConnectorMcpFixtureState.ts`, and the
+cross-surface MCP API parity test in
+`tests/test_ingest_connector_mcp_api_e2e.py`.
 
 Do not add private planning paths, machine-specific absolute paths, or remote
 URLs to connector docs or fixtures.
@@ -613,28 +716,36 @@ python -m unittest discover -s services\ingest\tests -p test_ingest_cli_connecto
 node apps\api\tests\ingest-connector-routes.test.mjs
 node apps\api\tests\ingest-connector-fixture-replay.test.mjs
 node apps\api\tests\ingest-connector-mcp-routes.test.mjs
+node apps\api\tests\ingest-connector-mcp-schema-alignment.test.mjs
 node packages\cli\src\index.ts ingest connectors mcp api replay --fixture examples\ingest-search\connector-mcp-api-requests.json
 node apps\api\tests\ingest-fixture-services.test.mjs
 node apps\api\tests\ingest-openapi-routes.test.mjs
+node packages\cli\tests\ingest-connector-mcp-api-replay.test.mjs
 node packages\cli\tests\ingest-connector-api-replay.test.mjs
 node packages\cli\tests\ingest-api-replay.test.mjs
 node packages\cli\tests\ingest-api-verify.test.mjs
 node packages\sdk-js\tests\client-ingest-search.test.mjs
 node packages\sdk-js\tests\ingest-connector-client.test.mjs
 node packages\sdk-js\tests\ingest-connector-fixture-fetch.test.mjs
+node packages\sdk-js\tests\ingest-connector-mcp-fixture-fetch.test.mjs
 node packages\sdk-js\tests\ingest-fixture-fetch.test.mjs
 node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs
 node apps\web\tests\ingest-api-state.test.mjs
 node apps\web\tests\ingest-connector-api-state.test.mjs
+node apps\web\tests\ingest-connector-mcp-fixture-state.test.mjs
 node apps\web\tests\ingest-connector-state.test.mjs
 node apps\web\tests\ingest-session-review.test.mjs
 node packages\schemas\tests\ingest-connector-api-manifest.test.mjs
+node packages\schemas\tests\ingest-connector-mcp-api.test.mjs
 node packages\schemas\tests\ingest-connector-manifest.test.mjs
 node packages\schemas\tests\ingest-search.test.mjs
 node apps\api\tests\ingest-connector-schema-alignment.test.mjs
 python -m unittest tests.test_ingest_connector_api_e2e
+python -m unittest tests.test_ingest_connector_mcp_api_e2e
 python -m unittest tests.test_ingest_contract_alignment
 python -m unittest tests.test_validate_openapi_ingest_connector_api_schema
+python -m unittest tests.test_validate_openapi_ingest_connector_mcp
+python -m unittest tests.test_validate_openapi_ingest_connector_mcp_fixture
 python -m unittest tests.test_validate_openapi_schema_components
 python -m unittest tests.test_schema_alignment_docs
 python -m unittest tests.test_validate_openapi_ingest_search

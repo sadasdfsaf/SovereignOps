@@ -20,7 +20,8 @@ export type IngestConnectorMcpFixtureWarningCode =
   | "secret_input"
   | "raw_path_input"
   | "private_marker_input"
-  | "malformed_request";
+  | "malformed_request"
+  | "schema_issue";
 
 export type IngestConnectorMcpFixtureErrorContext =
   | "input"
@@ -48,6 +49,8 @@ export interface IngestConnectorMcpFixtureState {
   connectorCount: number;
   connectorIds: string[];
   mismatchCount: number;
+  malformedRequestCount: number;
+  schemaIssueCount: number;
   warningCount: number;
   localOnly: boolean;
   noNetwork: boolean;
@@ -63,6 +66,7 @@ export interface IngestConnectorMcpFixtureState {
   requestCards: IngestConnectorMcpFixtureRequestCard[];
   summaryCards: IngestConnectorMcpFixtureSummaryCard[];
   mismatchIndicators: IngestConnectorMcpFixtureMismatchIndicator[];
+  schemaIssues: IngestConnectorMcpFixtureSchemaIssue[];
   warnings: IngestConnectorMcpFixtureWarning[];
   errorStates: IngestConnectorMcpFixtureErrorState[];
   emptyState: IngestConnectorMcpFixtureEmptyState;
@@ -162,6 +166,16 @@ export interface IngestConnectorMcpFixtureMismatchIndicator {
   ariaLabel: string;
 }
 
+export interface IngestConnectorMcpFixtureSchemaIssue {
+  id: string;
+  path: string;
+  message: string;
+  requestId?: string;
+  redacted: boolean;
+  redactionCount: number;
+  ariaLabel: string;
+}
+
 export interface IngestConnectorMcpFixtureWarning {
   id: string;
   code: IngestConnectorMcpFixtureWarningCode;
@@ -209,6 +223,7 @@ interface NormalizedFixture {
   resourceKeys: string[];
   safetyEvidence: SafetyEvidence;
   redactionReport: RedactionReport;
+  schemaIssues: SchemaIssueRecord[];
   inputError?: string;
 }
 
@@ -261,12 +276,60 @@ interface RedactedText {
   redactionCount: number;
 }
 
+interface SchemaIssueRecord {
+  path: string;
+  message: string;
+  requestId?: string;
+  redactionCount: number;
+}
+
 const DEFAULT_TIMESTAMP = "1970-01-01T00:00:00.000Z";
 const DEFAULT_RESOURCE_ROUTE = "/v1/ingest/connectors/mcp/resources";
 const DEFAULT_PREVIEW_ROUTE = "/v1/ingest/connectors/mcp/preview";
+const timestampKeys = [
+  "generatedAt",
+  "generated_at",
+  "createdAt",
+  "created_at",
+  "updatedAt",
+  "updated_at",
+] as const;
+const fixtureEnvelopeKeys = [
+  "fixture",
+  "requestFixture",
+  "request_fixture",
+  "requestsFixture",
+  "requests_fixture",
+  "apiRequests",
+  "api_requests",
+  "mcpFixture",
+  "mcp_fixture",
+  "data",
+  "result",
+  "value",
+  "payload",
+  "body",
+] as const;
+const responseBodyKeys = [
+  "body",
+  "json",
+  "data",
+  "result",
+  "value",
+  "payload",
+] as const;
+const schemaIssueKeys = [
+  "schemaIssues",
+  "schema_issues",
+  "validationIssues",
+  "validation_issues",
+  "issues",
+  "errors",
+] as const;
 const LOCAL_URI_SCHEMES = new Set([
   "file",
   "fixture",
+  "ingest",
   "local",
   "sovereignops",
   "stdin",
@@ -298,22 +361,28 @@ export function buildIngestConnectorMcpFixtureState(
   const mismatchIndicators = normalized.records
     .filter((record) => record.mismatchFields.length > 0)
     .map(buildMismatchIndicator);
-  const malformedWarnings = normalized.records
-    .filter((record) => record.malformed)
-    .map((record) =>
-      buildWarning("malformed_request", 1, {
-        requestId: record.id,
-      }),
-    );
+  const schemaIssues = normalized.schemaIssues.map(buildSchemaIssue);
+  const malformedRequestCount = normalized.records.filter((record) => record.malformed)
+    .length;
+  const malformedWarnings =
+    malformedRequestCount > 0
+      ? [buildWarning("malformed_request", malformedRequestCount)]
+      : [];
+  const schemaIssueWarnings =
+    schemaIssues.length > 0
+      ? [buildWarning("schema_issue", schemaIssues.length)]
+      : [];
   const warnings = dedupeWarnings([
     ...warningsFromRedactionReport(normalized.redactionReport),
     ...malformedWarnings,
+    ...schemaIssueWarnings,
   ]);
   const errorStates = buildErrorStates(normalized);
   const redactionCount = Math.max(
     redactionReportCount(normalized.redactionReport),
     sum(requestCards, (card) => card.redactionCount) +
-      sum(errorStates, (error) => error.redactionCount),
+      sum(errorStates, (error) => error.redactionCount) +
+      sum(schemaIssues, (issue) => issue.redactionCount),
   );
   const safety = buildSafetySummary(normalized.records, normalized.safetyEvidence);
   const successfulRequestCount = requestCards.filter(
@@ -372,6 +441,8 @@ export function buildIngestConnectorMcpFixtureState(
     connectorCount: connectorIds.length,
     connectorIds,
     mismatchCount: mismatchIndicators.length,
+    malformedRequestCount,
+    schemaIssueCount: schemaIssues.length,
     warningCount: warnings.length,
     localOnly: safety.localOnly,
     noNetwork: safety.noNetwork,
@@ -402,6 +473,7 @@ export function buildIngestConnectorMcpFixtureState(
       safety,
     }),
     mismatchIndicators,
+    schemaIssues,
     warnings,
     errorStates,
     emptyState: buildIngestConnectorMcpFixtureEmptyState(),
@@ -454,34 +526,32 @@ function normalizeFixture(
   options: BuildIngestConnectorMcpFixtureStateOptions,
 ): NormalizedFixture {
   const root = clonePlain(input);
+  const fixtureInput = unwrapFixtureEnvelope(root);
   const rootRecord = isRecord(root) ? root : undefined;
+  const fixtureRecord = isRecord(fixtureInput) ? fixtureInput : undefined;
   const generatedAt = normalizeTimestamp(
-    timestampField(
-      rootRecord,
-      "generatedAt",
-      "generated_at",
-      "createdAt",
-      "created_at",
-      "updatedAt",
-      "updated_at",
-    ),
+    timestampField(fixtureRecord, ...timestampKeys) ??
+      timestampField(rootRecord, ...timestampKeys),
     options.defaultTimestamp,
   );
-  const schemaVersion = stringField(rootRecord, "schemaVersion", "schema_version");
+  const schemaVersion =
+    stringField(fixtureRecord, "schemaVersion", "schema_version") ??
+    stringField(rootRecord, "schemaVersion", "schema_version");
   const rootSafety = collectSafetyEvidence(rootRecord);
-  const records = normalizeRequestRecords(root, generatedAt, rootSafety);
+  const records = normalizeRequestRecords(fixtureInput, generatedAt, rootSafety);
   const connectorIds = uniqueStrings([
     ...records.flatMap((record) => record.connectorIds),
+    ...collectConnectorIds(fixtureRecord),
     ...collectConnectorIds(rootRecord),
   ]);
   const resourceKeys = uniqueStrings(records.flatMap((record) => record.resourceKeys));
-  const inputError =
-    root === undefined ||
-    root === null ||
-    Array.isArray(root) ||
-    isRecord(root)
-      ? undefined
-      : "Ingest connector MCP fixture input must be an object.";
+  const inputError = fixtureInputError(root, fixtureInput);
+  const schemaIssues = collectFixtureSchemaIssues(
+    root,
+    fixtureInput,
+    records.length,
+    options.expectedRequestCount,
+  );
 
   return {
     generatedAt,
@@ -491,8 +561,250 @@ function normalizeFixture(
     resourceKeys,
     safetyEvidence: rootSafety,
     redactionReport: analyzeRedactions(root),
+    schemaIssues,
     ...(inputError === undefined ? {} : { inputError }),
   };
+}
+
+function unwrapFixtureEnvelope(input: unknown): unknown {
+  let current = input;
+  const seen = new WeakSet<object>();
+
+  for (let depth = 0; depth < 8; depth += 1) {
+    if (!isRecord(current)) {
+      return current;
+    }
+    if (seen.has(current)) {
+      return current;
+    }
+    seen.add(current);
+    if (looksLikeFixtureRoot(current)) {
+      return current;
+    }
+
+    const next = fixtureEnvelopeCandidate(current);
+    if (next === undefined || next === current) {
+      return current;
+    }
+    current = next;
+  }
+
+  return current;
+}
+
+function looksLikeFixtureRoot(value: AnyRecord): boolean {
+  return (
+    Object.hasOwn(value, "requests") ||
+    looksLikeRequestRecord(value) ||
+    looksLikeMcpBody(value)
+  );
+}
+
+function fixtureEnvelopeCandidate(record: AnyRecord): unknown | undefined {
+  for (const key of fixtureEnvelopeKeys) {
+    if (!Object.hasOwn(record, key)) {
+      continue;
+    }
+    const candidate = record[key];
+    if (!isRecord(candidate)) {
+      continue;
+    }
+    if (looksLikeFixtureRoot(candidate) || hasFixtureEnvelopeKey(candidate)) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
+function hasFixtureEnvelopeKey(record: AnyRecord): boolean {
+  return fixtureEnvelopeKeys.some((key) => Object.hasOwn(record, key));
+}
+
+function fixtureInputError(root: unknown, fixtureInput: unknown): string | undefined {
+  if (
+    root === undefined ||
+    root === null ||
+    Array.isArray(root) ||
+    isRecord(root)
+  ) {
+    if (
+      isRecord(fixtureInput) &&
+      Object.hasOwn(fixtureInput, "requests") &&
+      !Array.isArray(fixtureInput.requests)
+    ) {
+      return "MCP fixture requests must be an array.";
+    }
+    return undefined;
+  }
+
+  return "Ingest connector MCP fixture input must be an object.";
+}
+
+function collectFixtureSchemaIssues(
+  root: unknown,
+  fixtureInput: unknown,
+  normalizedRequestCount: number,
+  expectedRequestCount: number | undefined,
+): SchemaIssueRecord[] {
+  const issues: SchemaIssueRecord[] = [];
+  const rootRecord = isRecord(root) ? root : undefined;
+  const fixtureRecord = isRecord(fixtureInput) ? fixtureInput : undefined;
+
+  issues.push(...collectSchemaIssueEntries(rootRecord));
+  if (fixtureRecord !== undefined && fixtureRecord !== rootRecord) {
+    issues.push(...collectSchemaIssueEntries(fixtureRecord));
+  }
+  if (Array.isArray(fixtureRecord?.requests)) {
+    for (const entry of fixtureRecord.requests) {
+      if (!isRecord(entry)) {
+        continue;
+      }
+      const requestId = safeOptionalText(
+        stringField(entry, "id", "requestId", "request_id"),
+      );
+      issues.push(
+        ...collectSchemaIssueEntries(entry).map((issue) => ({
+          ...issue,
+          requestId: issue.requestId ?? requestId,
+        })),
+      );
+    }
+  }
+
+  if (
+    fixtureRecord !== undefined &&
+    Object.hasOwn(fixtureRecord, "requests") &&
+    !Array.isArray(fixtureRecord.requests)
+  ) {
+    issues.push(normalizeSchemaIssue("requests must be an array.", "requests"));
+  }
+
+  const declaredRequestCount =
+    expectedRequestCount ??
+    declaredFixtureRequestCount(fixtureRecord) ??
+    declaredFixtureRequestCount(rootRecord);
+  if (
+    declaredRequestCount !== undefined &&
+    declaredRequestCount !== normalizedRequestCount
+  ) {
+    issues.push(
+      normalizeSchemaIssue(
+        `expected ${formatCount(
+          declaredRequestCount,
+          "request",
+        )} but normalized ${formatCount(normalizedRequestCount, "request")}.`,
+        "requests",
+      ),
+    );
+  }
+
+  return dedupeSchemaIssues(issues);
+}
+
+function collectSchemaIssueEntries(
+  record: AnyRecord | undefined,
+): SchemaIssueRecord[] {
+  if (record === undefined) {
+    return [];
+  }
+
+  const issues: SchemaIssueRecord[] = [];
+  for (const key of schemaIssueKeys) {
+    const value = record[key];
+    if (Array.isArray(value)) {
+      issues.push(...value.map((entry) => normalizeSchemaIssue(entry, key)));
+    }
+  }
+
+  const error = recordField(record, "error");
+  const details = recordField(error, "details");
+  const validation = recordField(
+    record,
+    "validation",
+    "schemaValidation",
+    "schema_validation",
+  );
+  for (const nested of [error, details, validation]) {
+    if (nested === undefined) {
+      continue;
+    }
+    for (const key of schemaIssueKeys) {
+      const value = nested[key];
+      if (Array.isArray(value)) {
+        issues.push(...value.map((entry) => normalizeSchemaIssue(entry, key)));
+      }
+    }
+  }
+
+  return issues;
+}
+
+function normalizeSchemaIssue(
+  value: unknown,
+  fallbackPath: string,
+): SchemaIssueRecord {
+  const fallbackMessage = "MCP fixture schema validation issue.";
+  if (!isRecord(value)) {
+    const message = redactSensitiveText(value, fallbackMessage);
+    return {
+      path: fallbackPath,
+      message: message.text,
+      redactionCount: message.redactionCount,
+    };
+  }
+
+  const rawPath =
+    stringField(value, "path", "instancePath", "instance_path", "schemaPath", "field") ??
+    fallbackPath;
+  const rawMessage =
+    stringField(value, "message", "detail", "description", "code") ??
+    JSON.stringify(redactSensitiveValue(value));
+  const requestId = stringField(value, "requestId", "request_id");
+  const path = redactSensitiveText(rawPath, fallbackPath);
+  const message = redactSensitiveText(rawMessage, fallbackMessage);
+  const safeRequestId = safeOptionalText(requestId);
+
+  return {
+    path: path.text,
+    message: message.text,
+    ...(safeRequestId === undefined ? {} : { requestId: safeRequestId }),
+    redactionCount: path.redactionCount + message.redactionCount,
+  };
+}
+
+function declaredFixtureRequestCount(record: AnyRecord | undefined): number | undefined {
+  if (record === undefined) {
+    return undefined;
+  }
+  return (
+    integerField(record, "requestCount", "request_count", "expectedRequestCount") ??
+    integerField(recordField(record, "summary"), "requestCount", "request_count") ??
+    integerField(recordField(record, "counts"), "requestCount", "request_count") ??
+    integerField(recordField(record, "metadata"), "requestCount", "request_count")
+  );
+}
+
+function dedupeSchemaIssues(
+  issues: readonly SchemaIssueRecord[],
+): SchemaIssueRecord[] {
+  const byKey = new Map<string, SchemaIssueRecord>();
+  for (const issue of issues) {
+    const key = [issue.path, issue.message, issue.requestId ?? ""].join("\u0000");
+    const previous = byKey.get(key);
+    if (previous === undefined) {
+      byKey.set(key, issue);
+      continue;
+    }
+    byKey.set(key, {
+      ...previous,
+      redactionCount: Math.max(previous.redactionCount, issue.redactionCount),
+    });
+  }
+  return [...byKey.values()].sort((left, right) =>
+    left.path.localeCompare(right.path) ||
+    left.message.localeCompare(right.message) ||
+    (left.requestId ?? "").localeCompare(right.requestId ?? ""),
+  );
 }
 
 function normalizeRequestRecords(
@@ -500,10 +812,20 @@ function normalizeRequestRecords(
   generatedAt: string,
   rootSafety: SafetyEvidence,
 ): FixtureRecord[] {
+  if (looksLikeSharedRequestBundle(input)) {
+    return input.requests.map((entry, index) =>
+      normalizeSharedBundleRequestRecord(input, entry, index, generatedAt, rootSafety),
+    );
+  }
+
   if (isRecord(input) && Array.isArray(input.requests)) {
     return input.requests.map((entry, index) =>
       normalizeRequestRecord(entry, index, generatedAt, rootSafety),
     );
+  }
+
+  if (isRecord(input) && Object.hasOwn(input, "requests")) {
+    return [];
   }
 
   if (isRecord(input) && looksLikeRequestRecord(input)) {
@@ -528,6 +850,148 @@ function normalizeRequestRecords(
   }
 
   return [];
+}
+
+function normalizeSharedBundleRequestRecord(
+  bundle: AnyRecord,
+  input: unknown,
+  index: number,
+  _generatedAt: string,
+  rootSafety: SafetyEvidence,
+): FixtureRecord {
+  if (!isRecord(input)) {
+    return normalizeRequestRecord(input, index, _generatedAt, rootSafety);
+  }
+
+  const operation = normalizeSharedOperation(stringField(input, "operation"));
+  if (operation === undefined) {
+    return normalizeRequestRecord(input, index, _generatedAt, rootSafety);
+  }
+
+  const responsePick = pickSharedBundleResponseBody(bundle, input, operation);
+  const routePath = sharedBundleRoutePath(input, operation);
+  const method = operation === "preview" ? "POST" : "GET";
+  const expectedStatus = 200;
+  const statusCode = 200;
+  const bodySafety = mergeSafetyEvidence(
+    rootSafety,
+    collectSafetyEvidence(input),
+    collectSafetyEvidence(responsePick.body),
+  );
+  const connectorIds = uniqueStrings([
+    ...collectConnectorIds(input),
+    ...collectConnectorIds(responsePick.body),
+    ...collectConnectorIds(bundle),
+  ]);
+  const resourceKeys = uniqueStrings(collectResourceKeys(responsePick.body));
+
+  return {
+    id:
+      safeIdentifier(
+        stringField(input, "id", "requestId", "request_id"),
+        `request_${index + 1}`,
+      ) ?? `request_${index + 1}`,
+    index,
+    method,
+    routePath,
+    statusCode,
+    expectedStatus,
+    responseSource: responsePick.source,
+    malformed: false,
+    matches: { schema: true },
+    mismatchFields: [],
+    connectorIds,
+    resourceKeys,
+    resourceSuccess: isResourceRoute(routePath),
+    previewSuccess: isPreviewRoute(routePath) && previewAccepted(responsePick.body),
+    localOnly: safetyLocalOnly(bodySafety),
+    noNetwork: safetyNoNetwork(bodySafety),
+    durableWrites: bodySafety.durableWriteTrueCount > 0,
+    redactionCount: redactionReportCount(analyzeRedactions(input)),
+  };
+}
+
+function looksLikeSharedRequestBundle(value: unknown): value is AnyRecord & {
+  requests: unknown[];
+} {
+  return (
+    isRecord(value) &&
+    Array.isArray(value.requests) &&
+    (isRecord(value.resources) ||
+      Array.isArray(value.resourceFixtures) ||
+      isRecord(value.preview)) &&
+    value.requests.some(looksLikeSharedRequestFixture)
+  );
+}
+
+function looksLikeSharedRequestFixture(value: unknown): boolean {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return (
+    normalizeSharedOperation(stringField(value, "operation")) !== undefined ||
+    stringField(value, "responseSchemaVersion", "response_schema_version") !== undefined ||
+    stringField(value, "fixture") !== undefined
+  );
+}
+
+function normalizeSharedOperation(
+  value: string | undefined,
+): "resources/list" | "resources/read" | "preview" | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  const normalized = value.trim().toLocaleLowerCase();
+  if (
+    normalized === "resources/list" ||
+    normalized === "resources.read" ||
+    normalized === "resources/read" ||
+    normalized === "preview"
+  ) {
+    return normalized === "resources.read" ? "resources/read" : normalized;
+  }
+  return undefined;
+}
+
+function pickSharedBundleResponseBody(
+  bundle: AnyRecord,
+  request: AnyRecord,
+  operation: "resources/list" | "resources/read" | "preview",
+): ResponsePick {
+  if (operation === "preview") {
+    return { body: bundle.preview, source: "expected" };
+  }
+  if (operation === "resources/list") {
+    return { body: bundle.resources, source: "expected" };
+  }
+
+  const resourceUri = stringField(request, "resourceUri", "resource_uri");
+  const fixture = Array.isArray(bundle.resourceFixtures)
+    ? bundle.resourceFixtures.find(
+        (entry) =>
+          isRecord(entry) &&
+          (stringField(recordField(entry, "resource"), "uri") === resourceUri ||
+            stringField(entry, "uri", "resourceUri", "resource_uri") === resourceUri),
+      )
+    : undefined;
+  return { body: fixture, source: "expected" };
+}
+
+function sharedBundleRoutePath(
+  request: AnyRecord,
+  operation: "resources/list" | "resources/read" | "preview",
+): string {
+  if (operation === "preview") {
+    return DEFAULT_PREVIEW_ROUTE;
+  }
+  if (operation === "resources/list") {
+    return DEFAULT_RESOURCE_ROUTE;
+  }
+
+  const connectorId =
+    normalizeConnectorId(stringField(request, "connectorId", "connector_id") ?? "") ??
+    "resource";
+  return `${DEFAULT_RESOURCE_ROUTE}/${connectorId}`;
 }
 
 function normalizeRequestRecord(
@@ -565,12 +1029,18 @@ function normalizeRequestRecord(
   const routePath =
     safeRoutePath(
       stringField(route, "path") ??
+        stringField(request, "path", "routePath", "route_path") ??
         stringField(input, "path", "routePath", "route_path") ??
-        pathFromUrl(stringField(route, "url") ?? stringField(input, "url")),
+        pathFromUrl(
+          stringField(route, "url") ??
+            stringField(request, "url") ??
+            stringField(input, "url"),
+        ),
     ) ?? inferRoutePath(responsePick.body);
   const method =
     normalizeMethod(
       stringField(route, "method") ??
+        stringField(request, "method") ??
         stringField(input, "method") ??
         methodFromInferredRoute(responsePick.body),
     ) ?? "GET";
@@ -587,8 +1057,11 @@ function normalizeRequestRecord(
     matches,
     statusCode,
     expectedStatus,
-    actualBody: actual?.body,
-    expectedBody: input.expectedBody ?? expected?.body,
+    actualBody: pickRecordBody(actual),
+    expectedBody:
+      input.expectedBody ??
+      input.expected_body ??
+      pickRecordBody(expected),
   });
   const bodySafety = mergeSafetyEvidence(
     rootSafety,
@@ -619,8 +1092,10 @@ function normalizeRequestRecord(
     successStatus &&
     isPreviewRoute(routePath) &&
     previewAccepted(responsePick.body);
-  const error =
-    mismatchFields.length > 0
+  const malformed = !looksLikeRequestRecord(input);
+  const error = malformed
+    ? "MCP fixture request is missing method, route, or expected response."
+    : mismatchFields.length > 0
       ? `Replay mismatch: ${mismatchFields.sort().join(", ")}.`
       : requestErrorMessage(input, actual, response, responsePick, statusCode, expectedStatus);
 
@@ -637,7 +1112,7 @@ function normalizeRequestRecord(
     ...(statusCode === undefined ? {} : { statusCode }),
     ...(expectedStatus === undefined ? {} : { expectedStatus }),
     responseSource: responsePick.source,
-    malformed: false,
+    malformed,
     matches,
     mismatchFields,
     ...(error === undefined ? {} : { error }),
@@ -973,6 +1448,31 @@ function buildMismatchIndicator(
   };
 }
 
+function buildSchemaIssue(
+  issue: SchemaIssueRecord,
+  index: number,
+): IngestConnectorMcpFixtureSchemaIssue {
+  const path = redactSensitiveText(issue.path, "$");
+  const message = redactSensitiveText(issue.message, "MCP fixture schema issue.");
+  const requestId = safeOptionalText(issue.requestId);
+  const redactionCount =
+    issue.redactionCount + path.redactionCount + message.redactionCount;
+  const id = `ingest_connector_mcp_fixture.schema_issue.${sanitizeIdentifier(
+    `${requestId ?? "fixture"}.${path.text}.${index + 1}`,
+    `schema_issue_${index + 1}`,
+  )}`;
+
+  return {
+    id,
+    path: path.text,
+    message: message.text,
+    ...(requestId === undefined ? {} : { requestId }),
+    redacted: redactionCount > 0,
+    redactionCount,
+    ariaLabel: ["MCP fixture schema issue", path.text, message.text].join(", "),
+  };
+}
+
 function buildErrorStates(
   fixture: NormalizedFixture,
 ): IngestConnectorMcpFixtureErrorState[] {
@@ -1153,11 +1653,13 @@ function pickResponseBody(
   response: AnyRecord | undefined,
   expected: AnyRecord | undefined,
 ): ResponsePick {
-  if (actual !== undefined && Object.hasOwn(actual, "body")) {
-    return { body: actual.body, source: "actual" };
+  const actualBody = pickRecordBody(actual);
+  if (actualBody !== undefined) {
+    return { body: actualBody, source: "actual" };
   }
-  if (response !== undefined && Object.hasOwn(response, "body")) {
-    return { body: response.body, source: "response" };
+  const responseBody = pickRecordBody(response);
+  if (responseBody !== undefined) {
+    return { body: responseBody, source: "response" };
   }
   if (Object.hasOwn(record, "expectedBody")) {
     return { body: record.expectedBody, source: "expected" };
@@ -1165,8 +1667,9 @@ function pickResponseBody(
   if (Object.hasOwn(record, "expected_body")) {
     return { body: record.expected_body, source: "expected" };
   }
-  if (expected !== undefined && Object.hasOwn(expected, "body")) {
-    return { body: expected.body, source: "expected" };
+  const expectedBody = pickRecordBody(expected);
+  if (expectedBody !== undefined) {
+    return { body: expectedBody, source: "expected" };
   }
   if (expected !== undefined && Object.hasOwn(expected, "error")) {
     return { body: { error: expected.error }, source: "expected" };
@@ -1175,6 +1678,18 @@ function pickResponseBody(
     return { body: record.body, source: "body" };
   }
   return { source: "none" };
+}
+
+function pickRecordBody(record: AnyRecord | undefined): unknown | undefined {
+  if (record === undefined) {
+    return undefined;
+  }
+  for (const key of responseBodyKeys) {
+    if (Object.hasOwn(record, key)) {
+      return record[key];
+    }
+  }
+  return undefined;
 }
 
 function collectMismatchFields(input: {
@@ -1302,7 +1817,7 @@ function collectResourceKeys(value: unknown): string[] {
 
   const keys: string[] = [];
   if (looksLikeResourceRecord(value)) {
-    keys.push(resourceKey(value));
+    return [resourceKey(value)];
   }
   for (const nested of Object.values(value)) {
     keys.push(...collectResourceKeys(nested));
@@ -1311,6 +1826,10 @@ function collectResourceKeys(value: unknown): string[] {
 }
 
 function looksLikeResourceRecord(value: AnyRecord): boolean {
+  const schemaVersion = stringField(value, "schemaVersion", "schema_version");
+  if (schemaVersion?.includes("mcp-preview") === true) {
+    return false;
+  }
   if (Array.isArray(value.resources)) {
     return false;
   }
@@ -1320,7 +1839,13 @@ function looksLikeResourceRecord(value: AnyRecord): boolean {
   if (isRecord(value.resource) && isRecord(value.connector)) {
     return true;
   }
-  const schemaVersion = stringField(value, "schemaVersion", "schema_version");
+  if (
+    stringField(value, "uri", "resourceUri", "resource_uri") !== undefined &&
+    stringField(value, "mimeType", "mime_type") !== undefined &&
+    (stringField(value, "id") !== undefined || stringField(value, "name") !== undefined)
+  ) {
+    return true;
+  }
   return schemaVersion?.includes("ingest-connector-mcp-resource/") === true;
 }
 
@@ -1340,7 +1865,7 @@ function resourceKey(value: AnyRecord): string {
   const resource = recordField(value, "resource");
   const uri = stringField(resource, "uri", "resourceUri", "resource_uri") ??
     stringField(value, "uri", "resourceUri", "resource_uri");
-  return safeText(connectorId ?? uri ?? JSON.stringify(redactSensitiveValue(value)), "resource");
+  return safeText(uri ?? connectorId ?? JSON.stringify(redactSensitiveValue(value)), "resource");
 }
 
 function collectSafetyEvidence(
@@ -1394,6 +1919,7 @@ function observeBooleanSafety(
   if (token === "local_only" || token === "local") {
     if (value) {
       evidence.localOnlyTrueCount += 1;
+      evidence.noNetworkTrueCount += 1;
     } else {
       evidence.localOnlyFalseCount += 1;
     }
@@ -1866,6 +2392,8 @@ function warningTitle(code: IngestConnectorMcpFixtureWarningCode): string {
       return "Private marker redacted";
     case "malformed_request":
       return "Malformed request";
+    case "schema_issue":
+      return "Schema issue";
   }
 }
 
@@ -1882,6 +2410,8 @@ function warningDescription(
       return `${formatCount(count, "private marker")} omitted from MCP fixture state.`;
     case "malformed_request":
       return `${formatCount(count, "request")} could not be normalized.`;
+    case "schema_issue":
+      return `${formatCount(count, "schema issue")} reported by MCP fixture validation.`;
   }
 }
 
@@ -1948,6 +2478,10 @@ function normalizeConnectorId(value: string): string | undefined {
 function connectorIdFromUri(uri: string | undefined): string | undefined {
   if (uri === undefined) {
     return undefined;
+  }
+  const ingestUriMatch = uri.match(/^ingest:\/\/([^/?#]+)/i);
+  if (ingestUriMatch !== null) {
+    return ingestUriMatch[1];
   }
   const connectorPathMatch = uri.match(/\/connectors\/([^/?#]+)/i);
   if (connectorPathMatch !== null) {

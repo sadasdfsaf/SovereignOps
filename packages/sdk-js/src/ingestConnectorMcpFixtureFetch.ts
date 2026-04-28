@@ -8,6 +8,17 @@ import {
   type JsonValue,
 } from "./client.ts";
 import {
+  INGEST_CONNECTOR_MCP_API_REQUESTS_SCHEMA_VERSION as SHARED_API_REQUESTS_SCHEMA_VERSION,
+  INGEST_CONNECTOR_MCP_PREVIEW_SCHEMA_VERSION as SHARED_PREVIEW_SCHEMA_VERSION,
+  INGEST_CONNECTOR_MCP_RESOURCES_SCHEMA_VERSION as SHARED_RESOURCES_SCHEMA_VERSION,
+  INGEST_CONNECTOR_MCP_RESOURCE_SCHEMA_VERSION as SHARED_RESOURCE_SCHEMA_VERSION,
+  validateIngestConnectorMcpApiRequestBundle,
+  validateIngestConnectorMcpPreview,
+  validateIngestConnectorMcpResource,
+  validateIngestConnectorMcpResources,
+  type IngestConnectorMcpApiValidationIssue,
+} from "../../schemas/src/ingestConnectorMcpApi.ts";
+import {
   createIngestConnectorMcpClient,
   type IngestConnectorMcpClient,
   type IngestConnectorMcpClientOptions,
@@ -23,6 +34,9 @@ const MCP_RESOURCE_LIST_ROUTE_PATTERN = /^\/v[0-9]+\/ingest\/connectors\/mcp\/re
 const MCP_RESOURCE_READ_ROUTE_PATTERN = /^\/v[0-9]+\/ingest\/connectors\/mcp\/resources\/([^/?#]+)$/;
 const MCP_PREVIEW_ROUTE_PATTERN = /^\/v[0-9]+\/ingest\/connectors\/mcp\/preview$/;
 const CONNECTOR_ID_PATTERN = /^local\.[A-Za-z0-9_.-]{1,96}$/;
+const SHARED_VALIDATION_GENERATED_AT = "1970-01-01T00:00:00.000Z";
+const SHARED_EXCLUDED_CONTENT_TEXT = "[content excluded]";
+const SHARED_FIXTURE_REFERENCE = "connector-mcp-api-requests.json";
 
 const RAW_LOCAL_PATH_PATTERN =
   /(?:\b[A-Za-z]:[\\/][^\s"',;)}\]]+|\\\\[^\\\s"',;)}\]]+[\\][^\s"',;)}\]]+|\b(?:\/Users|\/home|\/root|\/tmp|\/var|\/etc|\/opt|\/private|\/mnt|\/Volumes)\/[^\s"',;)}\]]+)/g;
@@ -631,7 +645,7 @@ function validateFixtureBundle(value: unknown): asserts value is IngestConnector
   }
 
   if (Array.isArray(value.requests)) {
-    validateRequestEntries(value.requests, issues);
+    validateRequestEntries(value.requests, issues, sharedGeneratedAt(value));
   }
 
   if (issues.length > 0) {
@@ -642,6 +656,7 @@ function validateFixtureBundle(value: unknown): asserts value is IngestConnector
 function validateRequestEntries(
   requests: readonly unknown[],
   issues: IngestConnectorMcpFixtureIssue[],
+  generatedAt: unknown,
 ): void {
   const seenIds = new Set<string>();
   let successfulListRoutes = 0;
@@ -707,11 +722,23 @@ function validateRequestEntries(
     const status = request.expectedStatus;
     if (isSuccessStatus(status)) {
       if (routeKind === "resources_list") {
-        successfulListRoutes += validateSuccessfulListResponse(request, path, issues) ? 1 : 0;
+        const valid = validateSuccessfulListResponse(request, path, issues);
+        successfulListRoutes += valid ? 1 : 0;
+        if (valid) {
+          collectSharedSuccessfulResponseIssues(request, path, routeKind, generatedAt, issues);
+        }
       } else if (routeKind === "resource_read") {
-        successfulReadRoutes += validateSuccessfulReadResponse(request, path, routePath, issues) ? 1 : 0;
+        const valid = validateSuccessfulReadResponse(request, path, routePath, issues);
+        successfulReadRoutes += valid ? 1 : 0;
+        if (valid) {
+          collectSharedSuccessfulResponseIssues(request, path, routeKind, generatedAt, issues);
+        }
       } else {
-        successfulPreviewRoutes += validateSuccessfulPreviewResponse(request, path, issues) ? 1 : 0;
+        const valid = validateSuccessfulPreviewResponse(request, path, issues);
+        successfulPreviewRoutes += valid ? 1 : 0;
+        if (valid) {
+          collectSharedSuccessfulResponseIssues(request, path, routeKind, generatedAt, issues);
+        }
       }
     } else if (Number.isInteger(status) && (status as number) >= 400) {
       validateErrorResponseBody(request.expectedBody, `${path}.expectedBody`, issues);
@@ -738,6 +765,7 @@ function validateRequestEntries(
       message: "requests must contain at least one successful POST MCP preview fixture",
     });
   }
+  collectSharedFixtureBundleProjectionIssues(requests, generatedAt, issues);
 }
 
 function collectRouteMethodAndBodyIssues(
@@ -855,6 +883,447 @@ function validateSuccessfulPreviewResponse(
   collectPreviewRequestResponseConsistencyIssues(entry.body, body, path, issues);
 
   return issues.length === bodyIssuesStart;
+}
+
+function collectSharedSuccessfulResponseIssues(
+  entry: Record<string, unknown>,
+  path: string,
+  routeKind: McpFixtureRouteKind,
+  generatedAt: unknown,
+  issues: IngestConnectorMcpFixtureIssue[],
+): void {
+  const body = entry.expectedBody;
+  if (!isRecord(body)) {
+    return;
+  }
+
+  if (routeKind === "resources_list") {
+    if (!Array.isArray(body.resources)) {
+      return;
+    }
+    body.resources.forEach((resource, index) => {
+      const result = validateIngestConnectorMcpResources(
+        buildSharedResourcesEnvelope(resource, generatedAt),
+      );
+      issues.push(
+        ...sharedValidationIssues(result, (issuePath) =>
+          mapSharedResourcesIssuePath(
+            issuePath,
+            `${path}.expectedBody.resources.${index}`,
+          )
+        ),
+      );
+    });
+    return;
+  }
+
+  if (routeKind === "resource_read") {
+    const result = validateIngestConnectorMcpResource(
+      buildSharedResourceEnvelope(body.resource, generatedAt),
+    );
+    issues.push(
+      ...sharedValidationIssues(result, (issuePath) =>
+        mapSharedResourceEnvelopeIssuePath(issuePath, `${path}.expectedBody.resource`)
+      ),
+    );
+    return;
+  }
+
+  const result = validateIngestConnectorMcpPreview(
+    buildSharedPreviewEnvelope(body, generatedAt),
+  );
+  issues.push(
+    ...sharedValidationIssues(result, (issuePath) =>
+      mapSharedPreviewIssuePath(issuePath, `${path}.expectedBody`)
+    ),
+  );
+}
+
+function collectSharedFixtureBundleProjectionIssues(
+  requests: readonly unknown[],
+  generatedAt: unknown,
+  issues: IngestConnectorMcpFixtureIssue[],
+): void {
+  const listRequest = requests.find((request) =>
+    isSuccessfulRouteRequest(request, "resources_list")
+  );
+  if (!isRecord(listRequest)) {
+    return;
+  }
+
+  requests.forEach((request, index) => {
+    if (!isSuccessfulRouteRequest(request, "preview") || !isRecord(request.expectedBody)) {
+      return;
+    }
+
+    const previewBody = request.expectedBody;
+    const sharedPreview = buildSharedPreviewEnvelope(previewBody, generatedAt);
+    const sharedResource = isRecord(sharedPreview) && Array.isArray(sharedPreview.resources)
+      ? sharedPreview.resources[0]
+      : undefined;
+    const connectorId = stringValue(previewBody.connectorId);
+    const resourceSummary = isRecord(sharedResource) && isRecord(sharedResource.resource)
+      ? sharedResource.resource
+      : {};
+    const resourceUri = stringValue(resourceSummary.uri);
+    const sharedRequests = [
+      {
+        id: sharedRequestId(recordStringValue(listRequest, "id"), "list.resources"),
+        requestedAt: generatedAt,
+        connectorId,
+        operation: "resources/list",
+        responseSchemaVersion: SHARED_RESOURCES_SCHEMA_VERSION,
+        fixture: SHARED_FIXTURE_REFERENCE,
+      },
+      ...sharedReadRequestFixturesForConnector(requests, connectorId, resourceUri, generatedAt),
+      {
+        id: sharedRequestId(recordStringValue(request, "id"), "preview.local"),
+        requestedAt: generatedAt,
+        connectorId,
+        operation: "preview",
+        responseSchemaVersion: SHARED_PREVIEW_SCHEMA_VERSION,
+        fixture: SHARED_FIXTURE_REFERENCE,
+      },
+    ];
+    const sharedBundle = {
+      schemaVersion: SHARED_API_REQUESTS_SCHEMA_VERSION,
+      bundleId: sharedBundleId(connectorId),
+      generatedAt,
+      connectorId,
+      localOnly: true,
+      requests: sharedRequests,
+      resources: {
+        schemaVersion: SHARED_RESOURCES_SCHEMA_VERSION,
+        generatedAt,
+        connectorId,
+        localOnly: true,
+        resources: [resourceSummary],
+      },
+      resourceFixtures: [sharedResource],
+      preview: sharedPreview,
+    };
+    const result = validateIngestConnectorMcpApiRequestBundle(sharedBundle);
+    issues.push(
+      ...sharedValidationIssues(result, (issuePath) =>
+        `${`requests.${index}.expectedBody.sharedBundle`}${sharedIssuePathSuffix(issuePath)}`
+      ),
+    );
+  });
+}
+
+function sharedReadRequestFixturesForConnector(
+  requests: readonly unknown[],
+  connectorId: string,
+  resourceUri: string,
+  generatedAt: unknown,
+): unknown[] {
+  return requests
+    .filter((request) =>
+      isSuccessfulRouteRequest(request, "resource_read") &&
+      isRecord(request) &&
+      isRecord(request.expectedBody) &&
+      isRecord(request.expectedBody.resource) &&
+      request.expectedBody.resource.connectorId === connectorId
+    )
+    .map((request, index) => ({
+      id: sharedRequestId(
+        isRecord(request) ? recordStringValue(request, "id") : undefined,
+        `read.resource.${index + 1}`,
+      ),
+      requestedAt: generatedAt,
+      connectorId,
+      operation: "resources/read",
+      resourceUri,
+      responseSchemaVersion: SHARED_RESOURCE_SCHEMA_VERSION,
+      fixture: SHARED_FIXTURE_REFERENCE,
+    }));
+}
+
+function isSuccessfulRouteRequest(value: unknown, routeKind: McpFixtureRouteKind): boolean {
+  if (!isRecord(value) || !isSuccessStatus(value.expectedStatus)) {
+    return false;
+  }
+  if (typeof value.method !== "string" || typeof value.path !== "string") {
+    return false;
+  }
+  const routePath = safeNormalizeRoutePath(value.path);
+  return routePath !== undefined &&
+    classifyMcpFixtureRoute(routePath) === routeKind &&
+    (routeKind === "preview"
+      ? normalizeMethod(value.method) === "POST"
+      : normalizeMethod(value.method) === "GET");
+}
+
+function buildSharedResourcesEnvelope(resource: unknown, generatedAt: unknown): unknown {
+  const sharedResource = buildSharedResourceEnvelope(resource, generatedAt);
+  return {
+    schemaVersion: SHARED_RESOURCES_SCHEMA_VERSION,
+    generatedAt,
+    connectorId: isRecord(sharedResource) ? sharedResource.connectorId : undefined,
+    localOnly: isRecord(resource) && Object.hasOwn(resource, "localOnly")
+      ? resource.localOnly
+      : true,
+    resources: isRecord(sharedResource) ? [sharedResource.resource] : [],
+  };
+}
+
+function buildSharedResourceEnvelope(resource: unknown, generatedAt: unknown): unknown {
+  const record = isRecord(resource) ? resource : {};
+  const descriptor = isRecord(record.resource) ? record.resource : {};
+  const content = isRecord(record.content) ? record.content : {};
+  const connectorId = stringValue(record.connectorId);
+  const text = sharedContentText(stringValue(content.text));
+
+  return {
+    schemaVersion: SHARED_RESOURCE_SCHEMA_VERSION,
+    generatedAt,
+    connectorId,
+    localOnly: Object.hasOwn(record, "localOnly") ? record.localOnly : true,
+    resource: {
+      id: connectorId,
+      uri: sharedResourceUri(descriptor.uri, connectorId),
+      name: stringValue(descriptor.name),
+      description: stringValue(descriptor.description),
+      mimeType: stringValue(descriptor.mimeType),
+      textBytes: text.length,
+    },
+    content: {
+      type: "text",
+      text,
+      truncated: false,
+    },
+  };
+}
+
+function buildSharedPreviewEnvelope(
+  value: Record<string, unknown>,
+  generatedAt: unknown,
+): unknown {
+  const resource = isRecord(value.resource) ? value.resource : {};
+  const sharedResource = buildSharedResourceEnvelope(resource, generatedAt);
+  const sharedTextBytes =
+    isRecord(sharedResource) &&
+    isRecord(sharedResource.resource) &&
+    typeof sharedResource.resource.textBytes === "number"
+      ? sharedResource.resource.textBytes
+      : 0;
+
+  return {
+    schemaVersion: SHARED_PREVIEW_SCHEMA_VERSION,
+    generatedAt,
+    connectorId: value.connectorId,
+    localOnly: Object.hasOwn(value, "localOnly") ? value.localOnly : true,
+    dryRun: value.dryRun,
+    request: {
+      maxItems: sharedPreviewLimit(resource, "maxItems"),
+      maxTextBytes: sharedPreviewLimit(resource, "maxTextBytes"),
+    },
+    resources: [sharedResource],
+    summary: {
+      resourceCount: 1,
+      totalTextBytes: sharedTextBytes,
+      truncated: false,
+    },
+  };
+}
+
+function sharedValidationIssues(
+  result: { readonly ok: boolean; readonly issues: readonly IngestConnectorMcpApiValidationIssue[] },
+  mapPath: (path: string) => string,
+): IngestConnectorMcpFixtureIssue[] {
+  if (result.ok) {
+    return [];
+  }
+
+  return result.issues.map((issue) => ({
+    path: redactUnsafeText(mapPath(issue.path)),
+    message: `shared schema: ${redactUnsafeText(issue.message)}`,
+  }));
+}
+
+function mapSharedResourcesIssuePath(path: string, resourcePath: string): string {
+  const clean = normalizeSharedIssuePath(path);
+  if (clean === "" || clean === "resources" || clean === "resources.0") {
+    return resourcePath;
+  }
+  if (clean === "connectorId") {
+    return `${resourcePath}.connectorId`;
+  }
+  if (clean === "localOnly") {
+    return `${resourcePath}.localOnly`;
+  }
+  if (clean === "generatedAt") {
+    return "generatedAt";
+  }
+  if (clean.startsWith("resources.0.")) {
+    return mapSharedResourceSummaryIssuePath(
+      clean.slice("resources.0.".length),
+      resourcePath,
+    );
+  }
+  return `shared.${clean}`;
+}
+
+function mapSharedResourceEnvelopeIssuePath(path: string, resourcePath: string): string {
+  return mapSharedResourceEnvelopeCleanPath(normalizeSharedIssuePath(path), resourcePath);
+}
+
+function mapSharedPreviewIssuePath(path: string, previewPath: string): string {
+  const clean = normalizeSharedIssuePath(path);
+  if (clean === "" || clean === "resources" || clean === "resources.0") {
+    return `${previewPath}.resource`;
+  }
+  if (clean === "connectorId" || clean === "localOnly" || clean === "dryRun") {
+    return `${previewPath}.${clean}`;
+  }
+  if (clean === "generatedAt") {
+    return "generatedAt";
+  }
+  if (clean === "request.maxItems") {
+    return `${previewPath}.resource.connector.preview.maxItems`;
+  }
+  if (clean === "request.maxTextBytes") {
+    return `${previewPath}.resource.connector.preview.maxTextBytes`;
+  }
+  if (clean.startsWith("resources.0.")) {
+    return mapSharedResourceEnvelopeCleanPath(
+      clean.slice("resources.0.".length),
+      `${previewPath}.resource`,
+    );
+  }
+  if (clean.startsWith("summary.")) {
+    return `${previewPath}.preview.${clean.slice("summary.".length)}`;
+  }
+  return `${previewPath}.shared.${clean}`;
+}
+
+function mapSharedResourceEnvelopeCleanPath(clean: string, resourcePath: string): string {
+  if (clean === "") {
+    return resourcePath;
+  }
+  if (clean === "connectorId") {
+    return `${resourcePath}.connectorId`;
+  }
+  if (clean === "localOnly" || clean === "schemaVersion") {
+    return `${resourcePath}.${clean}`;
+  }
+  if (clean === "generatedAt") {
+    return "generatedAt";
+  }
+  if (clean === "resource") {
+    return `${resourcePath}.resource`;
+  }
+  if (clean.startsWith("resource.")) {
+    return mapSharedResourceSummaryIssuePath(
+      clean.slice("resource.".length),
+      resourcePath,
+    );
+  }
+  if (clean === "content") {
+    return `${resourcePath}.content`;
+  }
+  if (clean === "content.text") {
+    return `${resourcePath}.content.text`;
+  }
+  if (clean === "content.type" || clean === "content.truncated") {
+    return `${resourcePath}.content`;
+  }
+  if (clean.startsWith("content.")) {
+    return `${resourcePath}.${clean}`;
+  }
+  return `shared.${clean}`;
+}
+
+function mapSharedResourceSummaryIssuePath(clean: string, resourcePath: string): string {
+  switch (clean) {
+    case "id":
+      return `${resourcePath}.connectorId`;
+    case "uri":
+      return `${resourcePath}.resource.uri`;
+    case "name":
+      return `${resourcePath}.resource.name`;
+    case "description":
+      return `${resourcePath}.resource.description`;
+    case "mimeType":
+      return `${resourcePath}.resource.mimeType`;
+    case "textBytes":
+      return `${resourcePath}.content.text`;
+    default:
+      return `${resourcePath}.resource.${clean}`;
+  }
+}
+
+function normalizeSharedIssuePath(path: string): string {
+  const clean = path.trim();
+  const withoutRoot = clean === "$"
+    ? ""
+    : clean.startsWith("$.")
+      ? clean.slice(2)
+      : clean.startsWith("$")
+        ? clean.slice(1)
+        : clean;
+  return withoutRoot
+    .replace(/\[(\d+)\]/g, ".$1")
+    .replace(/^\./, "");
+}
+
+function sharedIssuePathSuffix(path: string): string {
+  const clean = normalizeSharedIssuePath(path);
+  return clean.length === 0 ? "" : `.${clean}`;
+}
+
+function sharedGeneratedAt(value: Record<string, unknown>): unknown {
+  return Object.hasOwn(value, "generatedAt")
+    ? value.generatedAt
+    : SHARED_VALIDATION_GENERATED_AT;
+}
+
+function sharedPreviewLimit(
+  resource: Record<string, unknown>,
+  field: "maxItems" | "maxTextBytes",
+): unknown {
+  const connector = isRecord(resource.connector) ? resource.connector : {};
+  const preview = isRecord(connector.preview) ? connector.preview : {};
+  return Object.hasOwn(preview, field) ? preview[field] : 1;
+}
+
+function sharedResourceUri(value: unknown, connectorId: string): string {
+  if (typeof value === "string" && value.startsWith("ingest://")) {
+    return value;
+  }
+  return `ingest://${connectorId}/manifest`;
+}
+
+function sharedContentText(value: string): string {
+  return value.length === 0 ? SHARED_EXCLUDED_CONTENT_TEXT : value;
+}
+
+function sharedBundleId(connectorId: string): string {
+  return `connector.mcp.fixture.${safeSharedToken(connectorId, "connector")}`.slice(0, 96);
+}
+
+function sharedRequestId(value: string | undefined, fallback: string): string {
+  return safeSharedToken(value ?? fallback, fallback).slice(0, 64);
+}
+
+function safeSharedToken(value: string, fallback: string): string {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, ".")
+    .replace(/[^a-z0-9.:-]+/g, ".")
+    .replace(/^[^a-z]+/, "")
+    .replace(/[.:-]{2,}/g, ".")
+    .replace(/[.:-]+$/g, "");
+  return normalized.length === 0 ? fallback : normalized;
+}
+
+function recordStringValue(record: Record<string, unknown>, field: string): string | undefined {
+  return typeof record[field] === "string" ? record[field] : undefined;
+}
+
+function stringValue(value: unknown): string {
+  return typeof value === "string" ? value : "";
 }
 
 function validateErrorResponseBody(

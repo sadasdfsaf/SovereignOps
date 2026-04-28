@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "ingest-connector-mcp-api-requests.v0",
+  "bundleId": "token.bundle",
+  "generatedAt": "not-a-time",
+  "connectorId": "local.files",
+  "localOnly": false,
+  "apiToken": "Bearer sk-example-local-test-value",
+  "requests": [
+    {
+      "id": "list.resources",
+      "requestedAt": "2026-04-27T12:00:00.000Z",
+      "connectorId": "local.files",
+      "operation": "resources/list",
+      "resourceUri": "ingest://local.files/resources/notes",
+      "responseSchemaVersion": "ingest-connector-mcp-resource/v1",
+      "fixture": "C:\\Users\\operator\\private-plan\\resources.json"
+    },
+    {
+      "id": "list.resources",
+      "requestedAt": "2026-04-27T12:00:01.000Z",
+      "connectorId": "remote.files",
+      "operation": "resources/read",
+      "resourceUri": "ingest://remote.files/resources/missing",
+      "responseSchemaVersion": "ingest-connector-mcp-preview/v1",
+      "fixture": "../outside.json"
+    }
+  ],
+  "resources": {
+    "schemaVersion": "ingest-connector-mcp-resources/v1",
+    "generatedAt": "2026-04-27T12:00:00.000Z",
+    "connectorId": "remote.files",
+    "localOnly": true,
+    "resources": [
+      {
+        "id": "notes",
+        "uri": "ingest://local.files/resources/notes",
+        "name": "Release Notes",
+        "description": "Reads C:\\Users\\operator\\private-plan\\notes.md",
+        "mimeType": "text/markdown",
+        "textBytes": 40
+      },
+      {
+        "id": "notes",
+        "uri": "ingest://local.files/resources/notes",
+        "name": "Release Notes Copy",
+        "description": "Duplicate resource entry for testing.",
+        "mimeType": "application/octet-stream",
+        "textBytes": -1
+      }
+    ]
+  },
+  "resourceFixtures": [
+    {
+      "schemaVersion": "ingest-connector-mcp-resource/v1",
+      "generatedAt": "2026-04-27T12:00:01.000Z",
+      "connectorId": "local.files",
+      "localOnly": true,
+      "resource": {
+        "id": "notes",
+        "uri": "ingest://local.files/resources/notes",
+        "name": "Release Notes",
+        "description": "Local release notes prepared for offline indexing.",
+        "mimeType": "text/markdown",
+        "textBytes": 40
+      },
+      "content": {
+        "type": "text",
+        "text": "Release notes ready for local indexing.",
+        "truncated": false
+      }
+    },
+    {
+      "schemaVersion": "ingest-connector-mcp-resource/v1",
+      "generatedAt": "2026-04-27T12:00:02.000Z",
+      "connectorId": "remote.files",
+      "localOnly": false,
+      "resource": {
+        "id": "summary",
+        "uri": "ingest://remote.files/resources/summary",
+        "name": "Raw Summary",
+        "description": "Forwards Bearer sk-example-local-test-value",
+        "mimeType": "application/json",
+        "textBytes": 28
+      },
+      "content": {
+        "type": "text",
+        "text": "{\"status\":\"ready\",\"items\":2}",
+        "truncated": false
+      }
+    }
+  ],
+  "preview": {
+    "schemaVersion": "ingest-connector-mcp-preview/v1",
+    "generatedAt": "2026-04-27T12:00:03.000Z",
+    "connectorId": "remote.files",
+    "localOnly": true,
+    "dryRun": false,
+    "request": {
+      "maxItems": 0,
+      "maxTextBytes": 0
+    },
+    "resources": [
+      {
+        "schemaVersion": "ingest-connector-mcp-resource/v1",
+        "generatedAt": "2026-04-27T12:00:01.000Z",
+        "connectorId": "local.files",
+        "localOnly": true,
+        "resource": {
+          "id": "notes",
+          "uri": "ingest://local.files/resources/notes",
+          "name": "Release Notes",
+          "description": "Local release notes prepared for offline indexing.",
+          "mimeType": "text/markdown",
+          "textBytes": 40
+        },
+        "content": {
+          "type": "text",
+          "text": "Release notes ready for local indexing.",
+          "truncated": false
+        }
+      }
+    ],
+    "summary": {
+      "resourceCount": 2,
+      "totalTextBytes": 999,
+      "truncated": false
+    }
+  }
+}

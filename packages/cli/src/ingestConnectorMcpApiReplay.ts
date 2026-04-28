@@ -18,6 +18,7 @@ export interface IngestConnectorMcpApiReplayCliResult {
 export interface IngestConnectorMcpApiReplayRunOptions {
   readonly cwd?: string;
   readonly dispatch?: IngestConnectorMcpApiDispatcher;
+  readonly sharedSchemaValidators?: IngestConnectorMcpApiReplaySharedSchemaValidators;
 }
 
 export interface IngestConnectorMcpApiReplayRequest {
@@ -39,6 +40,53 @@ export type IngestConnectorMcpApiDispatcher = (
 ) =>
   | IngestConnectorMcpApiReplayResponse
   | Promise<IngestConnectorMcpApiReplayResponse>;
+
+export interface IngestConnectorMcpApiReplaySharedValidationIssue {
+  readonly path: string;
+  readonly message: string;
+}
+
+export interface IngestConnectorMcpApiReplaySharedValidationResult<TValue = unknown> {
+  readonly ok: boolean;
+  readonly issues: readonly IngestConnectorMcpApiReplaySharedValidationIssue[];
+  readonly value?: TValue;
+}
+
+export interface IngestConnectorMcpApiReplayResponseValidationContext {
+  readonly phase: "expected" | "actual";
+  readonly requestId: string;
+  readonly method: string;
+  readonly path: string;
+  readonly status: number;
+}
+
+export interface IngestConnectorMcpApiReplaySharedSchemaValidators {
+  readonly validateFixtureBundle?: (
+    value: unknown,
+  ) => IngestConnectorMcpApiReplaySharedValidationResult | boolean | void;
+  readonly validateResponse?: (
+    response: IngestConnectorMcpApiReplayResponse,
+    context: IngestConnectorMcpApiReplayResponseValidationContext,
+  ) => IngestConnectorMcpApiReplaySharedValidationResult | boolean | void;
+  readonly validateResponseBody?: (
+    body: unknown,
+    context: IngestConnectorMcpApiReplayResponseValidationContext,
+  ) => IngestConnectorMcpApiReplaySharedValidationResult | boolean | void;
+  readonly validateResponseBodies?: Readonly<
+    Partial<
+      Record<
+        "preview" | "resource" | "resources",
+        (
+          body: unknown,
+          context: IngestConnectorMcpApiReplayResponseValidationContext,
+        ) => IngestConnectorMcpApiReplaySharedValidationResult | boolean | void
+      >
+    >
+  >;
+  readonly validateOnlySharedShape?: boolean;
+}
+
+type SharedValidationFunction = (...args: readonly unknown[]) => unknown;
 
 type ParsedFlagValue = string | boolean;
 
@@ -85,6 +133,7 @@ interface ReplayedRequest {
   readonly bodyMatches?: boolean;
   readonly expectationMatches?: boolean;
   readonly expectationIssues: readonly string[];
+  readonly responseValidationIssues: readonly IngestConnectorMcpApiReplaySharedValidationIssue[];
 }
 
 interface RedactionRecord {
@@ -139,6 +188,10 @@ const PRIVATE_MARKER_PATTERNS = [
   /\bprivate[- _]?plan(?:[- _]?pack)?\b/gi,
   /\b(?:codex-pack|plan-pack|sovereignops-codex-pack|codex_start_here)\b/gi,
 ];
+const SHARED_SCHEMA_MODULE_URL = new URL(
+  "../../schemas/src/ingestConnectorMcpApi.ts",
+  import.meta.url,
+);
 
 export async function runIngestConnectorMcpApiReplayCli(
   argv: readonly string[] = [],
@@ -180,7 +233,12 @@ export async function runIngestConnectorMcpApiReplayCli(
       requireStringFlag(parsed, "fixture"),
       options.cwd ?? process.cwd(),
     );
-    const bundle = parseFixtureBundle(await readFixtureJson(fixture));
+    const sharedSchemaValidators =
+      options.sharedSchemaValidators ?? await loadSharedSchemaValidators();
+    const bundle = parseFixtureBundle(
+      await readFixtureJson(fixture),
+      sharedSchemaValidators,
+    );
     const method = optionalMethodFlag(parsed);
     const route = optionalRouteFlag(parsed);
     const id = optionalIdFlag(parsed);
@@ -193,6 +251,7 @@ export async function runIngestConnectorMcpApiReplayCli(
     const replayed = await replayRequests(
       requests,
       options.dispatch ?? createIngestConnectorMcpApiDispatcher(),
+      sharedSchemaValidators,
     );
     const failedRequests = replayed.filter((request) => !replaySucceeded(request)).length;
 
@@ -250,6 +309,7 @@ export function createIngestConnectorMcpApiDispatcher(): IngestConnectorMcpApiDi
 async function replayRequests(
   requests: readonly IngestConnectorMcpApiFixtureRequest[],
   dispatch: IngestConnectorMcpApiDispatcher,
+  sharedSchemaValidators: IngestConnectorMcpApiReplaySharedSchemaValidators,
 ): Promise<readonly ReplayedRequest[]> {
   const replayed: ReplayedRequest[] = [];
 
@@ -266,8 +326,20 @@ async function replayRequests(
         ? undefined
         : jsonEquals(response.body, request.expectedBody);
     const expectationIssues = expectationMismatchIssues(response, request.expectedChecks);
+    const responseValidationIssues = validateResponseWithSharedSchema(
+      response,
+      request,
+      "actual",
+      sharedSchemaValidators,
+    );
+    const allExpectationIssues = [
+      ...expectationIssues,
+      ...responseValidationIssues.map(formatSharedValidationIssue),
+    ];
     const expectationMatches =
-      request.expectedChecks === undefined ? undefined : expectationIssues.length === 0;
+      request.expectedChecks === undefined && responseValidationIssues.length === 0
+        ? undefined
+        : allExpectationIssues.length === 0;
 
     replayed.push({
       fixture: request,
@@ -277,7 +349,8 @@ async function replayRequests(
       statusMatches: response.status === request.expectedStatus,
       ...(bodyMatches === undefined ? {} : { bodyMatches }),
       ...(expectationMatches === undefined ? {} : { expectationMatches }),
-      expectationIssues,
+      expectationIssues: allExpectationIssues,
+      responseValidationIssues,
     });
   }
 
@@ -448,6 +521,13 @@ function formatReplayedRequest(request: ReplayedRequest): Record<string, unknown
     }),
     expectationIssues:
       request.expectationIssues.length === 0 ? undefined : request.expectationIssues,
+    responseValidationIssues:
+      request.responseValidationIssues.length === 0
+        ? undefined
+        : redactor.redact(
+            request.responseValidationIssues,
+            "$.responseValidationIssues",
+          ),
     redactions: redactor.redactions.length === 0 ? undefined : redactor.redactions,
   });
 
@@ -556,7 +636,138 @@ async function readFixtureJson(fixture: ResolvedFixturePath): Promise<unknown> {
   }
 }
 
-function parseFixtureBundle(value: unknown): IngestConnectorMcpApiFixtureBundle {
+async function loadSharedSchemaValidators(): Promise<IngestConnectorMcpApiReplaySharedSchemaValidators> {
+  if (!existsSync(SHARED_SCHEMA_MODULE_URL)) {
+    return {};
+  }
+
+  const sharedModule = await import(SHARED_SCHEMA_MODULE_URL.href) as Record<string, unknown>;
+  return discoverSharedSchemaValidators(sharedModule);
+}
+
+function discoverSharedSchemaValidators(
+  sharedModule: Record<string, unknown>,
+): IngestConnectorMcpApiReplaySharedSchemaValidators {
+  const groups = [
+    sharedModule.ingestConnectorMcpApiValidators,
+    sharedModule.ingestConnectorMcpApiFixtureValidators,
+    sharedModule.ingestConnectorMcpApiSchemas,
+  ].filter(isRecord);
+
+  return optionalFields({
+    validateFixtureBundle: firstSharedValidationFunction(
+      sharedModule,
+      groups,
+      [
+        "validateIngestConnectorMcpApiRequestBundle",
+        "validateIngestConnectorMcpApiFixtureBundle",
+        "validateIngestConnectorMcpApiFixtureRequestBundle",
+        "validateIngestConnectorMcpFixtureBundle",
+        "validateFixtureBundle",
+        "apiRequests",
+        "fixtureBundle",
+      ],
+    ) as IngestConnectorMcpApiReplaySharedSchemaValidators["validateFixtureBundle"],
+    validateResponse: firstSharedValidationFunction(
+      sharedModule,
+      groups,
+      [
+        "validateIngestConnectorMcpApiResponse",
+        "validateIngestConnectorMcpApiFixtureResponse",
+        "validateFixtureResponse",
+        "validateResponse",
+        "response",
+      ],
+    ) as IngestConnectorMcpApiReplaySharedSchemaValidators["validateResponse"],
+    validateResponseBody: firstSharedValidationFunction(
+      sharedModule,
+      groups,
+      [
+        "validateIngestConnectorMcpApiResponseBody",
+        "validateIngestConnectorMcpApiFixtureResponseBody",
+        "validateFixtureResponseBody",
+        "validateResponseBody",
+        "responseBody",
+      ],
+    ) as IngestConnectorMcpApiReplaySharedSchemaValidators["validateResponseBody"],
+    validateResponseBodies: optionalFields({
+      resources: firstSharedValidationFunction(
+        sharedModule,
+        groups,
+        ["validateIngestConnectorMcpResources", "resources"],
+      ),
+      resource: firstSharedValidationFunction(
+        sharedModule,
+        groups,
+        ["validateIngestConnectorMcpResource", "resource"],
+      ),
+      preview: firstSharedValidationFunction(
+        sharedModule,
+        groups,
+        ["validateIngestConnectorMcpPreview", "preview"],
+      ),
+    }) as IngestConnectorMcpApiReplaySharedSchemaValidators["validateResponseBodies"],
+    validateOnlySharedShape: true,
+  });
+}
+
+function firstSharedValidationFunction(
+  sharedModule: Record<string, unknown>,
+  groups: readonly Record<string, unknown>[],
+  names: readonly string[],
+): SharedValidationFunction | undefined {
+  for (const name of names) {
+    const direct = sharedModule[name];
+    if (typeof direct === "function") {
+      return direct as SharedValidationFunction;
+    }
+
+    for (const group of groups) {
+      const grouped = group[name];
+      if (typeof grouped === "function") {
+        return grouped as SharedValidationFunction;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function validateFixtureBundleWithSharedSchema(
+  value: unknown,
+  sharedSchemaValidators: IngestConnectorMcpApiReplaySharedSchemaValidators,
+): unknown {
+  const validator = sharedSchemaValidators.validateFixtureBundle;
+  if (validator === undefined) {
+    return value;
+  }
+  if (
+    sharedSchemaValidators.validateOnlySharedShape === true &&
+    !isSharedMcpApiFixtureBundleShape(value)
+  ) {
+    return value;
+  }
+
+  const result = callSharedValidationFunction(validator, [value], value);
+  if (!result.ok) {
+    throw invalidFixture("Fixture bundle failed shared schema validation.", {
+      issues: result.issues,
+    });
+  }
+
+  return result.value ?? value;
+}
+
+function parseFixtureBundle(
+  value: unknown,
+  sharedSchemaValidators: IngestConnectorMcpApiReplaySharedSchemaValidators,
+): IngestConnectorMcpApiFixtureBundle {
+  const sharedValidatedValue = validateFixtureBundleWithSharedSchema(
+    value,
+    sharedSchemaValidators,
+  );
+
+  value = sharedValidatedValue;
   if (!isRecord(value)) {
     throw invalidFixture("fixture root must be a JSON object.");
   }
@@ -582,13 +793,16 @@ function parseFixtureBundle(value: unknown): IngestConnectorMcpApiFixtureBundle 
     ...(apiBase === undefined ? {} : { apiBase }),
     ...(localOnly === undefined ? {} : { localOnly }),
     ...(durableWrites === undefined ? {} : { durableWrites }),
-    requests: value.requests.map((request, index) => parseFixtureRequest(request, index)),
+    requests: value.requests.map((request, index) =>
+      parseFixtureRequest(request, index, sharedSchemaValidators)
+    ),
   };
 }
 
 function parseFixtureRequest(
   value: unknown,
   index: number,
+  sharedSchemaValidators: IngestConnectorMcpApiReplaySharedSchemaValidators,
 ): IngestConnectorMcpApiFixtureRequest {
   const prefix = `fixture.requests[${index}]`;
   if (!isRecord(value)) {
@@ -614,7 +828,7 @@ function parseFixtureRequest(
   const actorId = optionalNonEmptyString(value.actorId, `${prefix}.actorId`);
   const expectedChecks = optionalChecks(value.expectedChecks, `${prefix}.expectedChecks`);
 
-  return {
+  const fixtureRequest: IngestConnectorMcpApiFixtureRequest = {
     id,
     ...(title === undefined ? {} : { title }),
     method,
@@ -628,6 +842,14 @@ function parseFixtureRequest(
       : {}),
     ...(expectedChecks === undefined ? {} : { expectedChecks }),
   };
+
+  validateFixtureExpectedResponseWithSharedSchema(
+    fixtureRequest,
+    prefix,
+    sharedSchemaValidators,
+  );
+
+  return fixtureRequest;
 }
 
 function optionalChecks(
@@ -641,6 +863,273 @@ function optionalChecks(
     throw invalidFixture(`${label} must be an object.`);
   }
   return cloneJson(value);
+}
+
+function validateFixtureExpectedResponseWithSharedSchema(
+  request: IngestConnectorMcpApiFixtureRequest,
+  requestPath: string,
+  sharedSchemaValidators: IngestConnectorMcpApiReplaySharedSchemaValidators,
+): void {
+  if (request.expectedBody === undefined) {
+    return;
+  }
+
+  const response = {
+    status: request.expectedStatus,
+    headers: Object.freeze({
+      "content-type": "application/json; charset=utf-8",
+    }),
+    body: request.expectedBody,
+  };
+  const issues = validateResponseWithSharedSchema(
+    response,
+    request,
+    "expected",
+    sharedSchemaValidators,
+  );
+  if (issues.length === 0) {
+    return;
+  }
+
+  throw invalidFixture("Fixture expected responses failed shared schema validation.", {
+    issues: issues.map((issue) => ({
+      path: `${requestPath}.expectedBody${sharedIssuePathSuffix(issue.path)}`,
+      message: issue.message,
+    })),
+  });
+}
+
+function validateResponseWithSharedSchema(
+  response: IngestConnectorMcpApiReplayResponse,
+  request: IngestConnectorMcpApiFixtureRequest,
+  phase: IngestConnectorMcpApiReplayResponseValidationContext["phase"],
+  sharedSchemaValidators: IngestConnectorMcpApiReplaySharedSchemaValidators,
+): readonly IngestConnectorMcpApiReplaySharedValidationIssue[] {
+  const context = {
+    phase,
+    requestId: request.id,
+    method: request.method,
+    path: request.path,
+    status: response.status,
+  } satisfies IngestConnectorMcpApiReplayResponseValidationContext;
+
+  const issues: IngestConnectorMcpApiReplaySharedValidationIssue[] = [];
+  if (
+    sharedSchemaValidators.validateOnlySharedShape === true &&
+    !isSharedMcpApiResponseShape(response.body)
+  ) {
+    return issues;
+  }
+
+  if (sharedSchemaValidators.validateResponse !== undefined) {
+    const result = callSharedValidationFunction(
+      sharedSchemaValidators.validateResponse,
+      [response, context],
+      response,
+    );
+    if (!result.ok) {
+      issues.push(...result.issues);
+    }
+  }
+  if (sharedSchemaValidators.validateResponseBody !== undefined) {
+    const result = callSharedValidationFunction(
+      sharedSchemaValidators.validateResponseBody,
+      [response.body, context],
+      response.body,
+    );
+    if (!result.ok) {
+      issues.push(...result.issues);
+    }
+  }
+  const responseKind = sharedMcpApiResponseKind(response.body);
+  const kindValidator = responseKind === undefined
+    ? undefined
+    : sharedSchemaValidators.validateResponseBodies?.[responseKind];
+  if (kindValidator !== undefined) {
+    const result = callSharedValidationFunction(
+      kindValidator,
+      [response.body, context],
+      response.body,
+    );
+    if (!result.ok) {
+      issues.push(...result.issues);
+    }
+  }
+
+  return issues;
+}
+
+function isSharedMcpApiFixtureBundleShape(value: unknown): boolean {
+  if (!isRecord(value)) {
+    return true;
+  }
+  if (
+    Object.hasOwn(value, "bundleId") ||
+    Object.hasOwn(value, "resources") ||
+    Object.hasOwn(value, "resourceFixtures") ||
+    Object.hasOwn(value, "preview")
+  ) {
+    return true;
+  }
+  if (!Array.isArray(value.requests)) {
+    return false;
+  }
+  return value.requests.some((request) =>
+    isRecord(request) &&
+    (
+      Object.hasOwn(request, "fixture") ||
+      Object.hasOwn(request, "operation") ||
+      Object.hasOwn(request, "requestedAt") ||
+      Object.hasOwn(request, "responseSchemaVersion")
+    )
+  );
+}
+
+function isSharedMcpApiResponseShape(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    sharedMcpApiResponseKind(value) !== undefined &&
+    Object.hasOwn(value, "generatedAt")
+  );
+}
+
+function sharedMcpApiResponseKind(
+  value: unknown,
+): "preview" | "resource" | "resources" | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  switch (value.schemaVersion) {
+    case "ingest-connector-mcp-resources/v1":
+      return "resources";
+    case "ingest-connector-mcp-resource/v1":
+      return "resource";
+    case "ingest-connector-mcp-preview/v1":
+      return "preview";
+    default:
+      return undefined;
+  }
+}
+
+function callSharedValidationFunction(
+  validator: SharedValidationFunction,
+  args: readonly unknown[],
+  fallbackValue: unknown,
+): IngestConnectorMcpApiReplaySharedValidationResult {
+  try {
+    return normalizeSharedValidationResult(validator(...args), fallbackValue);
+  } catch (error) {
+    return {
+      ok: false,
+      issues: [
+        {
+          path: "$",
+          message: error instanceof Error ? error.message : String(error),
+        },
+      ],
+    };
+  }
+}
+
+function normalizeSharedValidationResult(
+  value: unknown,
+  fallbackValue: unknown,
+): IngestConnectorMcpApiReplaySharedValidationResult {
+  if (value === undefined || value === true) {
+    return {
+      ok: true,
+      issues: [],
+      value: fallbackValue,
+    };
+  }
+  if (value === false) {
+    return {
+      ok: false,
+      issues: [{ path: "$", message: "shared schema validation failed" }],
+    };
+  }
+  if (Array.isArray(value)) {
+    const issues = normalizeSharedValidationIssues(value);
+    return {
+      ok: issues.length === 0,
+      issues,
+      value: fallbackValue,
+    };
+  }
+  if (isRecord(value)) {
+    const rawIssues = Array.isArray(value.issues)
+      ? value.issues
+      : Array.isArray(value.errors)
+        ? value.errors
+        : [];
+    const issues = normalizeSharedValidationIssues(rawIssues);
+    const ok = typeof value.ok === "boolean"
+      ? value.ok
+      : typeof value.valid === "boolean"
+        ? value.valid
+        : issues.length === 0;
+
+    return {
+      ok,
+      issues: ok ? [] : issues.length === 0
+        ? [{ path: "$", message: "shared schema validation failed" }]
+        : issues,
+      value: Object.hasOwn(value, "value") ? value.value : fallbackValue,
+    };
+  }
+
+  return {
+    ok: false,
+    issues: [{ path: "$", message: String(value) }],
+  };
+}
+
+function normalizeSharedValidationIssues(
+  values: readonly unknown[],
+): readonly IngestConnectorMcpApiReplaySharedValidationIssue[] {
+  return values.map((value) => {
+    if (isRecord(value)) {
+      const pathValue = value.path ?? value.pointer ?? value.instancePath ?? "$";
+      const messageValue = value.message ?? value.reason ?? "shared schema validation failed";
+      return {
+        path: typeof pathValue === "string" && pathValue.trim().length > 0
+          ? pathValue
+          : "$",
+        message: typeof messageValue === "string" && messageValue.trim().length > 0
+          ? messageValue
+          : "shared schema validation failed",
+      };
+    }
+
+    return {
+      path: "$",
+      message: String(value),
+    };
+  });
+}
+
+function formatSharedValidationIssue(
+  issue: IngestConnectorMcpApiReplaySharedValidationIssue,
+): string {
+  return `${issue.path}: ${issue.message}`;
+}
+
+function sharedIssuePathSuffix(issuePath: string): string {
+  const cleanPath = issuePath.trim();
+  if (cleanPath.length === 0 || cleanPath === "$") {
+    return "";
+  }
+  if (cleanPath.startsWith("$.")) {
+    return cleanPath.slice(1);
+  }
+  if (cleanPath.startsWith("$[")) {
+    return cleanPath.slice(1);
+  }
+  if (cleanPath.startsWith(".") || cleanPath.startsWith("[")) {
+    return cleanPath;
+  }
+  return `.${cleanPath}`;
 }
 
 function summarizeReplay(replayed: readonly ReplayedRequest[]): Record<string, unknown> {
@@ -663,6 +1152,9 @@ function summarizeReplay(replayed: readonly ReplayedRequest[]): Record<string, u
     }
     if (request.expectationMatches === false) {
       increment(mismatches, "expectation");
+    }
+    if (request.responseValidationIssues.length > 0) {
+      increment(mismatches, "response");
     }
   }
 
@@ -1151,11 +1643,15 @@ function usageError(message: string): IngestConnectorMcpApiReplayError {
   });
 }
 
-function invalidFixture(message: string): IngestConnectorMcpApiReplayError {
+function invalidFixture(
+  message: string,
+  details?: Record<string, unknown>,
+): IngestConnectorMcpApiReplayError {
   return new IngestConnectorMcpApiReplayError({
     exitCode: 2,
     code: "invalid_fixture",
     message,
+    ...(details === undefined ? {} : { details }),
   });
 }
 

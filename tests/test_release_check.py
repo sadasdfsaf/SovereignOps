@@ -380,6 +380,8 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("tests.test_mcp_contract_docs", output.getvalue())
         self.assertIn("tests.test_agent_guide_docs", output.getvalue())
         self.assertIn("tests.test_validate_openapi_ingest_connector_mcp", output.getvalue())
+        self.assertIn("tests.test_validate_openapi_ingest_connector_mcp_fixture", output.getvalue())
+        self.assertIn("tests.test_ingest_connector_mcp_api_e2e", output.getvalue())
         self.assertIn("tests.test_validate_openapi_ingest_search", output.getvalue())
         self.assertIn("tests.test_ingest_connector_api_e2e", output.getvalue())
         self.assertIn("tests.test_ingest_contract_alignment", output.getvalue())
@@ -547,6 +549,8 @@ class ReleaseCheckTests(unittest.TestCase):
             "tests/test_mcp_contract_docs.py",
             "tests/test_agent_guide_docs.py",
             "tests/test_validate_openapi_ingest_connector_mcp.py",
+            "tests/test_validate_openapi_ingest_connector_mcp_fixture.py",
+            "tests/test_ingest_connector_mcp_api_e2e.py",
             "services/ingest/src/sovereignops_ingest/cli.py",
             "services/ingest/src/sovereignops_ingest/connectors.py",
             "services/ingest/src/sovereignops_ingest/connector_manifest.py",
@@ -563,6 +567,7 @@ class ReleaseCheckTests(unittest.TestCase):
             "apps/api/tests/ingest-connector-routes.test.mjs",
             "apps/api/tests/ingest-connector-fixture-replay.test.mjs",
             "apps/api/tests/ingest-connector-mcp-routes.test.mjs",
+            "apps/api/tests/ingest-connector-mcp-schema-alignment.test.mjs",
             "apps/api/tests/ingest-connector-schema-alignment.test.mjs",
             "apps/api/tests/ingest-fixture-services.test.mjs",
             "apps/api/tests/ingest-openapi-routes.test.mjs",
@@ -570,15 +575,18 @@ class ReleaseCheckTests(unittest.TestCase):
             "packages/cli/src/ingestApiReplay.ts",
             "packages/cli/src/ingestApiVerify.ts",
             "packages/cli/src/ingestConnectorApiReplay.ts",
+            "packages/cli/src/ingestConnectorMcpApiReplay.ts",
             "packages/cli/src/ingestConnectorMcpPreview.ts",
             "packages/cli/tests/ingest-api-replay.test.mjs",
             "packages/cli/tests/ingest-api-verify.test.mjs",
             "packages/cli/tests/ingest-connector-api-replay.test.mjs",
+            "packages/cli/tests/ingest-connector-mcp-api-replay.test.mjs",
             "packages/cli/tests/ingest-connector-mcp-preview.test.mjs",
             "packages/sdk-js/src/index.ts",
             "packages/sdk-js/src/ingestClient.ts",
             "packages/sdk-js/src/ingestConnectorClient.ts",
             "packages/sdk-js/src/ingestConnectorMcpClient.ts",
+            "packages/sdk-js/src/ingestConnectorMcpFixtureFetch.ts",
             "packages/sdk-js/src/ingestConnectorFixtureFetch.ts",
             "packages/sdk-js/src/ingestFixtureFetch.ts",
             "packages/sdk-js/src/localIngest.ts",
@@ -586,6 +594,7 @@ class ReleaseCheckTests(unittest.TestCase):
             "packages/sdk-js/tests/client-ingest-search.test.mjs",
             "packages/sdk-js/tests/ingest-connector-client.test.mjs",
             "packages/sdk-js/tests/ingest-connector-mcp-client.test.mjs",
+            "packages/sdk-js/tests/ingest-connector-mcp-fixture-fetch.test.mjs",
             "packages/sdk-js/tests/ingest-connector-fixture-fetch.test.mjs",
             "packages/sdk-js/tests/ingest-fixture-fetch.test.mjs",
             "packages/sdk-js/tests/local-ingest.test.mjs",
@@ -594,23 +603,36 @@ class ReleaseCheckTests(unittest.TestCase):
             "apps/web/src/ingestSearch.ts",
             "apps/web/src/ingestConnectorApiState.ts",
             "apps/web/src/ingestConnectorState.ts",
+            "apps/web/src/ingestConnectorMcpFixtureState.ts",
             "apps/web/src/ingestConnectorMcpState.ts",
             "apps/web/src/ingestDashboardState.ts",
             "apps/web/tests/ingest-api-state.test.mjs",
             "apps/web/tests/ingest-search.test.mjs",
             "apps/web/tests/ingest-connector-api-state.test.mjs",
             "apps/web/tests/ingest-connector-state.test.mjs",
+            "apps/web/tests/ingest-connector-mcp-fixture-state.test.mjs",
             "apps/web/tests/ingest-connector-mcp-state.test.mjs",
             "packages/schemas/src/index.ts",
             "packages/schemas/src/ingestConnectorApiManifest.ts",
+            "packages/schemas/src/ingestConnectorMcpApi.ts",
             "packages/schemas/src/ingestConnectorManifest.ts",
             "packages/schemas/src/ingestSearch.ts",
             "packages/schemas/tests/ingest-connector-api-manifest.test.mjs",
+            "packages/schemas/tests/ingest-connector-mcp-api.test.mjs",
             "packages/schemas/tests/ingest-connector-manifest.test.mjs",
             "packages/schemas/tests/ingest-search.test.mjs",
             "packages/schemas/fixtures/ingest-connector-api-manifest.valid.json",
             "packages/schemas/fixtures/ingest-connector-api-manifest.invalid.json",
             "packages/schemas/fixtures/ingest-connector-api-manifest.schema.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-resources.valid.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-resources.schema.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-resource.valid.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-resource.schema.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-preview.valid.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-preview.schema.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-api-requests.valid.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-api-requests.invalid.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-api-requests.schema.json",
             "packages/schemas/fixtures/ingest-connector-manifest.valid.json",
             "packages/schemas/fixtures/ingest-connector-manifest.invalid.json",
             "packages/schemas/fixtures/ingest-connector-manifest.schema.json",
@@ -626,6 +648,7 @@ class ReleaseCheckTests(unittest.TestCase):
             "tests/test_ingest_connector_api_e2e.py",
             "tests/test_schema_alignment_docs.py",
             "tests/test_validate_openapi_ingest_connector_api_schema.py",
+            "tests/test_validate_openapi_ingest_connector_mcp_fixture.py",
             "tests/test_validate_openapi_schema_components.py",
             "tests/test_validate_openapi_ingest_search.py",
             "apps/web/src/ingestSessionReview.ts",
@@ -641,6 +664,8 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("tests.test_mcp_contract_docs", docs_check.command)
         self.assertIn("tests.test_agent_guide_docs", docs_check.command)
         self.assertIn("tests.test_validate_openapi_ingest_connector_mcp", docs_check.command)
+        self.assertIn("tests.test_validate_openapi_ingest_connector_mcp_fixture", docs_check.command)
+        self.assertIn("tests.test_ingest_connector_mcp_api_e2e", docs_check.command)
         self.assertIn("tests.test_ingest_integration_docs", docs_check.command)
         self.assertIn("tests.test_sdk_js_docs", docs_check.command)
         self.assertIn("tests.test_ingest_connector_api_e2e", docs_check.command)
@@ -651,11 +676,13 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("tests.test_validate_openapi_ingest_search", docs_check.command)
         self.assertIn("SDK connector fixture harness", docs_check.description)
         self.assertIn("MCP connector resource parity", docs_check.description)
+        self.assertIn("shared MCP schema validators", docs_check.description)
+        self.assertIn("generated JSON schema fixtures", docs_check.description)
         self.assertIn("MCP API routes", docs_check.description)
         self.assertIn("MCP API fixture fetch", docs_check.description)
         self.assertIn("MCP CLI replay", docs_check.description)
         self.assertIn("MCP Web fixture state", docs_check.description)
-        self.assertIn("MCP E2E parity", docs_check.description)
+        self.assertIn("MCP E2E/OpenAPI parity", docs_check.description)
         self.assertIn("connector API E2E parity", docs_check.description)
         self.assertIn("OpenAPI/schema alignment", docs_check.description)
         self.assertIn("API schema fixtures", docs_check.description)
@@ -673,15 +700,35 @@ class ReleaseCheckTests(unittest.TestCase):
             "tests/test_mcp_contract_docs.py",
             "tests/test_agent_guide_docs.py",
             "tests/test_validate_openapi_ingest_connector_mcp.py",
+            "tests/test_validate_openapi_ingest_connector_mcp_fixture.py",
+            "tests/test_ingest_connector_mcp_api_e2e.py",
             "services/mcp-gateway/src/ingestConnectorResources.ts",
             "services/mcp-gateway/tests/ingest-connector-resources.test.mjs",
             "apps/api/src/ingestConnectorMcpRoutes.ts",
             "apps/api/tests/ingest-connector-mcp-routes.test.mjs",
+            "apps/api/tests/ingest-connector-mcp-schema-alignment.test.mjs",
+            "packages/cli/src/ingestConnectorMcpApiReplay.ts",
             "packages/cli/src/ingestConnectorMcpPreview.ts",
+            "packages/cli/tests/ingest-connector-mcp-api-replay.test.mjs",
             "packages/cli/tests/ingest-connector-mcp-preview.test.mjs",
             "packages/sdk-js/src/ingestConnectorMcpClient.ts",
+            "packages/sdk-js/src/ingestConnectorMcpFixtureFetch.ts",
             "packages/sdk-js/tests/ingest-connector-mcp-client.test.mjs",
+            "packages/sdk-js/tests/ingest-connector-mcp-fixture-fetch.test.mjs",
+            "packages/schemas/src/ingestConnectorMcpApi.ts",
+            "packages/schemas/tests/ingest-connector-mcp-api.test.mjs",
+            "packages/schemas/fixtures/ingest-connector-mcp-resources.valid.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-resources.schema.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-resource.valid.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-resource.schema.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-preview.valid.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-preview.schema.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-api-requests.valid.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-api-requests.invalid.json",
+            "packages/schemas/fixtures/ingest-connector-mcp-api-requests.schema.json",
+            "apps/web/src/ingestConnectorMcpFixtureState.ts",
             "apps/web/src/ingestConnectorMcpState.ts",
+            "apps/web/tests/ingest-connector-mcp-fixture-state.test.mjs",
             "apps/web/tests/ingest-connector-mcp-state.test.mjs",
             "examples/ingest-search/connector-mcp-api-requests.json",
         }
@@ -693,12 +740,16 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("tests.test_mcp_contract_docs", docs_check.command)
         self.assertIn("tests.test_agent_guide_docs", docs_check.command)
         self.assertIn("tests.test_validate_openapi_ingest_connector_mcp", docs_check.command)
+        self.assertIn("tests.test_validate_openapi_ingest_connector_mcp_fixture", docs_check.command)
+        self.assertIn("tests.test_ingest_connector_mcp_api_e2e", docs_check.command)
         self.assertIn("MCP connector resource parity", docs_check.description)
+        self.assertIn("shared MCP schema validators", docs_check.description)
+        self.assertIn("generated JSON schema fixtures", docs_check.description)
         self.assertIn("MCP API routes", docs_check.description)
         self.assertIn("MCP API fixture fetch", docs_check.description)
         self.assertIn("MCP CLI replay", docs_check.description)
         self.assertIn("MCP Web fixture state", docs_check.description)
-        self.assertIn("MCP E2E parity", docs_check.description)
+        self.assertIn("MCP E2E/OpenAPI parity", docs_check.description)
 
     def test_missing_tools_are_skipped_when_running_available_checks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

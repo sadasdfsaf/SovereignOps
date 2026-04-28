@@ -255,6 +255,17 @@ test("validates MCP fixture schema, uniqueness, local-only base, routes, methods
     ["requests.0.expectedChecks.connectorIds"],
   );
 
+  const sharedSchemaDrift = structuredClone(bundle);
+  fixtureRequest(
+    sharedSchemaDrift,
+    "mcp_ingest_connector_local_files_resource",
+  ).expectedBody.resource.resource.description = "Password reset content";
+  assertInvalidFixture(
+    () => createIngestConnectorMcpFixtureFetch(sharedSchemaDrift),
+    ["requests.1.expectedBody.resource.resource.description"],
+    { sharedSchema: true },
+  );
+
   const remoteHarnessBase = structuredClone(bundle);
   assertInvalidFixture(
     () => createIngestConnectorMcpFixtureClientHarness({
@@ -280,7 +291,7 @@ test("surfaces MCP fixture route drift as a client HTTP error", async () => {
   assert.equal(result.error.apiCode, "ingest_connector_mcp_fixture_request_not_found");
 });
 
-function assertInvalidFixture(action, expectedPaths) {
+function assertInvalidFixture(action, expectedPaths, options = {}) {
   assert.throws(
     action,
     (error) => {
@@ -290,6 +301,12 @@ function assertInvalidFixture(action, expectedPaths) {
         expectedPaths.every((path) => error.issues.some((issue) => issue.path === path)),
         true,
       );
+      if (options.sharedSchema === true) {
+        assert.equal(
+          error.issues.some((issue) => issue.message.startsWith("shared schema:")),
+          true,
+        );
+      }
       assertNoSensitiveText(error);
       return true;
     },

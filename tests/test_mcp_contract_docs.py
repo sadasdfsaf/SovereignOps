@@ -109,6 +109,12 @@ EXPECTED_SDK_NAMES = (
     "`readMcpConnectorResource`",
     "`previewOutput`",
     "`previewManifestResources`",
+    "`DEFAULT_INGEST_CONNECTOR_MCP_FIXTURE_PATH`",
+    "`loadIngestConnectorMcpFixtureBundle`",
+    "`createIngestConnectorMcpFixtureFetch`",
+    "`createIngestConnectorMcpFixtureClient`",
+    "`createIngestConnectorMcpFixtureClientHarness`",
+    "`baseUrlFromIngestConnectorMcpFixtureBundle`",
 )
 
 EXPECTED_COMMANDS = (
@@ -132,13 +138,25 @@ EXPECTED_COMMANDS = (
 EXPECTED_INGEST_MCP_PATHS = (
     "`services/mcp-gateway/src/ingestConnectorResources.ts`",
     "`apps/api/src/ingestConnectorMcpRoutes.ts`",
+    "`packages/cli/src/ingestConnectorMcpApiReplay.ts`",
     "`packages/cli/src/ingestConnectorMcpPreview.ts`",
     "`packages/sdk-js/src/ingestConnectorMcpClient.ts`",
+    "`packages/sdk-js/src/ingestConnectorMcpFixtureFetch.ts`",
+    "`packages/schemas/src/ingestConnectorMcpApi.ts`",
+    "`apps/web/src/ingestConnectorMcpFixtureState.ts`",
     "`apps/web/src/ingestConnectorMcpState.ts`",
     "`GET /v1/ingest/connectors/mcp/resources`",
     "`GET /v1/ingest/connectors/mcp/resources/{connectorId}`",
     "`POST /v1/ingest/connectors/mcp/preview`",
     "`ingest_connector.preview_manifest`",
+    "`IngestConnectorMcpResourceListResponse`",
+    "`IngestConnectorMcpResourceResponse`",
+    "`IngestConnectorMcpPreviewRequest`",
+    "`IngestConnectorMcpPreviewResponse`",
+    "`packages/schemas/fixtures/ingest-connector-mcp-resources.schema.json`",
+    "`packages/schemas/fixtures/ingest-connector-mcp-resource.schema.json`",
+    "`packages/schemas/fixtures/ingest-connector-mcp-preview.schema.json`",
+    "`packages/schemas/fixtures/ingest-connector-mcp-api-requests.schema.json`",
 )
 
 EXPECTED_SECURITY_GUARANTEES = (
@@ -200,6 +218,16 @@ class McpContractDocsTests(unittest.TestCase):
             "`mcp_ingest_connector_resources`",
             "SDK fixture fetches, CLI replay",
             "Web fixture state, and E2E parity checks",
+            "shared schema validator surface",
+            "generated JSON schema fixtures",
+            "`runIngestConnectorMcpApiReplayCli`",
+            "`isIngestConnectorMcpApiReplayCommand`",
+            "`createIngestConnectorMcpApiDispatcher`",
+            "`buildIngestConnectorMcpFixtureState`",
+            "`buildIngestConnectorMcpFixtureRequestCards`",
+            "`buildIngestConnectorMcpFixtureSummaryCards`",
+            "`buildIngestConnectorMcpFixtureSafetySummary`",
+            "`buildIngestConnectorMcpFixtureEmptyState`",
         ):
             with self.subTest(value=value):
                 self.assertIn(value, self.text)

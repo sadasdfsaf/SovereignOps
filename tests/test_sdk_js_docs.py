@@ -34,6 +34,7 @@ EXPECTED_REFERENCES = (
     "packages/sdk-js/src/ingestConnectorClient.ts",
     "packages/sdk-js/src/ingestConnectorFixtureFetch.ts",
     "packages/sdk-js/src/ingestConnectorMcpClient.ts",
+    "packages/sdk-js/src/ingestConnectorMcpFixtureFetch.ts",
     "packages/sdk-js/src/localIngest.ts",
     "packages/sdk-js/src/localIngestConnectorManifest.ts",
     "examples/ingest-search/api-requests.json",
@@ -44,6 +45,7 @@ EXPECTED_REFERENCES = (
     "packages/sdk-js/tests/ingest-connector-client.test.mjs",
     "packages/sdk-js/tests/ingest-connector-fixture-fetch.test.mjs",
     "packages/sdk-js/tests/ingest-connector-mcp-client.test.mjs",
+    "packages/sdk-js/tests/ingest-connector-mcp-fixture-fetch.test.mjs",
     "packages/sdk-js/tests/local-ingest.test.mjs",
     "packages/sdk-js/tests/local-ingest-connector-manifest.test.mjs",
     "packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupApiClient.ts",
@@ -59,6 +61,14 @@ EXPECTED_REFERENCES = (
     "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.valid.json",
     "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.invalid.json",
     "packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-response.schema.json",
+)
+
+EXPECTED_PLANNED_SCHEMA_REFERENCES = (
+    "packages/schemas/src/ingestConnectorMcpApi.ts",
+    "packages/schemas/fixtures/ingest-connector-mcp-resources.schema.json",
+    "packages/schemas/fixtures/ingest-connector-mcp-resource.schema.json",
+    "packages/schemas/fixtures/ingest-connector-mcp-preview.schema.json",
+    "packages/schemas/fixtures/ingest-connector-mcp-api-requests.schema.json",
 )
 
 EXPECTED_SYMBOLS = (
@@ -104,6 +114,15 @@ EXPECTED_SYMBOLS = (
     "readMcpConnectorResource",
     "previewOutput",
     "previewManifestResources",
+    "DEFAULT_INGEST_CONNECTOR_MCP_FIXTURE_PATH",
+    "loadIngestConnectorMcpFixtureBundle",
+    "createIngestConnectorMcpFixtureFetch",
+    "createIngestConnectorMcpFixtureClient",
+    "createIngestConnectorMcpFixtureClientHarness",
+    "baseUrlFromIngestConnectorMcpFixtureBundle",
+    "IngestConnectorMcpFixtureError",
+    "IngestConnectorMcpFixtureFetch",
+    "IngestConnectorMcpFixtureClientHarness",
     "listLocalIngestConnectorProfiles",
     "normalizeLocalIngestConnectorManifest",
     "buildLocalIngestConnectorReadinessSummary",
@@ -145,6 +164,7 @@ EXPECTED_COMMANDS = (
     r"node packages\sdk-js\tests\ingest-connector-client.test.mjs",
     r"node packages\sdk-js\tests\ingest-connector-fixture-fetch.test.mjs",
     r"node packages\sdk-js\tests\ingest-connector-mcp-client.test.mjs",
+    r"node packages\sdk-js\tests\ingest-connector-mcp-fixture-fetch.test.mjs",
     r"node packages\sdk-js\tests\local-ingest.test.mjs",
     r"node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs",
     r"node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs",
@@ -209,6 +229,10 @@ class SdkJsDocsTests(unittest.TestCase):
                 self.assertIn(reference, self.text)
                 self.assertTrue((ROOT / reference).exists(), reference)
 
+        for reference in EXPECTED_PLANNED_SCHEMA_REFERENCES:
+            with self.subTest(reference=reference):
+                self.assertIn(reference, self.text)
+
         for symbol in EXPECTED_SYMBOLS:
             with self.subTest(symbol=symbol):
                 self.assertIn(symbol, self.text)
@@ -222,7 +246,10 @@ class SdkJsDocsTests(unittest.TestCase):
             "MCP fixture fetch",
             "CLI replay",
             "Web fixture state",
-            "E2E parity",
+            "E2E/OpenAPI parity",
+            "SDK fixture harness",
+            "shared schema validators",
+            "generated JSON schema",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, self.text)

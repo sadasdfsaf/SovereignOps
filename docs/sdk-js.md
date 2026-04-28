@@ -59,6 +59,8 @@ console.log(workspace.describe(), plan.dryRun);
   `packages/sdk-js/src/ingestConnectorFixtureFetch.ts`
 - Ingest connector MCP API client:
   `packages/sdk-js/src/ingestConnectorMcpClient.ts`
+- Ingest connector MCP fixture fetch and client harness:
+  `packages/sdk-js/src/ingestConnectorMcpFixtureFetch.ts`
 - Ingest connector guide: `docs/ingest-connectors.md`
 - Ingest API replay fixture:
   `examples/ingest-search/api-requests.json`
@@ -80,6 +82,8 @@ console.log(workspace.describe(), plan.dryRun);
   `packages/sdk-js/tests/ingest-connector-fixture-fetch.test.mjs`
 - Focused connector MCP API client test:
   `packages/sdk-js/tests/ingest-connector-mcp-client.test.mjs`
+- Focused connector MCP fixture fetch test:
+  `packages/sdk-js/tests/ingest-connector-mcp-fixture-fetch.test.mjs`
 - Workspace session retention cleanup API client:
   `packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupApiClient.ts`
 - Workspace session retention cleanup inventory API client:
@@ -278,7 +282,15 @@ The MCP fixture fetch for parity tests should replay
 `examples/ingest-search/connector-mcp-api-requests.json` in memory. It should
 match method, route path, and JSON body; record calls for assertions; return
 JSON-only fixture errors for drift; and never fall back to global fetch. The
-same fixture feeds CLI replay, Web fixture state, and E2E parity checks.
+same fixture feeds CLI replay, Web fixture state, and E2E/OpenAPI parity checks.
+The shared schema validators live in
+`packages/schemas/src/ingestConnectorMcpApi.ts`, with generated JSON schema
+fixtures such as `packages/schemas/fixtures/ingest-connector-mcp-resources.schema.json`,
+`packages/schemas/fixtures/ingest-connector-mcp-resource.schema.json`,
+`packages/schemas/fixtures/ingest-connector-mcp-preview.schema.json`, and
+`packages/schemas/fixtures/ingest-connector-mcp-api-requests.schema.json`.
+The SDK fixture harness should validate resource-list, resource-read, preview
+request, and preview response envelopes against those public schema names.
 
 ```ts
 import { createIngestConnectorMcpClient } from "@sovereignops/sdk-js";
@@ -350,7 +362,20 @@ client, CLI/API replay tests, and the connector-specific SDK fixture harness in
 Connector MCP API replay uses
 `examples/ingest-search/connector-mcp-api-requests.json` through
 `createIngestConnectorMcpClient`, an injected MCP fixture fetch, CLI replay,
-and the Web fixture state builder in `apps/web/src/ingestConnectorMcpState.ts`.
+and the Web fixture state builders in `apps/web/src/ingestConnectorMcpState.ts`
+and `apps/web/src/ingestConnectorMcpFixtureState.ts`.
+
+MCP fixture helper names:
+
+- `DEFAULT_INGEST_CONNECTOR_MCP_FIXTURE_PATH`
+- `loadIngestConnectorMcpFixtureBundle`
+- `createIngestConnectorMcpFixtureFetch`
+- `createIngestConnectorMcpFixtureClient`
+- `createIngestConnectorMcpFixtureClientHarness`
+- `baseUrlFromIngestConnectorMcpFixtureBundle`
+- `IngestConnectorMcpFixtureError`
+- `IngestConnectorMcpFixtureFetch`
+- `IngestConnectorMcpFixtureClientHarness`
 
 Connector fixture helper names:
 
@@ -711,6 +736,7 @@ node packages\sdk-js\tests\local-ingest-connector-manifest.test.mjs
 node packages\sdk-js\tests\ingest-connector-client.test.mjs
 node packages\sdk-js\tests\ingest-connector-fixture-fetch.test.mjs
 node packages\sdk-js\tests\ingest-connector-mcp-client.test.mjs
+node packages\sdk-js\tests\ingest-connector-mcp-fixture-fetch.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention.test.mjs

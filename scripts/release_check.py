@@ -265,6 +265,20 @@ WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS: tuple[str, ...] = (
     "tests/test_workspace_session_snapshot_retention_cleanup_inventory_e2e.py",
 )
 
+INGEST_CONNECTOR_MCP_SCHEMA_REQUIRED_PATHS: tuple[str, ...] = (
+    "packages/schemas/src/ingestConnectorMcpApi.ts",
+    "packages/schemas/tests/ingest-connector-mcp-api.test.mjs",
+    "packages/schemas/fixtures/ingest-connector-mcp-resources.valid.json",
+    "packages/schemas/fixtures/ingest-connector-mcp-resources.schema.json",
+    "packages/schemas/fixtures/ingest-connector-mcp-resource.valid.json",
+    "packages/schemas/fixtures/ingest-connector-mcp-resource.schema.json",
+    "packages/schemas/fixtures/ingest-connector-mcp-preview.valid.json",
+    "packages/schemas/fixtures/ingest-connector-mcp-preview.schema.json",
+    "packages/schemas/fixtures/ingest-connector-mcp-api-requests.valid.json",
+    "packages/schemas/fixtures/ingest-connector-mcp-api-requests.invalid.json",
+    "packages/schemas/fixtures/ingest-connector-mcp-api-requests.schema.json",
+)
+
 MCP_INGEST_CONNECTOR_RESOURCE_REQUIRED_PATHS: tuple[str, ...] = (
     "docs/mcp-contract.md",
     "docs/agent-guide.md",
@@ -272,15 +286,25 @@ MCP_INGEST_CONNECTOR_RESOURCE_REQUIRED_PATHS: tuple[str, ...] = (
     "tests/test_mcp_contract_docs.py",
     "tests/test_agent_guide_docs.py",
     "tests/test_validate_openapi_ingest_connector_mcp.py",
+    "tests/test_validate_openapi_ingest_connector_mcp_fixture.py",
+    "tests/test_ingest_connector_mcp_api_e2e.py",
     "services/mcp-gateway/src/ingestConnectorResources.ts",
     "services/mcp-gateway/tests/ingest-connector-resources.test.mjs",
     "apps/api/src/ingestConnectorMcpRoutes.ts",
     "apps/api/tests/ingest-connector-mcp-routes.test.mjs",
+    "apps/api/tests/ingest-connector-mcp-schema-alignment.test.mjs",
+    "packages/cli/src/ingestConnectorMcpApiReplay.ts",
     "packages/cli/src/ingestConnectorMcpPreview.ts",
+    "packages/cli/tests/ingest-connector-mcp-api-replay.test.mjs",
     "packages/cli/tests/ingest-connector-mcp-preview.test.mjs",
     "packages/sdk-js/src/ingestConnectorMcpClient.ts",
+    "packages/sdk-js/src/ingestConnectorMcpFixtureFetch.ts",
     "packages/sdk-js/tests/ingest-connector-mcp-client.test.mjs",
+    "packages/sdk-js/tests/ingest-connector-mcp-fixture-fetch.test.mjs",
+    *INGEST_CONNECTOR_MCP_SCHEMA_REQUIRED_PATHS,
+    "apps/web/src/ingestConnectorMcpFixtureState.ts",
     "apps/web/src/ingestConnectorMcpState.ts",
+    "apps/web/tests/ingest-connector-mcp-fixture-state.test.mjs",
     "apps/web/tests/ingest-connector-mcp-state.test.mjs",
     "examples/ingest-search/connector-mcp-api-requests.json",
 )
@@ -842,7 +866,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
     ),
     CheckSpec(
         name="ingest-connector-docs",
-        description="Validate ingest connector docs, MCP connector resource parity, MCP API routes, MCP API fixture fetch, MCP CLI replay, MCP Web fixture state, MCP E2E parity, SDK connector fixture harness, connector API E2E parity, OpenAPI/schema alignment, API schema fixtures, Web ingest dashboard state, agent guidance, and local-only release guidance.",
+        description="Validate ingest connector docs, MCP connector resource parity, shared MCP schema validators, generated JSON schema fixtures, MCP API routes, MCP API fixture fetch, MCP CLI replay, MCP Web fixture state, MCP E2E/OpenAPI parity, SDK connector fixture harness, connector API E2E parity, OpenAPI/schema alignment, API schema fixtures, Web ingest dashboard state, agent guidance, and local-only release guidance.",
         command=(
             PYTHON,
             "-m",
@@ -851,6 +875,8 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "tests.test_mcp_contract_docs",
             "tests.test_agent_guide_docs",
             "tests.test_validate_openapi_ingest_connector_mcp",
+            "tests.test_validate_openapi_ingest_connector_mcp_fixture",
+            "tests.test_ingest_connector_mcp_api_e2e",
             "tests.test_ingest_integration_docs",
             "tests.test_sdk_js_docs",
             "tests.test_ingest_connector_api_e2e",

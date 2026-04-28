@@ -11,6 +11,12 @@ import {
   ingestConnectorManifestSchema,
   ingestConnectorProfileSchema,
 } from "../src/ingestConnectorManifest.ts";
+import {
+  ingestConnectorMcpApiRequestsSchema,
+  ingestConnectorMcpPreviewSchema,
+  ingestConnectorMcpResourceSchema,
+  ingestConnectorMcpResourcesSchema,
+} from "../src/ingestConnectorMcpApi.ts";
 import { jsonSchemaCatalog, jsonSchemas, schemaKinds } from "../src/jsonSchema.ts";
 import { mcpApprovalEvidenceSchema } from "../src/mcpApprovalEvidence.ts";
 import {
@@ -48,6 +54,10 @@ const outputs = [
   ["ingest-connector-api-manifest.schema.json", ingestConnectorApiManifestSchema],
   ["ingest-connector-profile.schema.json", ingestConnectorProfileSchema],
   ["ingest-connector-manifest.schema.json", ingestConnectorManifestSchema],
+  ["ingest-connector-mcp-resources.schema.json", ingestConnectorMcpResourcesSchema],
+  ["ingest-connector-mcp-resource.schema.json", ingestConnectorMcpResourceSchema],
+  ["ingest-connector-mcp-preview.schema.json", ingestConnectorMcpPreviewSchema],
+  ["ingest-connector-mcp-api-requests.schema.json", ingestConnectorMcpApiRequestsSchema],
   ["mcp-approval-evidence.schema.json", mcpApprovalEvidenceSchema],
   ["mcp-approval-evidence-record.schema.json", mcpApprovalEvidenceRecordSchema],
   ["mcp-approval-evidence-record-list.schema.json", mcpApprovalEvidenceRecordListSchema],
