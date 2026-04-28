@@ -116,11 +116,14 @@ class CIWorkflowTests(unittest.TestCase):
 
     def test_optional_tool_workflows_skip_cleanly(self) -> None:
         node_text = workflow_text("node.yml")
+        python_text = workflow_text("python.yml")
         typescript_text = workflow_text("typescript.yml")
         rust_text = workflow_text("rust.yml")
 
         self.assertIn("command -v pnpm", node_text)
         self.assertIn("pnpm not installed; skipping workspace checks", node_text)
+        self.assertIn("actions/setup-node@v4", python_text)
+        self.assertIn('node-version: "22"', python_text)
         self.assertIn("pnpm install --frozen-lockfile", typescript_text)
         self.assertIn("pnpm run typescript:check", typescript_text)
         self.assertIn("command -v cargo", rust_text)
