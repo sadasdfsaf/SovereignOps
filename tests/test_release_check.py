@@ -61,6 +61,7 @@ def make_release_root(root: Path) -> None:
         "scripts/validate_openapi.py",
         "scripts/validate_mcp_gateway_fixtures.py",
         "scripts/openapi_fixture_contract.py",
+        "scripts/fixture_drift.py",
         "scripts/node-check.mjs",
         *release_check.LOCAL_EVENT_CATALOG_REQUIRED_PATHS,
         *release_check.WORKSPACE_SESSION_REQUIRED_PATHS,
@@ -324,6 +325,7 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertTrue(by_name["ingest-evidence-api-replay"].available)
         self.assertTrue(by_name["status-dashboard"].available)
         self.assertTrue(by_name["bootstrap-docs"].available)
+        self.assertTrue(by_name["openapi-fixture-drift"].available)
         self.assertTrue(by_name["schema-contract-alignment"].available)
         self.assertTrue(by_name["local-event-catalog-integration"].available)
         self.assertTrue(by_name["workspace-session-integration"].available)
@@ -408,6 +410,7 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("tests.test_schema_alignment_docs", output.getvalue())
         self.assertIn("RUN status-dashboard: python scripts/status_dashboard.py --json", output.getvalue())
         self.assertIn("RUN bootstrap-docs: python -m unittest tests.test_adr_docs", output.getvalue())
+        self.assertIn("RUN openapi-fixture-drift: python scripts/fixture_drift.py --json", output.getvalue())
         self.assertIn("RUN schema-contract-alignment: python -m unittest tests.test_schema_alignment_docs", output.getvalue())
         self.assertIn("tests.test_openapi_fixture_contract", output.getvalue())
         self.assertIn("tests.test_validate_openapi_plugin_review_artifact_api_fixture", output.getvalue())
@@ -495,6 +498,23 @@ class ReleaseCheckTests(unittest.TestCase):
                 self.assertIn("OpenAPI fixture drift checks", spec.description)
                 self.assertIn(expected_commands[gate], spec.command)
                 self.assertIn("tests.test_openapi_fixture_contract", spec.command)
+
+    def test_openapi_fixture_drift_release_gate_uses_single_entrypoint(self) -> None:
+        checks = {spec.name: spec for spec in release_check.CHECK_SPECS}
+        spec = checks["openapi-fixture-drift"]
+        expected = {
+            "scripts/fixture_drift.py",
+            "scripts/openapi_fixture_contract.py",
+            "tests/test_openapi_fixture_contract.py",
+            "tests/test_validate_openapi_plugin_review_artifact_api_fixture.py",
+            "tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py",
+            "tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py",
+            "tests/test_validate_openapi_mcp_approval_evidence_records_api_fixture.py",
+        }
+
+        self.assertEqual((release_check.PYTHON, "scripts/fixture_drift.py", "--json"), spec.command)
+        self.assertLessEqual(expected, set(spec.required_paths))
+        self.assertIn("single fixture drift entrypoint", spec.description)
 
     def test_retention_cleanup_release_gate_tracks_round44_files(self) -> None:
         required = set(release_check.WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS)

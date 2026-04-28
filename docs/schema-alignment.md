@@ -99,6 +99,7 @@ Python contract checks must use the standard library unless a service already ow
 - Plugin review artifact and MCP approval evidence request bundle schemas stay aligned with the checked-in API replay fixtures before SDK fake-fetch harnesses, CLI replay commands, and Web state helpers consume them.
 - OpenAPI fixture drift tests use `scripts/openapi_fixture_contract.py` and `tests/test_openapi_fixture_contract.py` to compare checked-in replay fixtures with documented OpenAPI route blocks, response statuses, path parameters, tags, and request body references.
 - Route-family fixture drift tests live in `tests/test_validate_openapi_plugin_review_artifact_api_fixture.py`, `tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py`, `tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py`, and `tests/test_validate_openapi_mcp_approval_evidence_records_api_fixture.py`.
+- The `scripts/fixture_drift.py` script is the single command entrypoint for those fixture drift checks: run `python scripts\fixture_drift.py --json`; the `openapi-fixture-drift` release gate in `scripts/release_check.py` requires that script, the shared helper, and the four route-family fixture test files before it runs.
 
 Run `python scripts\validate_openapi.py` after OpenAPI edits. Add focused validator tests when a route family introduces a new component, response status, or replay fixture.
 
@@ -205,4 +206,4 @@ When a schema value changes:
 4. Update OpenAPI components and MCP tables when clients observe the value.
 5. Update event fixtures and replay fixtures with deterministic, redacted data.
 6. Run `python scripts\validate_openapi.py`, `node packages\schemas\scripts\export-json-schema.mjs --check`, `python scripts\validate_lifecycle_fixtures.py`, `python scripts\validate_mcp_gateway_fixtures.py`, and the focused compatibility tests for the touched layer.
-7. For replay fixture changes, run `python -m unittest tests.test_openapi_fixture_contract tests.test_validate_openapi_plugin_review_artifact_api_fixture tests.test_validate_openapi_plugin_review_artifact_records_api_fixture tests.test_validate_openapi_mcp_approval_evidence_api_fixture tests.test_validate_openapi_mcp_approval_evidence_records_api_fixture`.
+7. For replay fixture changes, run `python scripts\fixture_drift.py --json`; the release gate runs the same entrypoint.

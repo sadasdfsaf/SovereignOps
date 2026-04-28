@@ -240,6 +240,10 @@ Known gateway codes are `resource_not_found`, `policy_denied`, `approval_require
 
 ## Fixture Replay Contract
 
+Shared API fixture contract checks are summarized in
+`docs/api-fixture-contracts.md`; use that page for the cross-surface rules that
+apply to route/OpenAPI drift, schema fixture alignment, and local-only replay.
+
 Fixture replay stays local and deterministic:
 
 ```powershell

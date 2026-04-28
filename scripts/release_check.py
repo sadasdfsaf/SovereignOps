@@ -620,6 +620,15 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
         required_paths=("scripts/validate_openapi.py", "docs/openapi.yaml"),
     ),
     CheckSpec(
+        name="openapi-fixture-drift",
+        description="Validate OpenAPI replay fixture drift through the single fixture drift entrypoint.",
+        command=(PYTHON, "scripts/fixture_drift.py", "--json"),
+        required_paths=(
+            "scripts/fixture_drift.py",
+            *OPENAPI_FIXTURE_DRIFT_REQUIRED_PATHS,
+        ),
+    ),
+    CheckSpec(
         name="schema-contract-alignment",
         description="Validate schema alignment docs, OpenAPI schema component wiring, and OpenAPI fixture drift checks.",
         command=(

@@ -145,5 +145,12 @@ def _required_string(record: dict[str, Any], key: str, index: int) -> str:
 
 
 def _assert_safe_path_parameter(value: str, source_path: str) -> None:
-    if not SAFE_PATH_PARAMETER.fullmatch(value):
+    if (
+        not SAFE_PATH_PARAMETER.fullmatch(value)
+        or value in {".", ".."}
+        or "/" in value
+        or "\\" in value
+        or "/." in source_path
+        or "\\." in source_path
+    ):
         raise AssertionError(f"unsafe path parameter in fixture route: {source_path}")

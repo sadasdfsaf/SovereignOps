@@ -2,6 +2,7 @@
 import { pathToFileURL } from "node:url";
 
 export * from "./commands.ts";
+export * from "./fixtureDrift.ts";
 export * from "./lifecycle.ts";
 export * from "./auditExport.ts";
 export * from "./ingestConnectorApiReplay.ts";
@@ -33,6 +34,7 @@ export * from "./workspaceSessionSnapshotStore.ts";
 
 import { runAuditExportCli } from "./auditExport.ts";
 import { runCli as runCoreCli } from "./commands.ts";
+import { runFixtureDriftCli } from "./fixtureDrift.ts";
 import { runIngestConnectorApiReplayCli } from "./ingestConnectorApiReplay.ts";
 import { runIngestConnectorMcpApiReplayCli } from "./ingestConnectorMcpApiReplay.ts";
 import { runIngestEvidenceApiReplayCli } from "./ingestEvidenceApiReplay.ts";
@@ -64,6 +66,7 @@ import { runWorkspaceSessionSnapshotStoreCli } from "./workspaceSessionSnapshotS
 export async function runCli(
   argv: readonly string[] = [],
   options: Parameters<typeof runCoreCli>[1] &
+    Parameters<typeof runFixtureDriftCli>[1] &
     Parameters<typeof runLifecycleCli>[1] &
     Parameters<typeof runAuditExportCli>[1] &
     Parameters<typeof runIngestConnectorApiReplayCli>[1] &
@@ -94,6 +97,7 @@ export async function runCli(
     Parameters<typeof runWorkspaceSessionSnapshotStoreCli>[1] = {},
 ): ReturnType<typeof runCoreCli> {
   return (
+    (await runFixtureDriftCli(argv, options)) ??
     (await runAuditExportCli(argv, options)) ??
     (await runWorkspaceSessionSnapshotRetentionCleanupCli(argv, options)) ??
     (await runWorkspaceSessionSnapshotRetentionCleanupInventoryApiReplayCli(argv, options)) ??

@@ -56,7 +56,10 @@ node scripts/node-check.mjs
 cargo check --workspace
 cargo test --workspace
 pnpm -r --if-present check
+npm run fixtures:check
 ```
+
+`npm run fixtures:check` runs `python scripts/fixture_drift.py --json` for fixture drift checks.
 
 If Cargo is unavailable, `python scripts\rust_guard.py` is the Rust-source guard fallback for unsafe panic-style calls. See `docs/development-quickstart.md` for the expanded setup and validation flow.
 

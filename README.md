@@ -49,6 +49,7 @@ python scripts\smoke.py
 python -m unittest discover -s tests
 python scripts\loc_budget.py --summary
 python scripts\env_guard.py
+npm run fixtures:check
 ```
 
 Rust and pnpm checks are wired into the smoke flow and run automatically when those tools are installed.

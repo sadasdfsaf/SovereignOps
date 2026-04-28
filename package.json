@@ -12,6 +12,7 @@
     "health": "python scripts/status_dashboard.py --json",
     "loc": "python scripts/loc_budget.py --summary",
     "openapi:check": "python scripts/validate_openapi.py",
+    "fixtures:check": "python scripts/fixture_drift.py --json",
     "queue": "python scripts/task_queue.py",
     "test": "python -m unittest discover -s tests"
   },

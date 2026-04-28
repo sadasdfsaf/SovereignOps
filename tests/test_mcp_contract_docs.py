@@ -245,6 +245,10 @@ class McpContractDocsTests(unittest.TestCase):
         safety_samples = json.loads(SAFETY_SAMPLES_PATH.read_text(encoding="utf-8"))
         markers = safety_samples["markers"]
 
+        self.assertIn("`docs/api-fixture-contracts.md`", self.text)
+        self.assertIn("route/OpenAPI drift", self.text)
+        self.assertIn("schema fixture alignment", self.text)
+        self.assertIn("local-only replay", self.text)
         self.assertIn("`examples/mcp-gateway/safety-samples.json`", self.text)
         self.assertIn(f"`{markers['begin']}`", self.text)
         self.assertIn(f"`{markers['end']}`", self.text)
