@@ -5,6 +5,7 @@
   "private": true,
   "main": "src/index.ts",
   "scripts": {
-    "check": "node ../../scripts/node-check.mjs --package"
+    "check": "node ../../scripts/node-check.mjs --package && node tests/ui.test.mjs",
+    "test": "node tests/ui.test.mjs"
   }
 }

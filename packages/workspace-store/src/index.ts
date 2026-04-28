@@ -805,7 +805,7 @@ function serializationError(message: string, path: string): WorkspaceMetadataErr
 
 function readOnlyClone<T>(value: T): DeepReadonly<T> {
   try {
-    return deepFreeze(structuredClone(value)) as DeepReadonly<T>;
+    return deepFreeze(structuredClone(value), new WeakSet<object>()) as DeepReadonly<T>;
   } catch (cause) {
     if (cause instanceof WorkspaceStoreError) {
       throw cause;
@@ -818,13 +818,18 @@ function readOnlyClone<T>(value: T): DeepReadonly<T> {
   }
 }
 
-function deepFreeze<T>(value: T): T {
+function deepFreeze<T>(value: T, seen: WeakSet<object>): T {
   if (!isRecord(value) && !Array.isArray(value)) {
     return value;
   }
 
+  if (seen.has(value)) {
+    return value;
+  }
+  seen.add(value);
+
   for (const nested of Object.values(value)) {
-    deepFreeze(nested);
+    deepFreeze(nested, seen);
   }
 
   return Object.freeze(value);

@@ -35,6 +35,8 @@ WORKFLOWS = {
         "name": "typescript",
         "commands": [
             "corepack enable",
+            "pnpm install --frozen-lockfile",
+            "pnpm run typescript:check",
             "pnpm -r --if-present check",
         ],
     },
@@ -119,8 +121,8 @@ class CIWorkflowTests(unittest.TestCase):
 
         self.assertIn("command -v pnpm", node_text)
         self.assertIn("pnpm not installed; skipping workspace checks", node_text)
-        self.assertIn("command -v pnpm", typescript_text)
-        self.assertIn("pnpm not installed; skipping workspace checks", typescript_text)
+        self.assertIn("pnpm install --frozen-lockfile", typescript_text)
+        self.assertIn("pnpm run typescript:check", typescript_text)
         self.assertIn("command -v cargo", rust_text)
         self.assertIn("cargo not installed; skipping Cargo checks", rust_text)
         self.assertIn("rustfmt not installed; skipping format check", rust_text)

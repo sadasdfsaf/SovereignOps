@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   BackupManifestValidationError,
+  checkRestoreSafety,
   createBackupManifest,
   createBackupPayloadDescriptor,
   createRedactedBackupAuditEvent,
@@ -137,6 +138,38 @@ test("blocks unsafe restore requests", () => {
   assert.equal(plan.summary.blocked, 2);
   assert.ok(plan.safety.blockers.includes("restore targets the source workspace without explicit overwrite approval"));
   assert.ok(plan.safety.blockers.includes("replace mode requires explicit destructive restore approval"));
+});
+
+test("rejects unsupported restore modes at runtime", () => {
+  const manifest = baseManifest();
+
+  assert.throws(
+    () => planWorkspaceRestore(manifest, {
+      targetWorkspaceId: "wsp_restore",
+      mode: "replacee",
+      existingPayloadFingerprints: {
+        "records/notes.json.enc": stableFingerprint("older-notes"),
+      },
+    }),
+    (error) => {
+      assert.equal(error instanceof BackupManifestValidationError, true);
+      assert.deepEqual(error.issues, [
+        {
+          path: "options.mode",
+          message: "must be one of preview, merge, or replace",
+        },
+      ]);
+      return true;
+    },
+  );
+
+  assert.throws(
+    () => checkRestoreSafety(manifest, {
+      targetWorkspaceId: "wsp_restore",
+      mode: "replacee",
+    }),
+    BackupManifestValidationError,
+  );
 });
 
 test("evaluates retention rules while preserving required backups", () => {

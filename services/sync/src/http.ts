@@ -98,6 +98,10 @@ const JSON_HEADERS = {
 
 const WORKSPACE_ID_PATTERN = /^wsp_[A-Za-z0-9_-]{1,88}$/;
 const DEVICE_ID_PATTERN = /^dev_[A-Za-z0-9_-]{1,88}$/;
+const ANONYMOUS_RATE_LIMIT_SUBJECT = Object.freeze({
+  workspaceId: "wsp_anonymous",
+  deviceId: "dev_anonymous",
+});
 
 const ERROR_STATUS: Record<SyncApiErrorCode, number> = {
   malformed_cursor: 400,
@@ -148,6 +152,11 @@ export async function handleBundleUpload(
   request: SyncHttpRequest,
   dependencies: SyncHttpDependencies,
 ): Promise<SyncHttpResponse> {
+  const limited = enforcePreValidationRateLimit(dependencies, request.body);
+  if (limited) {
+    return limited;
+  }
+
   const validation = validateUploadRequest(request.body);
   if (!validation.ok) {
     const code = hasProvidedCursorIssue(request.body, "baseCursor", validation.issues)
@@ -155,11 +164,6 @@ export async function handleBundleUpload(
       : "invalid_upload";
     const message = code === "malformed_cursor" ? "Upload cursor is malformed." : "Upload request is invalid.";
     return createApiErrorResponse(code, message, validationDetails(validation.issues));
-  }
-
-  const limited = enforceRateLimit(dependencies, validation.value);
-  if (limited) {
-    return limited;
   }
 
   try {
@@ -174,17 +178,17 @@ export async function handleBundleDownload(
   request: SyncHttpRequest,
   dependencies: SyncHttpDependencies,
 ): Promise<SyncHttpResponse> {
+  const limited = enforcePreValidationRateLimit(dependencies, request.body);
+  if (limited) {
+    return limited;
+  }
+
   const validation = validateDownloadRequest(request.body);
   if (!validation.ok) {
     const code = hasProvidedCursorIssue(request.body, "afterCursor", validation.issues)
       ? "malformed_cursor"
       : "invalid_upload";
     return createApiErrorResponse(code, "Download request is invalid.", validationDetails(validation.issues));
-  }
-
-  const limited = enforceRateLimit(dependencies, validation.value);
-  if (limited) {
-    return limited;
   }
 
   try {
@@ -203,17 +207,17 @@ export async function handleCursorStatus(
   request: SyncHttpRequest,
   dependencies: SyncHttpDependencies,
 ): Promise<SyncHttpResponse> {
+  const limited = enforcePreValidationRateLimit(dependencies, request.body);
+  if (limited) {
+    return limited;
+  }
+
   const validation = validateCursorStatusRequest(request.body);
   if (!validation.ok) {
     const code = hasProvidedCursorIssue(request.body, "cursor", validation.issues)
       ? "malformed_cursor"
       : "invalid_upload";
     return createApiErrorResponse(code, "Cursor status request is invalid.", validationDetails(validation.issues));
-  }
-
-  const limited = enforceRateLimit(dependencies, validation.value);
-  if (limited) {
-    return limited;
   }
 
   try {
@@ -318,6 +322,28 @@ function enforceRateLimit(
   }
 
   return rateLimitedResponse(decision);
+}
+
+function enforcePreValidationRateLimit(
+  dependencies: SyncHttpDependencies,
+  body: unknown,
+): SyncHttpResponse<SyncApiErrorBody> | undefined {
+  return enforceRateLimit(dependencies, readPreliminaryRateLimitSubject(body));
+}
+
+function readPreliminaryRateLimitSubject(body: unknown): { workspaceId: string; deviceId: string } {
+  if (!isRecord(body)) {
+    return ANONYMOUS_RATE_LIMIT_SUBJECT;
+  }
+
+  return {
+    workspaceId: typeof body.workspaceId === "string" && WORKSPACE_ID_PATTERN.test(body.workspaceId)
+      ? body.workspaceId
+      : ANONYMOUS_RATE_LIMIT_SUBJECT.workspaceId,
+    deviceId: typeof body.deviceId === "string" && DEVICE_ID_PATTERN.test(body.deviceId)
+      ? body.deviceId
+      : ANONYMOUS_RATE_LIMIT_SUBJECT.deviceId,
+  };
 }
 
 function rateLimitedResponse(decision: RateLimitDecision): SyncHttpResponse<SyncApiErrorBody> {

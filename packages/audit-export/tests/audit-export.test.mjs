@@ -120,6 +120,26 @@ test("renders JSONL and CSV in stable event order", () => {
   assert.equal(csv.split("\n")[1].startsWith("evt_001,2026-04-27T04:00:01.000Z"), true);
 });
 
+test("escapes spreadsheet formula prefixes in CSV cells", () => {
+  const csv = renderAuditCsv([
+    {
+      ...event("evt_formula", "2026-04-27T04:00:00.000Z", "+workspace.exported", "allow", {
+        note: "safe nested JSON remains JSON text",
+        formula: '=HYPERLINK("https://example.invalid","nested")',
+        list: ["\tSUM(1,2)", "plain"],
+      }),
+      reason: '=HYPERLINK("https://example.invalid","x")',
+    },
+  ]);
+  const row = csv.split("\n")[1];
+
+  assert.equal(row.startsWith("evt_formula,2026-04-27T04:00:00.000Z,'+workspace.exported"), true);
+  assert.equal(row.includes("\"'=HYPERLINK(\"\"https://example.invalid\"\",\"\"x\"\")\""), true);
+  assert.equal(row.includes("\"\"formula\"\":\"\"'=HYPERLINK"), true);
+  assert.equal(row.includes("\"\"list\"\":[\"\"'\\tSUM(1,2)\"\",\"\"plain\"\"]"), true);
+  assert.equal(row.includes(",=HYPERLINK"), false);
+});
+
 test("filters by decision, type, and inclusive timestamp bounds", () => {
   const filtered = filterAuditEvents(baseEvents, {
     decision: "allow",

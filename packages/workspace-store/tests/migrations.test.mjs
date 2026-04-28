@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   MigrationPlanError,
   MigrationRunError,
+  WorkspaceMetadataError,
   WORKSPACE_STORE_ERROR_CODES,
   fingerprintWorkspaceMetadata,
   planWorkspaceMetadataMigrations,
@@ -236,6 +237,35 @@ test("serializes and fingerprints metadata deterministically", () => {
       items: [{ id: "itm_notes", title: "Local notes" }],
       workspaceId: "wsp_alpha",
     }),
+  );
+});
+
+test("rejects cyclic metadata without relying on stack overflow", () => {
+  const cyclic = {
+    schemaVersion: 1,
+    workspaceId: "wsp_cycle",
+  };
+  cyclic.self = cyclic;
+
+  assert.throws(
+    () => fingerprintWorkspaceMetadata(cyclic),
+    (error) => {
+      assert.equal(error instanceof WorkspaceMetadataError, true);
+      assert.equal(error.code, WORKSPACE_STORE_ERROR_CODES.SERIALIZATION_INVALID);
+      assert.equal(error.details.path, "metadata.self");
+      assert.equal(error.cause instanceof RangeError, false);
+      return true;
+    },
+  );
+
+  assert.throws(
+    () => planWorkspaceMetadataMigrations(cyclic, metadataMigrations(), { targetVersion: 2 }),
+    (error) => {
+      assert.equal(error instanceof WorkspaceMetadataError, true);
+      assert.equal(error.code, WORKSPACE_STORE_ERROR_CODES.SERIALIZATION_INVALID);
+      assert.equal(error.cause instanceof RangeError, false);
+      return true;
+    },
   );
 });
 

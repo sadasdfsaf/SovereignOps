@@ -322,7 +322,7 @@ export function normalizeBackupManifest(value: BackupManifest): BackupManifest {
 
 export function planWorkspaceRestore(manifestValue: unknown, options: RestorePlanOptions): RestorePlan {
   const manifest = assertBackupManifest(manifestValue);
-  const mode = options.mode ?? "preview";
+  const mode = readRestoreMode(options.mode);
   const safety = checkRestoreSafety(manifest, { ...options, mode });
   const include = options.includePayloadIds ? new Set(options.includePayloadIds.map(normalizeString)) : undefined;
   const exclude = new Set((options.excludePayloadIds ?? []).map(normalizeString));
@@ -376,7 +376,7 @@ export function checkRestoreSafety(manifestValue: unknown, options: RestoreSafet
   }
 
   const manifest = validation.value;
-  const mode = options.mode ?? "preview";
+  const mode = readRestoreMode(options.mode);
   const targetWorkspaceId = normalizeString(options.targetWorkspaceId);
   const blockers: string[] = [];
   const warnings: string[] = [];
@@ -571,6 +571,21 @@ const PAYLOAD_INTEGRITY_FIELDS = new Set([
   "descriptorFingerprint",
 ]);
 const PAYLOAD_KINDS = new Set(["workspace_state", "record", "asset", "settings"]);
+const RESTORE_MODES = new Set<RestoreMode>(["preview", "merge", "replace"]);
+
+function readRestoreMode(value: unknown): RestoreMode {
+  const mode = value ?? "preview";
+  if (typeof mode === "string" && RESTORE_MODES.has(mode as RestoreMode)) {
+    return mode as RestoreMode;
+  }
+
+  throw new BackupManifestValidationError([
+    {
+      path: "options.mode",
+      message: "must be one of preview, merge, or replace",
+    },
+  ]);
+}
 
 function validatePayloadDescriptors(
   value: unknown,

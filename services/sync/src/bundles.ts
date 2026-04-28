@@ -87,6 +87,7 @@ const WORKSPACE_ID_PATTERN = /^wsp_[A-Za-z0-9_-]{1,88}$/;
 const DEVICE_ID_PATTERN = /^dev_[A-Za-z0-9_-]{1,88}$/;
 const CHECKSUM_PATTERN = /^sha256:[a-f0-9]{64}$/;
 const MAX_DOWNLOAD_LIMIT = 500;
+const MAX_JSON_DEPTH = 100;
 
 export function createUploadBatch(input: CreateUploadBatchInput): SyncUploadBatch {
   const issues: ValidationIssue[] = [];
@@ -339,12 +340,14 @@ function validateEvent(
   if (typeof value.type !== "string" || value.type.trim().length === 0) {
     issues.push({ path: `${path}.type`, message: "type must be a non-empty string" });
   }
+  const payloadIssueCount = issues.length;
   validateJsonValue(value.payload, `${path}.payload`, issues);
+  const payloadValid = issues.length === payloadIssueCount;
   if (typeof value.createdAt !== "string" || value.createdAt.trim().length === 0) {
     issues.push({ path: `${path}.createdAt`, message: "createdAt must be a non-empty string" });
   }
 
-  if (!isEventId(value.id) || typeof workspaceId !== "string" || typeof deviceId !== "string") {
+  if (!isEventId(value.id) || typeof workspaceId !== "string" || typeof deviceId !== "string" || !payloadValid) {
     return undefined;
   }
 
@@ -433,7 +436,18 @@ function canonicalJson(value: JsonValue | Omit<SyncUploadBatch, "checksum">): st
   throw new Error("cannot checksum unsupported value");
 }
 
-function validateJsonValue(value: unknown, path: string, issues: ValidationIssue[]): void {
+function validateJsonValue(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+  seen: WeakSet<object> = new WeakSet<object>(),
+  depth = 0,
+): void {
+  if (depth > MAX_JSON_DEPTH) {
+    issues.push({ path, message: `JSON values cannot exceed ${MAX_JSON_DEPTH} nested levels` });
+    return;
+  }
+
   if (
     value === null ||
     typeof value === "string" ||
@@ -444,18 +458,30 @@ function validateJsonValue(value: unknown, path: string, issues: ValidationIssue
   }
 
   if (Array.isArray(value)) {
-    value.forEach((item, index) => validateJsonValue(item, `${path}[${index}]`, issues));
+    if (seen.has(value)) {
+      issues.push({ path, message: "JSON values cannot contain circular references" });
+      return;
+    }
+    seen.add(value);
+    value.forEach((item, index) => validateJsonValue(item, `${path}[${index}]`, issues, seen, depth + 1));
+    seen.delete(value);
     return;
   }
 
   if (isRecord(value)) {
+    if (seen.has(value)) {
+      issues.push({ path, message: "JSON values cannot contain circular references" });
+      return;
+    }
+    seen.add(value);
     for (const [key, nestedValue] of Object.entries(value)) {
       if (nestedValue === undefined) {
         issues.push({ path: `${path}.${key}`, message: "JSON values cannot be undefined" });
       } else {
-        validateJsonValue(nestedValue, `${path}.${key}`, issues);
+        validateJsonValue(nestedValue, `${path}.${key}`, issues, seen, depth + 1);
       }
     }
+    seen.delete(value);
     return;
   }
 

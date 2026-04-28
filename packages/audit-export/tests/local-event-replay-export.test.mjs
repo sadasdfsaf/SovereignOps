@@ -115,6 +115,31 @@ test("renders local replay JSONL and CSV without sensitive metadata", () => {
   assert.equal(csv.includes("[REDACTED]"), true);
 });
 
+test("escapes spreadsheet formula prefixes in local replay CSV cells", () => {
+  const formulaEvent = canonicalEvent({
+    id: "evt_formula",
+    sequence: 3,
+    operation: "+replay",
+    occurredAt: "2026-04-27T04:00:03.000Z",
+    recordedAt: "2026-04-27T04:00:04.000Z",
+    payload: {
+      title: "Formula payload",
+      formula: "=cmd",
+      nested: {
+        tabPrefix: "\tcmd",
+      },
+    },
+    previousDigest: calculateCanonicalLocalEventDigest(canonicalEvents[1]),
+  });
+  const csv = renderLocalEventReplayCsv([formulaEvent]);
+  const row = csv.split("\n")[1];
+
+  assert.equal(row.includes(",'+replay,"), true);
+  assert.equal(row.includes("\"\"formula\"\":\"\"'=cmd\"\""), true);
+  assert.equal(row.includes("\"\"tabPrefix\"\":\"\"'\\tcmd\"\""), true);
+  assert.equal(row.includes(",+replay,"), false);
+});
+
 test("creates deterministic local replay packages and manifests", () => {
   const first = createLocalEventReplayExportPackage([canonicalEvents[1], replayCatalog.summary, canonicalEvents[0]], {
     createdAt: "2026-04-27T05:00:00.000Z",

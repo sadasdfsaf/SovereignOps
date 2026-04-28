@@ -4,8 +4,10 @@
   "version": "0.1.0",
   "description": "Local-first encrypted workspace with policy-gated AI agent operations.",
   "type": "module",
+  "packageManager": "pnpm@10.33.2",
   "scripts": {
-    "check": "node scripts/node-check.mjs",
+    "check": "node scripts/node-check.mjs && npm run typescript:check",
+    "typescript:check": "tsc --noEmit -p tsconfig.alpha.json",
     "env:check": "python scripts/env_guard.py",
     "rust:guard": "python scripts/rust_guard.py",
     "smoke": "python scripts/smoke.py",
@@ -26,5 +28,8 @@
     "services/mcp-gateway",
     "services/sync"
   ],
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3"
+  }
 }

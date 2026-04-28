@@ -4,6 +4,7 @@ import {
   AuditExportError,
   type DeepReadonly,
   type JsonObject,
+  type JsonValue,
   redactAuditValue,
   fingerprintAuditExport,
   serializeDeterministicJson,
@@ -143,6 +144,7 @@ const LOCAL_EVENT_REPLAY_RECORD_TYPES = Object.freeze([
   "synced_event",
   "replay_summary",
 ] satisfies readonly LocalEventReplayExportRecordType[]);
+const CSV_FORMULA_PREFIX_PATTERN = /^[=+\-@\t\r]/;
 
 export function normalizeLocalEventReplayExportRecords(
   input: unknown,
@@ -660,7 +662,7 @@ function readLocalEventReplayCsvColumn(
     case "hasMore":
       return record.hasMore === null ? "" : String(record.hasMore);
     case "metadata":
-      return serializeDeterministicJson(record.metadata);
+      return serializeDeterministicJson(escapeCsvJsonFormulaValues(record.metadata));
     case "fingerprint":
       return record.fingerprint;
     default:
@@ -837,10 +839,30 @@ function requirePlainRecord(value: unknown, path: string): Record<string, unknow
 }
 
 function formatCsvCell(value: string): string {
-  if (!/[",\r\n]/.test(value)) {
-    return value;
+  const safeValue = escapeCsvFormulaValue(value);
+  if (!/[",\r\n]/.test(safeValue)) {
+    return safeValue;
   }
-  return `"${value.replaceAll("\"", "\"\"")}"`;
+  return `"${safeValue.replaceAll("\"", "\"\"")}"`;
+}
+
+function escapeCsvFormulaValue(value: string): string {
+  return CSV_FORMULA_PREFIX_PATTERN.test(value) ? `'${value}` : value;
+}
+
+function escapeCsvJsonFormulaValues(value: JsonValue): JsonValue {
+  if (typeof value === "string") {
+    return escapeCsvFormulaValue(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map(escapeCsvJsonFormulaValues);
+  }
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nested]) => [key, escapeCsvJsonFormulaValues(nested)]),
+    );
+  }
+  return value;
 }
 
 function uniqueSorted(values: readonly string[]): readonly string[] {

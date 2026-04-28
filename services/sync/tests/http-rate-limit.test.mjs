@@ -151,6 +151,74 @@ test("rate limiter scopes tokens per workspace and device", async () => {
   assert.equal((await handlers.downloadBundle(request)).status, 200);
 });
 
+test("invalid requests consume pre-validation rate-limit tokens", async () => {
+  let nowMs = 100_000;
+  const limiter = new InMemoryTokenWindowRateLimiter({
+    capacity: 1,
+    windowMs: 1_000,
+    now: () => nowMs,
+  });
+  const handlers = createSyncHttpHandlers({
+    now: () => nowMs,
+    rateLimiter: limiter,
+    repository: createFakeRepository(),
+  });
+  const invalidRequest = {
+    body: {
+      workspaceId: "wsp_alpha",
+      deviceId: "dev_laptop",
+      baseCursor: INITIAL_CURSOR,
+      events: [],
+      checksum: `sha256:${"0".repeat(64)}`,
+    },
+  };
+
+  const invalid = await handlers.uploadBundle(invalidRequest);
+  assert.equal(invalid.status, 400);
+  assert.equal(invalid.body.error.code, "invalid_upload");
+
+  const limited = await handlers.uploadBundle(invalidRequest);
+  assert.equal(limited.status, 429);
+  assert.equal(limited.body.error.code, "rate_limited");
+  assert.equal(limited.body.error.details.workspaceId, "wsp_alpha");
+  assert.equal(limited.body.error.details.deviceId, "dev_laptop");
+
+  nowMs += 1_000;
+  assert.equal((await handlers.uploadBundle(invalidRequest)).status, 400);
+});
+
+test("cyclic upload payloads are rejected without overflowing validation", async () => {
+  const payload = { title: "cyclic" };
+  payload.self = payload;
+  const handlers = createSyncHttpHandlers({ repository: createFakeRepository() });
+
+  const response = await handlers.uploadBundle({
+    body: {
+      workspaceId: "wsp_alpha",
+      deviceId: "dev_laptop",
+      baseCursor: INITIAL_CURSOR,
+      events: [
+        {
+          ...baseEvent,
+          id: "evt_cycle",
+          sequence: 1,
+          payload,
+        },
+      ],
+      checksum: `sha256:${"0".repeat(64)}`,
+    },
+  });
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error.code, "invalid_upload");
+  assert.ok(
+    response.body.error.details.issues.some((issue) => (
+      issue.path === "events[0].payload.self" &&
+      issue.message === "JSON values cannot contain circular references"
+    )),
+  );
+});
+
 test("standard error responses keep code, message, details, and status stable", () => {
   const expectedStatuses = {
     malformed_cursor: 400,

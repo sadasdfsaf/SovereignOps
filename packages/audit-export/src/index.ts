@@ -163,6 +163,7 @@ const CSV_COLUMNS = Object.freeze([
   "context",
   "fingerprint",
 ]);
+const CSV_FORMULA_PREFIX_PATTERN = /^[=+\-@\t\r]/;
 
 export function normalizeAuditEvent(value: unknown): DeepReadonly<NormalizedAuditEvent> {
   if (!isPlainRecord(value)) {
@@ -604,15 +605,15 @@ function readCsvColumn(event: NormalizedAuditEvent, column: string): string {
     case "decision":
       return event.decision ?? "";
     case "actor":
-      return event.actor === null ? "" : serializeDeterministicJson(event.actor);
+      return event.actor === null ? "" : serializeDeterministicJson(escapeCsvJsonFormulaValues(event.actor));
     case "target":
-      return event.target === null ? "" : serializeDeterministicJson(event.target);
+      return event.target === null ? "" : serializeDeterministicJson(escapeCsvJsonFormulaValues(event.target));
     case "reason":
       return event.reason ?? "";
     case "attributes":
-      return serializeDeterministicJson(event.attributes);
+      return serializeDeterministicJson(escapeCsvJsonFormulaValues(event.attributes));
     case "context":
-      return serializeDeterministicJson(event.context);
+      return serializeDeterministicJson(escapeCsvJsonFormulaValues(event.context));
     case "fingerprint":
       return event.fingerprint;
     default:
@@ -621,10 +622,30 @@ function readCsvColumn(event: NormalizedAuditEvent, column: string): string {
 }
 
 function formatCsvCell(value: string): string {
-  if (!/[",\r\n]/.test(value)) {
-    return value;
+  const safeValue = escapeCsvFormulaValue(value);
+  if (!/[",\r\n]/.test(safeValue)) {
+    return safeValue;
   }
-  return `"${value.replaceAll("\"", "\"\"")}"`;
+  return `"${safeValue.replaceAll("\"", "\"\"")}"`;
+}
+
+function escapeCsvFormulaValue(value: string): string {
+  return CSV_FORMULA_PREFIX_PATTERN.test(value) ? `'${value}` : value;
+}
+
+function escapeCsvJsonFormulaValues(value: JsonValue): JsonValue {
+  if (typeof value === "string") {
+    return escapeCsvFormulaValue(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map(escapeCsvJsonFormulaValues);
+  }
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nested]) => [key, escapeCsvJsonFormulaValues(nested)]),
+    );
+  }
+  return value;
 }
 
 function createFingerprint(value: unknown): string {

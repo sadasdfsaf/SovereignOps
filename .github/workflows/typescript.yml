@@ -20,8 +20,6 @@ jobs:
         shell: bash
         run: |
           corepack enable
-          if command -v pnpm >/dev/null 2>&1; then
-            pnpm -r --if-present check
-          else
-            echo "pnpm not installed; skipping workspace checks"
-          fi
+          pnpm install --frozen-lockfile
+          pnpm run typescript:check
+          pnpm -r --if-present check
