@@ -71,6 +71,14 @@ test("joins workspace roots without allowing traversal", () => {
   assert.equal(posixJoin.value.relativePath, "records/item.json");
   assert.equal(posixJoin.value.absolutePath, "/workspace/root/records/item.json");
 
+  const dotPrefixedPosixJoin = joinWorkspaceRoot("/workspace/root", "..vault/item.json", {
+    platform: "posix",
+  });
+
+  assert.equal(dotPrefixedPosixJoin.ok, true);
+  assert.equal(dotPrefixedPosixJoin.value.absolutePath, "/workspace/root/..vault/item.json");
+  assert.equal(dotPrefixedPosixJoin.value.relativePath, "..vault/item.json");
+
   const windowsJoin = joinWorkspaceRoot("C:\\workspace\\root", "records\\item.json", {
     platform: "windows",
   });
@@ -79,6 +87,14 @@ test("joins workspace roots without allowing traversal", () => {
   assert.equal(windowsJoin.value.workspaceRoot, "C:\\workspace\\root");
   assert.equal(windowsJoin.value.relativePath, "records/item.json");
   assert.equal(windowsJoin.value.absolutePath, "C:\\workspace\\root\\records\\item.json");
+
+  const dotPrefixedWindowsJoin = joinWorkspaceRoot("C:\\workspace\\root", "...cache\\item.json", {
+    platform: "windows",
+  });
+
+  assert.equal(dotPrefixedWindowsJoin.ok, true);
+  assert.equal(dotPrefixedWindowsJoin.value.absolutePath, "C:\\workspace\\root\\...cache\\item.json");
+  assert.equal(dotPrefixedWindowsJoin.value.relativePath, "...cache/item.json");
 
   const autoWindowsJoin = joinWorkspaceRoot("C:\\workspace\\root", "records\\item.json", {
     platform: "auto",

@@ -239,7 +239,11 @@ export function joinWorkspaceRoot(
   const relativeForPlatform = toPlatformSeparators(relative.value.normalizedPath, platform);
   const absolutePath = pathApi.resolve(root, relativeForPlatform);
   const relation = pathApi.relative(root, absolutePath);
-  if (relation.startsWith("..") || pathApi.isAbsolute(relation)) {
+  const escapedRoot =
+    relation === ".." ||
+    relation.startsWith(`..${pathApi.sep}`) ||
+    pathApi.isAbsolute(relation);
+  if (escapedRoot) {
     return validationFailure([
       createIssue(
         relativeIssuePath,

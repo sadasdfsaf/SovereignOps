@@ -32,6 +32,14 @@ def optional_tool(name: str) -> str | None:
     return path
 
 
+def run_optional_tool_check(tool: str, args: list[str], *, cwd: Path) -> bool:
+    executable = optional_tool(tool)
+    if executable is None:
+        return False
+    run([executable, *args], cwd=cwd)
+    return True
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run cross-platform SovereignOps smoke checks.")
     parser.add_argument("--root", default=".", help="Repository root.")
@@ -57,15 +65,9 @@ def main() -> int:
             if not ok:
                 raise SystemExit(f"Python compile check failed for {source_dir}")
 
-    cargo = optional_tool("cargo")
-    if cargo:
-        run([cargo, "check", "--workspace"], cwd=root, required=False)
-    node = optional_tool("node")
-    if node:
-        run([node, "scripts/node-check.mjs"], cwd=root, required=False)
-    pnpm = optional_tool("pnpm")
-    if pnpm:
-        run([pnpm, "-r", "--if-present", "check"], cwd=root, required=False)
+    run_optional_tool_check("cargo", ["check", "--workspace"], cwd=root)
+    run_optional_tool_check("node", ["scripts/node-check.mjs"], cwd=root)
+    run_optional_tool_check("pnpm", ["-r", "--if-present", "check"], cwd=root)
 
     print("Smoke check completed.")
     return 0
