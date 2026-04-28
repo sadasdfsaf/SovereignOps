@@ -97,7 +97,7 @@ function buildReplay(preview) {
   return {
     schemaVersion: "mcp-approval-evidence-api-requests.v1",
     generatedAt: timestamps.replay,
-    apiBase: "local://mcp-approval-evidence-preview",
+    apiBase: "local://mcp-approval-evidence-api",
     requests: [
       {
         id: "api_mcp_approval_evidence_preview",
@@ -126,7 +126,7 @@ function buildPublicFixtureBundle() {
   return {
     schemaVersion: "mcp-approval-evidence-preview-requests.v1",
     generatedAt: timestamps.replay,
-    apiBase: "local://mcp-approval-evidence-preview",
+    apiBase: "local://mcp-approval-evidence-api",
     requests: [
       {
         id: "api_mcp_approval_evidence_public_preview",

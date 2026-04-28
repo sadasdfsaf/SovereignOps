@@ -1,7 +1,7 @@
 {
   "schemaVersion": "mcp-approval-evidence-preview-requests.v1",
   "generatedAt": "2026-04-27T12:00:00.000Z",
-  "apiBase": "local://mcp-approval-evidence-preview",
+  "apiBase": "local://mcp-approval-evidence-api",
   "requests": [
     {
       "id": "api_mcp_approval_evidence_preview_local_tasks",

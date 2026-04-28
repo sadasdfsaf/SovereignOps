@@ -9,6 +9,8 @@ This document covers the local-first API, SDK, CLI fixture, schema, gateway, and
 - `docs/mcp-approval-evidence-records-api.md`
 - `tests/test_mcp_approval_evidence_records_api_docs.py`
 - `tests/test_mcp_approval_evidence_records_api_alignment.py`
+- `tests/test_validate_openapi_mcp_approval_evidence_records_api_fixture.py`
+- `tests/test_openapi_fixture_contract.py`
 - `services/mcp-gateway/src/approvalEvidenceRecords.ts`
 - `services/mcp-gateway/tests/approval-evidence-records.test.mjs`
 - `apps/api/src/mcpApprovalEvidenceRecordRoutes.ts`
@@ -35,6 +37,7 @@ This document covers the local-first API, SDK, CLI fixture, schema, gateway, and
 - `apps/web/src/mcpApprovalEvidenceRecordState.ts`
 - `apps/web/tests/mcp-approval-evidence-record-state.test.mjs`
 - `docs/openapi.yaml`
+- `scripts/openapi_fixture_contract.py`
 - `scripts/release_check.py`
 - `scripts/repo_health.py`
 
@@ -94,12 +97,27 @@ and expected redacted record/comparison response fields.
 
 `buildMcpApprovalEvidenceRecordState` converts create, list, get, and compare API output into pure view state. It highlights empty record stores, stale baselines, fingerprint drift, missing evidence references, redaction status, and next actions without depending on browser APIs.
 
+## OpenAPI Fixture Drift
+
+`tests/test_validate_openapi_mcp_approval_evidence_records_api_fixture.py` uses
+`scripts/openapi_fixture_contract.py` and
+`tests/test_openapi_fixture_contract.py` to check that
+`examples/mcp/approval-evidence-records-requests.json` still maps to the
+documented create, list, get, and compare OpenAPI blocks. The drift check locks
+expected response statuses, `mcp` tags, `recordId` path parameters, request body
+schema references, local `apiBase`, and fixture safety rules before API route
+tests, SDK fake-fetch tests, CLI replay, gateway record checks, and Web state
+builders consume the fixture.
+
 ## Release Wiring
 
 The release check includes `mcp-approval-evidence-records-api-alignment` so API
 routes, docs, schemas, shared request bundle validators, generated request
-bundle JSON schema fixtures, SDK, CLI, Web helpers, examples, and health checks
-stay linked. The repository health script tracks the public files listed above.
+bundle JSON schema fixtures, OpenAPI fixture drift checks, SDK, CLI, Web
+helpers, examples, and health checks stay linked. It runs
+`tests.test_validate_openapi_mcp_approval_evidence_records_api_fixture` and
+`tests.test_openapi_fixture_contract` with the alignment check. The repository
+health script tracks the public files listed above.
 
 ## Guardrails
 
@@ -118,6 +136,7 @@ stay linked. The repository health script tracks the public files listed above.
 
 - `python -m unittest tests.test_mcp_approval_evidence_records_api_docs`
 - `python -m unittest tests.test_mcp_approval_evidence_records_api_alignment`
+- `python -m unittest tests.test_validate_openapi_mcp_approval_evidence_records_api_fixture tests.test_openapi_fixture_contract`
 - `python -m json.tool examples\mcp\approval-evidence-records-requests.json`
 - `python -m json.tool packages\schemas\fixtures\mcp-approval-evidence-record.valid.json`
 - `python -m json.tool packages\schemas\fixtures\mcp-approval-evidence-record.invalid.json`

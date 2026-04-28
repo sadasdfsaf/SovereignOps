@@ -13,6 +13,8 @@ service.
 - `docs/plugin-review-artifact-records-api.md`
 - `tests/test_plugin_review_artifact_records_api_docs.py`
 - `tests/test_plugin_review_artifact_records_api_alignment.py`
+- `tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py`
+- `tests/test_openapi_fixture_contract.py`
 - `packages/plugin-sdk/src/reviewArtifactRecords.ts`
 - `packages/plugin-sdk/tests/review-artifact-records.test.mjs`
 - `apps/api/src/pluginReviewArtifactRecordRoutes.ts`
@@ -39,6 +41,7 @@ service.
 - `apps/web/src/pluginReviewArtifactRecordState.ts`
 - `apps/web/tests/plugin-review-artifact-record-state.test.mjs`
 - `docs/openapi.yaml`
+- `scripts/openapi_fixture_contract.py`
 - `scripts/release_check.py`
 - `scripts/repo_health.py`
 
@@ -121,12 +124,27 @@ API output into pure view state. It highlights empty record stores, stale
 baselines, fingerprint drift, decision drift, redaction status, and next actions
 without depending on browser APIs.
 
+## OpenAPI Fixture Drift
+
+`tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py`
+uses `scripts/openapi_fixture_contract.py` and
+`tests/test_openapi_fixture_contract.py` to check that
+`examples/plugins/release-notes/review-artifact-records-requests.json` still
+maps to the documented create, list, get, and compare OpenAPI blocks. The drift
+check locks expected response statuses, `plugins` tags, `recordId` path
+parameters, request body schema references, local `apiBase`, and fixture safety
+rules before API route tests, SDK fake-fetch tests, CLI replay, plugin SDK
+record checks, and Web state builders consume the fixture.
+
 ## Release Wiring
 
 The release check includes `plugin-review-artifact-records-api-alignment` so API
 routes, docs, schemas, shared request bundle validators, generated request
-bundle JSON schema fixtures, SDK, CLI, Web helpers, examples, and health checks
-stay linked. The repository health script tracks the public files listed above.
+bundle JSON schema fixtures, OpenAPI fixture drift checks, SDK, CLI, Web
+helpers, examples, and health checks stay linked. It runs
+`tests.test_validate_openapi_plugin_review_artifact_records_api_fixture` and
+`tests.test_openapi_fixture_contract` with the alignment check. The repository
+health script tracks the public files listed above.
 
 ## Guardrails
 
@@ -145,6 +163,7 @@ stay linked. The repository health script tracks the public files listed above.
 
 - `python -m unittest tests.test_plugin_review_artifact_records_api_docs`
 - `python -m unittest tests.test_plugin_review_artifact_records_api_alignment`
+- `python -m unittest tests.test_validate_openapi_plugin_review_artifact_records_api_fixture tests.test_openapi_fixture_contract`
 - `python -m json.tool examples\plugins\release-notes\review-artifact-records-requests.json`
 - `python -m json.tool packages\schemas\fixtures\plugin-review-artifact-record.valid.json`
 - `python -m json.tool packages\schemas\fixtures\plugin-review-artifact-record.invalid.json`

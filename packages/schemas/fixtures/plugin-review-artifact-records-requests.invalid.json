@@ -1,7 +1,7 @@
 {
   "schemaVersion": "plugin-review-artifact-records-requests.v1",
   "generatedAt": "2026-04-27T13:10:00.000Z",
-  "apiBase": "local://plugin-review-artifact-records",
+  "apiBase": "local://plugin-review-artifact-records-api",
   "fixtureRefs": [
     {
       "id": "releaseNotesReviewArtifact",

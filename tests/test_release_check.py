@@ -60,6 +60,7 @@ def make_release_root(root: Path) -> None:
         "scripts/rust_guard.py",
         "scripts/validate_openapi.py",
         "scripts/validate_mcp_gateway_fixtures.py",
+        "scripts/openapi_fixture_contract.py",
         "scripts/node-check.mjs",
         *release_check.LOCAL_EVENT_CATALOG_REQUIRED_PATHS,
         *release_check.WORKSPACE_SESSION_REQUIRED_PATHS,
@@ -162,6 +163,11 @@ def make_release_root(root: Path) -> None:
         "tests/test_ingest_contract_alignment.py",
         "tests/test_schema_alignment_docs.py",
         "tests/test_validate_openapi_schema_components.py",
+        "tests/test_openapi_fixture_contract.py",
+        "tests/test_validate_openapi_plugin_review_artifact_api_fixture.py",
+        "tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py",
+        "tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py",
+        "tests/test_validate_openapi_mcp_approval_evidence_records_api_fixture.py",
         "tests/test_validate_openapi_ingest_search.py",
         "tests/test_validate_openapi_ingest_evidence.py",
         "tests/ingest_evidence_parity.test.mjs",
@@ -403,6 +409,11 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("RUN status-dashboard: python scripts/status_dashboard.py --json", output.getvalue())
         self.assertIn("RUN bootstrap-docs: python -m unittest tests.test_adr_docs", output.getvalue())
         self.assertIn("RUN schema-contract-alignment: python -m unittest tests.test_schema_alignment_docs", output.getvalue())
+        self.assertIn("tests.test_openapi_fixture_contract", output.getvalue())
+        self.assertIn("tests.test_validate_openapi_plugin_review_artifact_api_fixture", output.getvalue())
+        self.assertIn("tests.test_validate_openapi_plugin_review_artifact_records_api_fixture", output.getvalue())
+        self.assertIn("tests.test_validate_openapi_mcp_approval_evidence_api_fixture", output.getvalue())
+        self.assertIn("tests.test_validate_openapi_mcp_approval_evidence_records_api_fixture", output.getvalue())
         self.assertIn("RUN loc-integrity: python scripts/loc_integrity.py", output.getvalue())
         self.assertIn("SKIP local-event-catalog-integration: missing tool: node", output.getvalue())
         self.assertIn("SKIP workspace-session-integration: missing tool: node", output.getvalue())
@@ -433,6 +444,9 @@ class ReleaseCheckTests(unittest.TestCase):
                 "packages/schemas/fixtures/plugin-review-artifact-api-requests.valid.json",
                 "packages/schemas/fixtures/plugin-review-artifact-api-requests.invalid.json",
                 "packages/schemas/fixtures/plugin-review-artifact-api-requests.schema.json",
+                "scripts/openapi_fixture_contract.py",
+                "tests/test_openapi_fixture_contract.py",
+                "tests/test_validate_openapi_plugin_review_artifact_api_fixture.py",
             },
             "plugin-review-artifact-records-api-alignment": {
                 "packages/schemas/src/pluginReviewArtifactRecord.ts",
@@ -440,6 +454,9 @@ class ReleaseCheckTests(unittest.TestCase):
                 "packages/schemas/fixtures/plugin-review-artifact-records-requests.valid.json",
                 "packages/schemas/fixtures/plugin-review-artifact-records-requests.invalid.json",
                 "packages/schemas/fixtures/plugin-review-artifact-records-requests.schema.json",
+                "scripts/openapi_fixture_contract.py",
+                "tests/test_openapi_fixture_contract.py",
+                "tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py",
             },
             "mcp-approval-evidence-api-alignment": {
                 "packages/schemas/src/mcpApprovalEvidence.ts",
@@ -447,6 +464,9 @@ class ReleaseCheckTests(unittest.TestCase):
                 "packages/schemas/fixtures/mcp-approval-evidence-preview-requests.valid.json",
                 "packages/schemas/fixtures/mcp-approval-evidence-preview-requests.invalid.json",
                 "packages/schemas/fixtures/mcp-approval-evidence-preview-requests.schema.json",
+                "scripts/openapi_fixture_contract.py",
+                "tests/test_openapi_fixture_contract.py",
+                "tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py",
             },
             "mcp-approval-evidence-records-api-alignment": {
                 "packages/schemas/src/mcpApprovalEvidenceRecord.ts",
@@ -454,7 +474,16 @@ class ReleaseCheckTests(unittest.TestCase):
                 "packages/schemas/fixtures/mcp-approval-evidence-records-requests.valid.json",
                 "packages/schemas/fixtures/mcp-approval-evidence-records-requests.invalid.json",
                 "packages/schemas/fixtures/mcp-approval-evidence-records-requests.schema.json",
+                "scripts/openapi_fixture_contract.py",
+                "tests/test_openapi_fixture_contract.py",
+                "tests/test_validate_openapi_mcp_approval_evidence_records_api_fixture.py",
             },
+        }
+        expected_commands = {
+            "plugin-review-artifact-api-alignment": "tests.test_validate_openapi_plugin_review_artifact_api_fixture",
+            "plugin-review-artifact-records-api-alignment": "tests.test_validate_openapi_plugin_review_artifact_records_api_fixture",
+            "mcp-approval-evidence-api-alignment": "tests.test_validate_openapi_mcp_approval_evidence_api_fixture",
+            "mcp-approval-evidence-records-api-alignment": "tests.test_validate_openapi_mcp_approval_evidence_records_api_fixture",
         }
 
         for gate, expected in expected_by_gate.items():
@@ -463,6 +492,9 @@ class ReleaseCheckTests(unittest.TestCase):
                 self.assertLessEqual(expected, set(spec.required_paths))
                 self.assertIn("shared request bundle validators", spec.description)
                 self.assertIn("generated request bundle JSON schema fixtures", spec.description)
+                self.assertIn("OpenAPI fixture drift checks", spec.description)
+                self.assertIn(expected_commands[gate], spec.command)
+                self.assertIn("tests.test_openapi_fixture_contract", spec.command)
 
     def test_retention_cleanup_release_gate_tracks_round44_files(self) -> None:
         required = set(release_check.WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS)

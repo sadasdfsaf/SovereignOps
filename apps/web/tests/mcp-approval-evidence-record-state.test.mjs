@@ -71,7 +71,7 @@ function buildPublicFixtureBundle() {
   return {
     schemaVersion: "mcp-approval-evidence-records-requests.v1",
     generatedAt: timestamps.replay,
-    apiBase: "local://mcp-approval-evidence-records",
+    apiBase: "local://mcp-approval-evidence-records-api",
     requests: [
       {
         id: "api_mcp_approval_evidence_records_public_create",

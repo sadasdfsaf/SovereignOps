@@ -95,6 +95,12 @@ EXPECTED_ALIGNMENT_REFERENCES = (
     "`tests/test_plugin_review_artifact_records_api_docs.py`",
     "`tests/test_mcp_approval_evidence_api_docs.py`",
     "`tests/test_mcp_approval_evidence_records_api_docs.py`",
+    "`scripts/openapi_fixture_contract.py`",
+    "`tests/test_openapi_fixture_contract.py`",
+    "`tests/test_validate_openapi_plugin_review_artifact_api_fixture.py`",
+    "`tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py`",
+    "`tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py`",
+    "`tests/test_validate_openapi_mcp_approval_evidence_records_api_fixture.py`",
     "`[REDACTED]`",
     "`[redacted]`",
 )
@@ -106,6 +112,7 @@ EXPECTED_COMMANDS = (
     "python scripts\\validate_lifecycle_fixtures.py",
     "python scripts\\validate_mcp_gateway_fixtures.py",
     "python -m unittest discover -s tests",
+    "python -m unittest tests.test_openapi_fixture_contract tests.test_validate_openapi_plugin_review_artifact_api_fixture tests.test_validate_openapi_plugin_review_artifact_records_api_fixture tests.test_validate_openapi_mcp_approval_evidence_api_fixture tests.test_validate_openapi_mcp_approval_evidence_records_api_fixture",
 )
 
 
@@ -145,6 +152,8 @@ class SchemaAlignmentDocsTests(unittest.TestCase):
             "local-only expectations",
             "redaction expectations",
             "generated schemas, route contracts, or fixture replay",
+            "OpenAPI fixture drift tests",
+            "replay fixtures with documented OpenAPI route blocks",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, self.text)

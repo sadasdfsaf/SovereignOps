@@ -24,6 +24,8 @@ The Round 27 API and SDK slice is expected to use these repo-relative files:
 - `docs/plugin-review-artifact-api.md`
 - `tests/test_plugin_review_artifact_api_docs.py`
 - `tests/test_plugin_review_artifact_api_alignment.py`
+- `tests/test_validate_openapi_plugin_review_artifact_api_fixture.py`
+- `tests/test_openapi_fixture_contract.py`
 - `apps/api/src/pluginReviewArtifactRoutes.ts`
 - `apps/api/tests/plugin-review-artifact-routes.test.mjs`
 - `packages/sdk-js/src/pluginReviewArtifactClient.ts`
@@ -42,6 +44,7 @@ The Round 27 API and SDK slice is expected to use these repo-relative files:
 - `apps/web/src/pluginReviewArtifactApiState.ts`
 - `apps/web/tests/plugin-review-artifact-api-state.test.mjs`
 - `docs/openapi.yaml`
+- `scripts/openapi_fixture_contract.py`
 - `scripts/release_check.py`
 - `scripts/repo_health.py`
 
@@ -135,6 +138,18 @@ contract.
 objects, route summaries, and preview responses, then return review state for
 local inspection without opening sockets.
 
+## OpenAPI Fixture Drift
+
+`tests/test_validate_openapi_plugin_review_artifact_api_fixture.py` uses
+`scripts/openapi_fixture_contract.py` and
+`tests/test_openapi_fixture_contract.py` to check that
+`examples/plugins/release-notes/review-artifact-api-requests.json` still maps to
+the documented `POST /v1/plugins/review-artifacts/preview` OpenAPI block. The
+drift check locks the expected response status, `plugins` tag, request body
+schema reference, local `apiBase`, and fixture safety rules before API route
+tests, SDK fake-fetch tests, CLI replay, and Web state builders consume the
+fixture.
+
 ## Release Wiring
 
 Once the parent API and SDK files are integrated:
@@ -151,7 +166,9 @@ Once the parent API and SDK files are integrated:
   `tests/plugin-review-artifact-api-state.test.mjs`.
 - `scripts/release_check.py` should include
   `plugin-review-artifact-api-alignment`, the shared request bundle validators,
-  and the generated request bundle JSON schema fixtures.
+  generated request bundle JSON schema fixtures, and the OpenAPI fixture drift
+  checks `tests.test_validate_openapi_plugin_review_artifact_api_fixture` and
+  `tests.test_openapi_fixture_contract`.
 - `scripts/repo_health.py` should include the API docs, tests, fixtures, and
   implementation files.
 
@@ -174,6 +191,7 @@ Run the focused checks from the repository root:
 ```powershell
 python -m unittest tests.test_plugin_review_artifact_api_docs
 python -m unittest tests.test_plugin_review_artifact_api_alignment
+python -m unittest tests.test_validate_openapi_plugin_review_artifact_api_fixture tests.test_openapi_fixture_contract
 python -m json.tool examples\plugins\release-notes\review-artifact-api-requests.json
 python -m json.tool packages\schemas\fixtures\plugin-review-artifact-preview.valid.json
 python -m json.tool packages\schemas\fixtures\plugin-review-artifact-preview.invalid.json

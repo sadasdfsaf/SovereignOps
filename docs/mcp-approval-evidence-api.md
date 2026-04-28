@@ -11,6 +11,8 @@ The route is intentionally local-only and side-effect free. It accepts caller-pr
 - `docs/mcp-approval-evidence-api.md`
 - `tests/test_mcp_approval_evidence_api_docs.py`
 - `tests/test_mcp_approval_evidence_api_alignment.py`
+- `tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py`
+- `tests/test_openapi_fixture_contract.py`
 - `services/mcp-gateway/src/approvalEvidence.ts`
 - `services/mcp-gateway/tests/approval-evidence.test.mjs`
 - `apps/api/src/mcpApprovalEvidenceRoutes.ts`
@@ -31,6 +33,7 @@ The route is intentionally local-only and side-effect free. It accepts caller-pr
 - `apps/web/src/mcpApprovalEvidenceApiState.ts`
 - `apps/web/tests/mcp-approval-evidence-api-state.test.mjs`
 - `docs/openapi.yaml`
+- `scripts/openapi_fixture_contract.py`
 - `scripts/release_check.py`
 - `scripts/repo_health.py`
 
@@ -98,9 +101,27 @@ redacted preview response fields.
 
 `buildMcpApprovalEvidenceApiState` converts preview responses into deterministic review state: summary cards, status rows, audit reference rows, redaction warning rows, and action buttons. It handles loading, success, error, empty audit refs, approval-required, denied, approved, and expired states.
 
+## OpenAPI Fixture Drift
+
+`tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py` uses
+`scripts/openapi_fixture_contract.py` and
+`tests/test_openapi_fixture_contract.py` to check that
+`examples/mcp/approval-evidence-preview-requests.json` still maps to the
+documented `POST /v1/mcp/approval-evidence/preview` OpenAPI block. The drift
+check locks the expected response status, `mcp` tag, request body schema
+reference, local `apiBase`, and fixture safety rules before API route tests, SDK
+fake-fetch tests, CLI replay, gateway preview checks, and Web state builders
+consume the fixture.
+
 ## Release Wiring
 
-The release check includes `mcp-approval-evidence-api-alignment` so the API route, OpenAPI contract, SDK client, CLI replay fixture, schema fixtures, shared request bundle validators, generated request bundle JSON schema fixtures, Web state helper, docs, and focused tests stay connected.
+The release check includes `mcp-approval-evidence-api-alignment` so the API
+route, OpenAPI contract, SDK client, CLI replay fixture, schema fixtures, shared
+request bundle validators, generated request bundle JSON schema fixtures,
+OpenAPI fixture drift checks, Web state helper, docs, and focused tests stay
+connected. It runs
+`tests.test_validate_openapi_mcp_approval_evidence_api_fixture` and
+`tests.test_openapi_fixture_contract` with the alignment check.
 
 ## Guardrails
 
@@ -121,6 +142,7 @@ Run focused checks:
 ```powershell
 python -m unittest tests.test_mcp_approval_evidence_api_docs
 python -m unittest tests.test_mcp_approval_evidence_api_alignment
+python -m unittest tests.test_validate_openapi_mcp_approval_evidence_api_fixture tests.test_openapi_fixture_contract
 python -m json.tool examples\mcp\approval-evidence-preview-requests.json
 python -m json.tool packages\schemas\fixtures\mcp-approval-evidence.valid.json
 python -m json.tool packages\schemas\fixtures\mcp-approval-evidence.invalid.json

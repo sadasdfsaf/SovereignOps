@@ -88,7 +88,7 @@ test("validates public MCP approval evidence request bundle and drives SDK previ
   );
   assert.equal(fixture.route.method, "POST");
   assert.equal(fixture.route.path, "/v1/mcp/approval-evidence/preview");
-  assert.equal(fetch.calls[0].url, "local://mcp-approval-evidence-preview/v1/mcp/approval-evidence/preview");
+  assert.equal(fetch.calls[0].url, "local://mcp-approval-evidence-api/v1/mcp/approval-evidence/preview");
   assert.equal(fetch.calls[0].init.method, fixture.route.method);
   assert.deepEqual(JSON.parse(fetch.calls[0].init.body), request);
   assert.equal(preview.kind, fixture.expect.kind);

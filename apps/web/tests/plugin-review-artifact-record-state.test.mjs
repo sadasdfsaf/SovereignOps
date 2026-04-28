@@ -85,7 +85,7 @@ function buildPublicFixtureBundle() {
   return {
     schemaVersion: "plugin-review-artifact-records-requests.v1",
     generatedAt: timestamps.middle,
-    apiBase: "local://plugin-review-artifact-records",
+    apiBase: "local://plugin-review-artifact-records-api",
     requests: [
       {
         id: "api_plugin_review_artifact_records_public_create",

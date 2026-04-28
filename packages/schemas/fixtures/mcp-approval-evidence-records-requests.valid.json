@@ -1,7 +1,7 @@
 {
   "schemaVersion": "mcp-approval-evidence-records-requests.v1",
   "generatedAt": "2026-04-27T12:30:00.000Z",
-  "apiBase": "local://mcp-approval-evidence-records",
+  "apiBase": "local://mcp-approval-evidence-records-api",
   "requests": [
     {
       "id": "api_mcp_approval_evidence_records_create_local_notes",

@@ -97,6 +97,8 @@ Python contract checks must use the standard library unless a service already ow
 - Enum values are copied from TypeScript constants, not reworded in route docs.
 - Ingest connector MCP components (`IngestConnectorMcpResourceListResponse`, `IngestConnectorMcpResourceResponse`, `IngestConnectorMcpPreviewRequest`, and `IngestConnectorMcpPreviewResponse`) stay aligned with `packages/schemas/src/ingestConnectorMcpApi.ts`.
 - Plugin review artifact and MCP approval evidence request bundle schemas stay aligned with the checked-in API replay fixtures before SDK fake-fetch harnesses, CLI replay commands, and Web state helpers consume them.
+- OpenAPI fixture drift tests use `scripts/openapi_fixture_contract.py` and `tests/test_openapi_fixture_contract.py` to compare checked-in replay fixtures with documented OpenAPI route blocks, response statuses, path parameters, tags, and request body references.
+- Route-family fixture drift tests live in `tests/test_validate_openapi_plugin_review_artifact_api_fixture.py`, `tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py`, `tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py`, and `tests/test_validate_openapi_mcp_approval_evidence_records_api_fixture.py`.
 
 Run `python scripts\validate_openapi.py` after OpenAPI edits. Add focused validator tests when a route family introduces a new component, response status, or replay fixture.
 
@@ -188,6 +190,7 @@ Compatibility tests should compare contracts across layers instead of checking o
 - `tests/test_mcp_contract_docs.py` locks MCP protocol sections, tools, error codes, audit output, replay fixtures, and CLI commands.
 - `tests/test_validate_openapi_ingest_connector_mcp.py`, `tests/test_validate_openapi_ingest_connector_mcp_fixture.py`, and `tests/test_ingest_connector_mcp_api_e2e.py` lock ingest connector MCP OpenAPI parity, fixture safety, SDK fixture harness replay, CLI replay, and Web fixture state.
 - `tests/test_plugin_review_artifact_api_docs.py`, `tests/test_plugin_review_artifact_records_api_docs.py`, `tests/test_mcp_approval_evidence_api_docs.py`, and `tests/test_mcp_approval_evidence_records_api_docs.py` lock shared request bundle validator names, public fixture paths, local-only expectations, and redaction expectations.
+- `tests/test_validate_openapi_plugin_review_artifact_api_fixture.py`, `tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py`, `tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py`, and `tests/test_validate_openapi_mcp_approval_evidence_records_api_fixture.py` lock replay fixtures against `docs/openapi.yaml` through `tests/test_openapi_fixture_contract.py`.
 - Focused doc tests lock any public alignment process that would break consumers if silently removed.
 
 Before merging a schema change, run the narrow layer checks plus `python -m unittest discover -s tests`. Broaden to Rust and Node workspace checks when a change touches shared values, generated schemas, route contracts, or fixture replay.
@@ -202,3 +205,4 @@ When a schema value changes:
 4. Update OpenAPI components and MCP tables when clients observe the value.
 5. Update event fixtures and replay fixtures with deterministic, redacted data.
 6. Run `python scripts\validate_openapi.py`, `node packages\schemas\scripts\export-json-schema.mjs --check`, `python scripts\validate_lifecycle_fixtures.py`, `python scripts\validate_mcp_gateway_fixtures.py`, and the focused compatibility tests for the touched layer.
+7. For replay fixture changes, run `python -m unittest tests.test_openapi_fixture_contract tests.test_validate_openapi_plugin_review_artifact_api_fixture tests.test_validate_openapi_plugin_review_artifact_records_api_fixture tests.test_validate_openapi_mcp_approval_evidence_api_fixture tests.test_validate_openapi_mcp_approval_evidence_records_api_fixture`.
