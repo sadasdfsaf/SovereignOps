@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import {
+  PLUGIN_REVIEW_ARTIFACT_API_REQUESTS_SCHEMA_VERSION,
   PLUGIN_REVIEW_ARTIFACT_PREVIEW_SCHEMA_VERSION,
+  assertPluginReviewArtifactApiRequestBundle,
   assertPluginReviewArtifactObject,
   assertPluginReviewArtifactPreview,
   externalCallMethods,
@@ -13,26 +15,42 @@ import {
   getPluginReviewArtifactSchema,
   isPluginReviewArtifactFingerprint,
   isPluginReviewArtifactSourceFilePath,
+  pluginReviewArtifactApiRequestsSchema,
+  pluginReviewArtifactApiRouteMethods,
   pluginReviewArtifactKinds,
   pluginReviewArtifactPreviewSchema,
   pluginReviewArtifactPreviewSchemaDefinition,
+  pluginReviewArtifactSchemaDefinitions,
   pluginReviewArtifactSchemas,
   pluginReviewArtifactValidators,
   previewRenderModes,
   redactionKinds,
   sourceFileRoles,
+  validatePluginReviewArtifactApiRequestBundle,
   validatePluginReviewArtifactObject,
   validatePluginReviewArtifactPreview,
 } from "../src/pluginReviewArtifact.ts";
 
 const fixturesDir = fileURLToPath(new URL("../fixtures/", import.meta.url));
+const examplesDir = fileURLToPath(new URL("../../../examples/", import.meta.url));
 
 test("exposes plugin review artifact preview schema metadata", () => {
   assert.equal(PLUGIN_REVIEW_ARTIFACT_PREVIEW_SCHEMA_VERSION, "plugin-review-artifact-preview.v1");
-  assert.deepEqual(pluginReviewArtifactKinds, ["pluginReviewArtifactPreview"]);
+  assert.equal(
+    PLUGIN_REVIEW_ARTIFACT_API_REQUESTS_SCHEMA_VERSION,
+    "plugin-review-artifact-api-requests.v1",
+  );
+  assert.deepEqual(pluginReviewArtifactKinds, [
+    "pluginReviewArtifactPreview",
+    "pluginReviewArtifactApiRequests",
+  ]);
   assert.equal(pluginReviewArtifactPreviewSchemaDefinition.kind, "pluginReviewArtifactPreview");
   assert.equal(pluginReviewArtifactPreviewSchemaDefinition.schemaVersion, PLUGIN_REVIEW_ARTIFACT_PREVIEW_SCHEMA_VERSION);
   assert.equal(pluginReviewArtifactPreviewSchemaDefinition.schema, pluginReviewArtifactPreviewSchema);
+  assert.equal(
+    pluginReviewArtifactSchemaDefinitions.pluginReviewArtifactApiRequests.schema,
+    pluginReviewArtifactApiRequestsSchema,
+  );
   assert.equal(
     pluginReviewArtifactPreviewSchema.$id,
     "https://schemas.sovereignops.local/plugin-review/artifact-preview.schema.json",
@@ -40,10 +58,22 @@ test("exposes plugin review artifact preview schema metadata", () => {
   assert.equal(pluginReviewArtifactPreviewSchema.properties.schemaVersion.const, PLUGIN_REVIEW_ARTIFACT_PREVIEW_SCHEMA_VERSION);
   assert.equal(getPluginReviewArtifactPreviewSchema(), pluginReviewArtifactPreviewSchema);
   assert.equal(getPluginReviewArtifactSchema("pluginReviewArtifactPreview"), pluginReviewArtifactSchemas.pluginReviewArtifactPreview);
+  assert.equal(
+    getPluginReviewArtifactSchema("pluginReviewArtifactApiRequests"),
+    pluginReviewArtifactSchemas.pluginReviewArtifactApiRequests,
+  );
   assert.deepEqual(sourceFileRoles.slice(0, 3), ["manifest", "entrypoint", "source"]);
   assert.deepEqual(redactionKinds, ["credential", "personalData", "internalPath", "proprietaryValue"]);
   assert.deepEqual(externalCallMethods, ["GET", "POST", "PUT", "PATCH", "DELETE"]);
+  assert.deepEqual(pluginReviewArtifactApiRouteMethods, ["GET", "POST", "PUT", "PATCH", "DELETE"]);
   assert.deepEqual(previewRenderModes, ["markdown", "json", "text"]);
+});
+
+test("plugin review artifact API request schema export fixture matches source export", async () => {
+  assert.deepEqual(
+    await readFixtureJson("plugin-review-artifact-api-requests.schema.json"),
+    JSON.parse(JSON.stringify(pluginReviewArtifactApiRequestsSchema)),
+  );
 });
 
 test("valid fixture satisfies runtime validator and schema contract", async () => {
@@ -59,6 +89,26 @@ test("valid fixture satisfies runtime validator and schema contract", async () =
   assert.equal(pluginReviewArtifactValidators.pluginReviewArtifactPreview(fixture).ok, true);
   assert.doesNotThrow(() => assertPluginReviewArtifactPreview(fixture));
   assert.doesNotThrow(() => assertPluginReviewArtifactObject("pluginReviewArtifactPreview", fixture));
+});
+
+test("public plugin review artifact API request bundle satisfies runtime validator and schema", async () => {
+  const publicBundle = await readExampleJson("plugins/release-notes/review-artifact-api-requests.json");
+  const fixture = await readFixtureJson("plugin-review-artifact-api-requests.valid.json");
+
+  assert.deepEqual(fixture, publicBundle);
+
+  for (const bundle of [publicBundle, fixture]) {
+    const runtimeResult = validatePluginReviewArtifactApiRequestBundle(bundle);
+    const genericResult = validatePluginReviewArtifactObject("pluginReviewArtifactApiRequests", bundle);
+    const schemaIssues = validateWithJsonSchema(pluginReviewArtifactApiRequestsSchema, bundle);
+
+    assert.equal(runtimeResult.ok, true, formatIssues(runtimeResult.issues));
+    assert.equal(genericResult.ok, true, formatIssues(genericResult.issues));
+    assert.equal(pluginReviewArtifactValidators.pluginReviewArtifactApiRequests(bundle).ok, true);
+    assert.deepEqual(schemaIssues, [], formatIssues(schemaIssues));
+    assert.doesNotThrow(() => assertPluginReviewArtifactApiRequestBundle(bundle));
+    assert.doesNotThrow(() => assertPluginReviewArtifactObject("pluginReviewArtifactApiRequests", bundle));
+  }
 });
 
 test("successful validation returns a cloned and deeply frozen value", async () => {
@@ -77,6 +127,25 @@ test("successful validation returns a cloned and deeply frozen value", async () 
   assert.equal(result.value.sourceFiles[0].id, "manifest");
   assert.throws(() => {
     result.value.preview.sections[0].id = "changed";
+  }, TypeError);
+});
+
+test("successful API request bundle validation returns a cloned and deeply frozen value", async () => {
+  const fixture = await readFixtureJson("plugin-review-artifact-api-requests.valid.json");
+  const result = validatePluginReviewArtifactApiRequestBundle(fixture);
+
+  assert.equal(result.ok, true, formatIssues(result.issues));
+  assert.notEqual(result.value, fixture);
+  assert.notEqual(result.value.requests, fixture.requests);
+  assert.notEqual(result.value.requests[0].request, fixture.requests[0].request);
+  assert.equal(Object.isFrozen(result.value), true);
+  assert.equal(Object.isFrozen(result.value.requests), true);
+  assert.equal(Object.isFrozen(result.value.requests[0].request), true);
+
+  fixture.requests[0].id = "changed";
+  assert.equal(result.value.requests[0].id, "api_plugin_review_artifact_preview_release_notes");
+  assert.throws(() => {
+    result.value.requests[0].id = "changed";
   }, TypeError);
 });
 
@@ -132,6 +201,21 @@ test("invalid fixture reports useful runtime paths and schema issues", async () 
   assert.ok(issuePaths(schemaIssues).includes("$.externalCalls[0].executed"));
 });
 
+test("invalid plugin review artifact API request bundle reports useful paths", async () => {
+  const fixture = await readFixtureJson("plugin-review-artifact-api-requests.invalid.json");
+  const runtimeResult = validatePluginReviewArtifactApiRequestBundle(fixture);
+  const schemaIssues = validateWithJsonSchema(pluginReviewArtifactApiRequestsSchema, fixture);
+  const paths = issuePaths(runtimeResult.issues);
+
+  assert.equal(runtimeResult.ok, false);
+  assert.ok(paths.includes("fixtureRefs[0].fixturePath"));
+  assert.ok(paths.includes("requests[0].request.headers.authorization"));
+  assert.ok(paths.includes("requests[0].request.body.sources.manifest.path"));
+  assert.ok(paths.includes("requests[1].id"));
+  assert.ok(schemaIssues.length > 0);
+  assert.ok(issuePaths(schemaIssues).includes("$.fixtureRefs[0].fixturePath"));
+});
+
 test("helpers accept only local preview fingerprints and source paths", () => {
   assert.equal(isPluginReviewArtifactFingerprint("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), true);
   assert.equal(isPluginReviewArtifactFingerprint("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"), false);
@@ -154,8 +238,16 @@ async function readFixtureJson(file) {
   return JSON.parse(await readFile(join(fixturesDir, file), "utf8"));
 }
 
+async function readExampleJson(file) {
+  return JSON.parse(await readFile(join(examplesDir, file), "utf8"));
+}
+
 function issuePaths(issues) {
   return issues.map((issue) => issue.path);
+}
+
+function formatIssues(issues) {
+  return issues.map((issue) => `${issue.path}: ${issue.message}`).join("; ");
 }
 
 function validateWithJsonSchema(schema, value, path = "$", issues = []) {

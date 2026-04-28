@@ -162,6 +162,42 @@ function buildReplay() {
   };
 }
 
+function buildPublicFixtureBundle() {
+  return {
+    schemaVersion: "plugin-review-artifact-api-requests.v1",
+    generatedAt: timestamps.replay,
+    apiBase: "local://plugin-review-artifact-api",
+    requests: [
+      {
+        id: "api_plugin_review_artifact_public_preview",
+        title: "Preview public plugin review artifact",
+        route: {
+          method: "POST",
+          path: "/v1/plugins/review-artifacts/preview",
+        },
+        request: {},
+        expect: {
+          status: 200,
+          contentType: "application/json",
+          kind: "plugin-review-artifact.preview",
+          schemaVersion: "plugin-review-artifact-preview.v1",
+          pluginId: "plugin.review-helper",
+          redactionCount: 0,
+        },
+      },
+    ],
+  };
+}
+
+function buildMalformedPublicFixtureBundle() {
+  const fixture = buildPublicFixtureBundle();
+  fixture.generatedAt = "not-a-date";
+  fixture.apiBase = "https://example.test/api";
+  fixture.requests[0].route.path = "preview";
+  fixture.requests[0].expect.status = 99;
+  return fixture;
+}
+
 function testReplayBuildsApiState() {
   const replay = buildReplay();
   const original = structuredClone(replay);
@@ -172,6 +208,7 @@ function testReplayBuildsApiState() {
   assert.deepEqual(replay, original);
   assert.equal(state.generatedAt, timestamps.replay);
   assert.equal(state.status, "attention");
+  assert.deepEqual(state.errorStates, []);
   assert.equal(state.responseStatus.status, "complete");
   assert.equal(state.responseStatus.statusCode, 200);
   assert.deepEqual(
@@ -249,6 +286,68 @@ function testReplayBuildsApiState() {
   );
 }
 
+function testPublicFixtureBundleSchemaFeedback() {
+  const fixture = buildPublicFixtureBundle();
+  const original = structuredClone(fixture);
+  const state = buildPluginReviewArtifactApiState(fixture);
+
+  assert.deepEqual(fixture, original);
+  assert.equal(state.generatedAt, timestamps.replay);
+  assert.equal(state.status, "complete");
+  assert.equal(state.responseStatus.status, "complete");
+  assert.deepEqual(state.errorStates, []);
+  assert.deepEqual(
+    state.requestCards.map((card) => [
+      card.requestId,
+      card.routePath,
+      card.status,
+      card.statusCode,
+    ]),
+    [
+      [
+        "api_plugin_review_artifact_public_preview",
+        "/v1/plugins/review-artifacts/preview",
+        "complete",
+        200,
+      ],
+    ],
+  );
+
+  const malformed = buildMalformedPublicFixtureBundle();
+  const errorStates = buildPluginReviewArtifactApiErrorStates(malformed);
+  assert.deepEqual(
+    errorStates,
+    buildPluginReviewArtifactApiErrorStates(structuredClone(malformed)),
+  );
+  assert.equal(errorStates.length, 1);
+  assert.equal(errorStates[0].context, "requests");
+  assert.equal(
+    errorStates[0].errorState.description.startsWith(
+      "Plugin review artifact API fixture bundle schema validation failed with 4 issues:",
+    ),
+    true,
+  );
+  assert.equal(
+    errorStates[0].errorState.description.includes(
+      "apiBase: apiBase must be a local:// API base",
+    ),
+    true,
+  );
+  assert.equal(
+    errorStates[0].errorState.description.includes(
+      "requests[0].expect.status: status must be an HTTP status from 100 to 599",
+    ),
+    true,
+  );
+
+  const malformedState = buildPluginReviewArtifactApiState(malformed);
+  assert.equal(malformedState.status, "error");
+  assert.equal(
+    malformedState.responseStatus.errorState.description,
+    errorStates[0].errorState.description,
+  );
+}
+
 function testFocusedBuilders() {
   const replay = buildReplay();
 
@@ -317,6 +416,7 @@ function testDirectArtifactShape() {
 
   assert.equal(state.generatedAt, timestamps.preview);
   assert.equal(state.responseStatus.status, "ready");
+  assert.deepEqual(state.errorStates, []);
   assert.equal(state.artifact.pluginName, "Review Helper");
   assert.deepEqual(
     state.redactionCounts.map((count) => [
@@ -548,6 +648,7 @@ function testReturnedStateIsDefensivelyCloned() {
 }
 
 testReplayBuildsApiState();
+testPublicFixtureBundleSchemaFeedback();
 testFocusedBuilders();
 testDirectArtifactShape();
 testRoutePreviewResponseWithNestedArtifact();

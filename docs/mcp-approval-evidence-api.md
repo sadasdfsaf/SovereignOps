@@ -25,6 +25,9 @@ The route is intentionally local-only and side-effect free. It accepts caller-pr
 - `packages/schemas/fixtures/mcp-approval-evidence.valid.json`
 - `packages/schemas/fixtures/mcp-approval-evidence.invalid.json`
 - `packages/schemas/fixtures/mcp-approval-evidence.schema.json`
+- `packages/schemas/fixtures/mcp-approval-evidence-preview-requests.valid.json`
+- `packages/schemas/fixtures/mcp-approval-evidence-preview-requests.invalid.json`
+- `packages/schemas/fixtures/mcp-approval-evidence-preview-requests.schema.json`
 - `apps/web/src/mcpApprovalEvidenceApiState.ts`
 - `apps/web/tests/mcp-approval-evidence-api-state.test.mjs`
 - `docs/openapi.yaml`
@@ -64,21 +67,52 @@ The replay command rejects directories, missing files, malformed JSON, private w
 
 The valid fixture encodes a redacted local approval preview. The invalid fixture intentionally includes malformed status and unsafe metadata fields so tests verify rejection.
 
+## Request Bundle Schema
+
+`packages/schemas/src/mcpApprovalEvidence.ts` also exposes the shared preview
+request bundle contract for API, SDK, CLI, gateway, and Web parity:
+
+- `MCP_APPROVAL_EVIDENCE_PREVIEW_REQUESTS_SCHEMA_VERSION`
+- `mcpApprovalEvidencePreviewRequestsSchema`
+- `mcpApprovalEvidenceSchemaDefinitions`
+- `mcpApprovalEvidenceValidators`
+- `validateMcpApprovalEvidenceObject`
+- `assertMcpApprovalEvidenceObject`
+- `validateMcpApprovalEvidencePreviewRequestBundle`
+- `assertMcpApprovalEvidencePreviewRequestBundle`
+
+The public request bundle fixtures are:
+
+- `packages/schemas/fixtures/mcp-approval-evidence-preview-requests.valid.json`
+- `packages/schemas/fixtures/mcp-approval-evidence-preview-requests.invalid.json`
+- `packages/schemas/fixtures/mcp-approval-evidence-preview-requests.schema.json`
+
+The bundle schema validates the checked-in preview replay fixture before API
+route tests, SDK fake-fetch tests, CLI replay, gateway preview checks, and Web
+state builders consume it. It locks request ids,
+`POST /v1/mcp/approval-evidence/preview`, local `apiBase` values,
+repo-relative fixture references, JSON-only request bodies, and expected
+redacted preview response fields.
+
 ## Web Helper
 
 `buildMcpApprovalEvidenceApiState` converts preview responses into deterministic review state: summary cards, status rows, audit reference rows, redaction warning rows, and action buttons. It handles loading, success, error, empty audit refs, approval-required, denied, approved, and expired states.
 
 ## Release Wiring
 
-The release check includes `mcp-approval-evidence-api-alignment` so the API route, OpenAPI contract, SDK client, CLI replay fixture, schema fixtures, Web state helper, docs, and focused tests stay connected.
+The release check includes `mcp-approval-evidence-api-alignment` so the API route, OpenAPI contract, SDK client, CLI replay fixture, schema fixtures, shared request bundle validators, generated request bundle JSON schema fixtures, Web state helper, docs, and focused tests stay connected.
 
 ## Guardrails
 
 - Keep all evidence local-only and proposal-only until a separate approval path executes an action.
+- Keep preview request bundle `apiBase` values on `local://` endpoints and
+  fixture references repo-relative.
 - Keep audit references as ids, labels, and deterministic fingerprints; do not embed raw audit payloads unless already redacted.
 - Keep route handlers pure: no file reads, no network calls, no background execution.
 - Keep fixture paths repo-relative and avoid absolute user paths.
 - Preserve `[REDACTED]` placeholders instead of deleting sensitive fields, so reviewers can see what was removed.
+- Reject raw credentials, unredacted secret-shaped values, private paths, and
+  live service URLs in request bundle fixtures.
 
 ## Validation
 
@@ -91,4 +125,7 @@ python -m json.tool examples\mcp\approval-evidence-preview-requests.json
 python -m json.tool packages\schemas\fixtures\mcp-approval-evidence.valid.json
 python -m json.tool packages\schemas\fixtures\mcp-approval-evidence.invalid.json
 python -m json.tool packages\schemas\fixtures\mcp-approval-evidence.schema.json
+python -m json.tool packages\schemas\fixtures\mcp-approval-evidence-preview-requests.valid.json
+python -m json.tool packages\schemas\fixtures\mcp-approval-evidence-preview-requests.invalid.json
+python -m json.tool packages\schemas\fixtures\mcp-approval-evidence-preview-requests.schema.json
 ```

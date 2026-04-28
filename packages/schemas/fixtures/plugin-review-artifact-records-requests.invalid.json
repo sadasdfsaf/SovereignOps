@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "plugin-review-artifact-records-requests.v1",
+  "generatedAt": "2026-04-27T13:10:00.000Z",
+  "apiBase": "local://plugin-review-artifact-records",
+  "fixtureRefs": [
+    {
+      "id": "releaseNotesReviewArtifact",
+      "fixturePath": "../private-plan/review-artifact.json"
+    }
+  ],
+  "requests": [
+    {
+      "id": "duplicate_record",
+      "title": "Create unsafe plugin review artifact record",
+      "route": {
+        "method": "POST",
+        "path": "/v1/plugins/review-artifacts/records"
+      },
+      "request": {
+        "headers": {
+          "content-type": "application/json",
+          "authorization": "Bearer sk-example-local-test-value"
+        },
+        "body": {
+          "record": {
+            "id": "prar_release_notes_001",
+            "status": "persisted",
+            "pluginId": "plugin.release-notes.local-draft",
+            "artifact": {
+              "$fixtureRef": "releaseNotesReviewArtifact"
+            },
+            "metadata": {
+              "source": "C:/Users/operator/private-plan/review-artifact.json"
+            }
+          }
+        }
+      },
+      "expect": {
+        "status": 201,
+        "contentType": "application/json"
+      }
+    },
+    {
+      "id": "duplicate_record",
+      "title": "Duplicate record request id",
+      "route": {
+        "method": "GET",
+        "path": "/v1/plugins/review-artifacts/records"
+      },
+      "request": {
+        "headers": {
+          "x-fixture-scope": "public-release-notes-example"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json"
+      }
+    }
+  ]
+}

@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import {
@@ -9,6 +12,11 @@ import {
   createMcpApprovalEvidenceRecordClient,
   toApiResult,
 } from "../src/index.ts";
+import {
+  validateMcpApprovalEvidenceRecordApiRequestBundle,
+} from "../../schemas/src/mcpApprovalEvidenceRecord.ts";
+
+const schemasFixturesDir = fileURLToPath(new URL("../../schemas/fixtures/", import.meta.url));
 
 test("creates, lists, gets, and compares MCP approval evidence records", async () => {
   const record = validRecord();
@@ -99,6 +107,60 @@ test("creates, lists, gets, and compares MCP approval evidence records", async (
     leftRecordId: record.id,
     rightRecordId: otherRecord.id,
   });
+});
+
+test("validates public MCP approval evidence records bundle and drives SDK record calls", async () => {
+  const bundle = await validatedPublicBundle(
+    "mcp-approval-evidence-records-requests.valid.json",
+    validateMcpApprovalEvidenceRecordApiRequestBundle,
+  );
+  const invalidBundle = await readSchemaFixtureJson("mcp-approval-evidence-records-requests.invalid.json");
+  const invalidResult = validateMcpApprovalEvidenceRecordApiRequestBundle(invalidBundle);
+  const createFixture = fixtureRequest(bundle, "api_mcp_approval_evidence_records_create_local_notes");
+  const listFixture = fixtureRequest(bundle, "api_mcp_approval_evidence_records_list_local_notes");
+  const getFixture = fixtureRequest(bundle, "api_mcp_approval_evidence_records_get_local_notes");
+  const compareFixture = fixtureRequest(bundle, "api_mcp_approval_evidence_records_compare_local_notes");
+  const fetch = fakeFetch([
+    jsonResponse(createFixture.expect.status, recordResponseFromFixture(createFixture)),
+    jsonResponse(listFixture.expect.status, recordListResponseFromFixture(listFixture, createFixture)),
+    jsonResponse(getFixture.expect.status, recordResponseFromFixture(getFixture, createFixture)),
+    jsonResponse(compareFixture.expect.status, compareResponseFromFixture(compareFixture)),
+  ]);
+  const client = createMcpApprovalEvidenceRecordClient({
+    baseUrl: baseUrlForFixture(bundle),
+    fetch,
+  });
+
+  const created = await client.create(createFixture.request.body);
+  const listed = await client.list();
+  const fetched = await client.get(getFixture.expect.recordId);
+  const compared = await client.compare(compareFixture.request.body);
+
+  assert.equal(invalidResult.ok, false);
+  assert.deepEqual(
+    [
+      "fixtureRefs[0].fixturePath",
+      "requests[0].request.headers.authorization",
+      "requests[0].request.body.record.metadata.source",
+      "requests[1].id",
+    ].every((path) => invalidResult.issues.some((issue) => issue.path === path)),
+    true,
+  );
+  assert.equal(created.kind, createFixture.expect.kind);
+  assert.equal(created.recordId, createFixture.expect.recordId);
+  assert.equal(listed.kind, listFixture.expect.kind);
+  assert.equal(listed.records.length, listFixture.expect.recordCount);
+  assert.equal(fetched.recordId, getFixture.expect.recordId);
+  assert.equal(compared.kind, compareFixture.expect.kind);
+  assert.equal(compared.matches, true);
+  assert.deepEqual(fetch.calls.map((call) => [call.init.method, new URL(call.url).pathname]), [
+    [createFixture.route.method, createFixture.route.path],
+    [listFixture.route.method, listFixture.route.path],
+    [getFixture.route.method, getFixture.route.path],
+    [compareFixture.route.method, compareFixture.route.path],
+  ]);
+  assert.deepEqual(JSON.parse(fetch.calls[0].init.body), createFixture.request.body);
+  assert.deepEqual(JSON.parse(fetch.calls[3].init.body), compareFixture.request.body);
 });
 
 test("validates record requests before fetch is called", async () => {
@@ -420,6 +482,67 @@ function routeRecord() {
     fingerprint: `sha256:${"d".repeat(64)}`,
     baselineFingerprint: `sha256:${"e".repeat(64)}`,
   };
+}
+
+function recordResponseFromFixture(fixture, createFixture = fixture) {
+  return {
+    localOnly: true,
+    redacted: true,
+    kind: fixture.expect.kind,
+    schemaVersion: fixture.expect.schemaVersion,
+    recordId: fixture.expect.recordId,
+    record: createFixture.request.body.record,
+  };
+}
+
+function recordListResponseFromFixture(fixture, createFixture) {
+  return {
+    localOnly: true,
+    redacted: true,
+    kind: fixture.expect.kind,
+    schemaVersion: fixture.expect.schemaVersion,
+    records: [createFixture.request.body.record],
+    recordCount: fixture.expect.recordCount,
+    statuses: fixture.expect.statuses,
+  };
+}
+
+function compareResponseFromFixture(fixture) {
+  return {
+    localOnly: true,
+    redacted: true,
+    kind: fixture.expect.kind,
+    schemaVersion: fixture.expect.schemaVersion,
+    matches: fixture.expect.matches,
+    differenceCount: fixture.expect.differenceCount,
+  };
+}
+
+async function validatedPublicBundle(file, validator) {
+  const bundle = await readSchemaFixtureJson(file);
+  const result = validator(bundle);
+
+  assert.equal(result.ok, true, formatIssues(result.issues));
+  assert.equal(Object.isFrozen(result.value), true);
+  return result.value;
+}
+
+async function readSchemaFixtureJson(file) {
+  return JSON.parse(await readFile(join(schemasFixturesDir, file), "utf8"));
+}
+
+function fixtureRequest(bundle, id) {
+  const fixture = bundle.requests.find((request) => request.id === id);
+  assert.notEqual(fixture, undefined);
+  return fixture;
+}
+
+function baseUrlForFixture(bundle) {
+  return new URL("v1/", bundle.apiBase.endsWith("/") ? bundle.apiBase : `${bundle.apiBase}/`).href;
+}
+
+function formatIssues(issues) {
+  return issues.map((issue) => `${issue.path}: ${issue.message}`).join("; ");
 }
 
 function fakeFetch(items) {

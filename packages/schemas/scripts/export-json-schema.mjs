@@ -18,15 +18,23 @@ import {
   ingestConnectorMcpResourcesSchema,
 } from "../src/ingestConnectorMcpApi.ts";
 import { jsonSchemaCatalog, jsonSchemas, schemaKinds } from "../src/jsonSchema.ts";
-import { mcpApprovalEvidenceSchema } from "../src/mcpApprovalEvidence.ts";
 import {
+  mcpApprovalEvidencePreviewRequestsSchema,
+  mcpApprovalEvidenceSchema,
+} from "../src/mcpApprovalEvidence.ts";
+import {
+  mcpApprovalEvidenceRecordApiRequestsSchema,
   mcpApprovalEvidenceRecordComparisonSchema,
   mcpApprovalEvidenceRecordCreateRequestSchema,
   mcpApprovalEvidenceRecordListSchema,
   mcpApprovalEvidenceRecordSchema,
 } from "../src/mcpApprovalEvidenceRecord.ts";
-import { pluginReviewArtifactPreviewSchema } from "../src/pluginReviewArtifact.ts";
 import {
+  pluginReviewArtifactApiRequestsSchema,
+  pluginReviewArtifactPreviewSchema,
+} from "../src/pluginReviewArtifact.ts";
+import {
+  pluginReviewArtifactRecordApiRequestsSchema,
   pluginReviewArtifactRecordComparisonSchema,
   pluginReviewArtifactRecordCreateRequestSchema,
   pluginReviewArtifactRecordListSchema,
@@ -59,15 +67,19 @@ const outputs = [
   ["ingest-connector-mcp-preview.schema.json", ingestConnectorMcpPreviewSchema],
   ["ingest-connector-mcp-api-requests.schema.json", ingestConnectorMcpApiRequestsSchema],
   ["mcp-approval-evidence.schema.json", mcpApprovalEvidenceSchema],
+  ["mcp-approval-evidence-preview-requests.schema.json", mcpApprovalEvidencePreviewRequestsSchema],
   ["mcp-approval-evidence-record.schema.json", mcpApprovalEvidenceRecordSchema],
   ["mcp-approval-evidence-record-list.schema.json", mcpApprovalEvidenceRecordListSchema],
   ["mcp-approval-evidence-record-comparison.schema.json", mcpApprovalEvidenceRecordComparisonSchema],
   ["mcp-approval-evidence-record-create-request.schema.json", mcpApprovalEvidenceRecordCreateRequestSchema],
+  ["mcp-approval-evidence-records-requests.schema.json", mcpApprovalEvidenceRecordApiRequestsSchema],
   ["plugin-review-artifact-preview.schema.json", pluginReviewArtifactPreviewSchema],
+  ["plugin-review-artifact-api-requests.schema.json", pluginReviewArtifactApiRequestsSchema],
   ["plugin-review-artifact-record.schema.json", pluginReviewArtifactRecordSchema],
   ["plugin-review-artifact-record-list.schema.json", pluginReviewArtifactRecordListSchema],
   ["plugin-review-artifact-record-comparison.schema.json", pluginReviewArtifactRecordComparisonSchema],
   ["plugin-review-artifact-record-create-request.schema.json", pluginReviewArtifactRecordCreateRequestSchema],
+  ["plugin-review-artifact-records-requests.schema.json", pluginReviewArtifactRecordApiRequestsSchema],
   [
     "workspace-session-snapshot-retention-cleanup-request.schema.json",
     workspaceSessionSnapshotRetentionCleanupRequestSchema,

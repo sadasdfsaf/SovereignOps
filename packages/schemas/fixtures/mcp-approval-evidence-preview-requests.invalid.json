@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "mcp-approval-evidence-preview-requests.v1",
+  "generatedAt": "2026-04-27T12:00:00.000Z",
+  "apiBase": "local://mcp-approval-evidence-preview",
+  "fixtureRefs": [
+    {
+      "id": "approvalEvidenceInput",
+      "fixturePath": "C:/Users/operator/private-plan/approval-evidence.json"
+    }
+  ],
+  "requests": [
+    {
+      "id": "duplicate_preview",
+      "title": "Preview unsafe MCP approval evidence",
+      "route": {
+        "method": "POST",
+        "path": "/v1/mcp/approval-evidence/preview"
+      },
+      "request": {
+        "headers": {
+          "authorization": "Bearer sk-example-local-test-value"
+        },
+        "body": {
+          "approvalSessions": [
+            {
+              "id": "aps_local_task_export_pending",
+              "metadata": {
+                "source": "../private-plan/approval-evidence.json",
+                "note": "Forward Bearer sk-example-local-test-value"
+              }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json"
+      }
+    },
+    {
+      "id": "duplicate_preview",
+      "title": "Duplicate preview request id",
+      "route": {
+        "method": "POST",
+        "path": "/v1/mcp/approval-evidence/preview"
+      },
+      "request": {
+        "headers": {
+          "authorization": "Bearer [REDACTED]"
+        }
+      },
+      "expect": {
+        "status": 400,
+        "contentType": "application/json"
+      }
+    }
+  ]
+}

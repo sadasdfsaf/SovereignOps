@@ -122,6 +122,43 @@ function buildReplay(preview) {
   };
 }
 
+function buildPublicFixtureBundle() {
+  return {
+    schemaVersion: "mcp-approval-evidence-preview-requests.v1",
+    generatedAt: timestamps.replay,
+    apiBase: "local://mcp-approval-evidence-preview",
+    requests: [
+      {
+        id: "api_mcp_approval_evidence_public_preview",
+        title: "Preview public approval evidence",
+        route: {
+          method: "POST",
+          path: "/v1/mcp/approval-evidence/preview",
+        },
+        request: {},
+        expect: {
+          status: 200,
+          contentType: "application/json",
+          kind: "mcp-approval-evidence.preview",
+          schemaVersion: "mcp-approval-evidence-preview/v1",
+          approvalSessionCount: 1,
+          entryCount: 1,
+          redactionCount: 0,
+        },
+      },
+    ],
+  };
+}
+
+function buildMalformedPublicFixtureBundle() {
+  const fixture = buildPublicFixtureBundle();
+  fixture.generatedAt = "not-a-date";
+  fixture.apiBase = "https://example.test/api";
+  fixture.requests[0].route.path = "preview";
+  fixture.requests[0].expect.status = 99;
+  return fixture;
+}
+
 function testAllowedStateBuildsReviewModels() {
   const replay = buildReplay(buildPreview("allowed"));
   const original = structuredClone(replay);
@@ -130,6 +167,7 @@ function testAllowedStateBuildsReviewModels() {
   assert.deepEqual(replay, original);
   assert.equal(state.phase, "success");
   assert.equal(state.status, "allowed");
+  assert.deepEqual(state.errorStates, []);
   assert.equal(state.generatedAt, timestamps.replay);
   assert.equal(state.previewId, "preview_allowed");
   assert.equal(state.sessionId, "mcp_allowed_session");
@@ -168,6 +206,80 @@ function testAllowedStateBuildsReviewModels() {
       .enabled,
     true,
   );
+}
+
+function testPublicFixtureBundleSchemaFeedback() {
+  const fixture = buildPublicFixtureBundle();
+  const original = structuredClone(fixture);
+  const state = buildMcpApprovalEvidenceApiState(fixture);
+
+  assert.deepEqual(fixture, original);
+  assert.equal(state.phase, "success");
+  assert.equal(state.status, "empty");
+  assert.deepEqual(state.errorStates, []);
+  assert.deepEqual(
+    state.statusRows
+      .filter((row) => row.rowId === "api_response")
+      .map((row) => [row.value, row.status, row.detailLabels]),
+    [
+      [
+        "POST /v1/mcp/approval-evidence/preview",
+        "allowed",
+        ["HTTP 200", "1 successful response"],
+      ],
+    ],
+  );
+
+  const malformed = buildMalformedPublicFixtureBundle();
+  const errorStates = buildMcpApprovalEvidenceApiErrorStates(malformed);
+  assert.deepEqual(
+    errorStates,
+    buildMcpApprovalEvidenceApiErrorStates(structuredClone(malformed)),
+  );
+  assert.equal(errorStates.length, 1);
+  assert.equal(errorStates[0].context, "request");
+  assert.equal(
+    errorStates[0].errorState.description.startsWith(
+      "MCP approval evidence preview fixture bundle schema validation failed with 4 issues:",
+    ),
+    true,
+  );
+  assert.equal(
+    errorStates[0].errorState.description.includes(
+      "apiBase: apiBase must be a local:// API base",
+    ),
+    true,
+  );
+  assert.equal(
+    errorStates[0].errorState.description.includes(
+      "requests[0].expect.status: status must be an HTTP status from 100 to 599",
+    ),
+    true,
+  );
+
+  const malformedState = buildMcpApprovalEvidenceApiState(malformed);
+  assert.equal(malformedState.phase, "error");
+  assert.equal(malformedState.status, "error");
+  assert.equal(
+    malformedState.errorStates[0].errorState.description,
+    errorStates[0].errorState.description,
+  );
+}
+
+function testDirectPreviewShapeRemainsTolerant() {
+  const preview = buildPreview("allowed");
+  const original = structuredClone(preview);
+  const state = buildMcpApprovalEvidenceApiState(preview, {
+    defaultTimestamp: timestamps.replay,
+  });
+
+  assert.deepEqual(preview, original);
+  assert.equal(state.phase, "success");
+  assert.equal(state.status, "allowed");
+  assert.deepEqual(state.errorStates, []);
+  assert.equal(state.generatedAt, timestamps.preview);
+  assert.equal(state.previewId, "preview_allowed");
+  assert.equal(state.review.title, "Draft document patch on notes/project-plan.md");
 }
 
 function testDeniedStateBuildsGateAndActionRows() {
@@ -390,6 +502,8 @@ function testReturnedStateIsDefensivelyCloned() {
 }
 
 testAllowedStateBuildsReviewModels();
+testPublicFixtureBundleSchemaFeedback();
+testDirectPreviewShapeRemainsTolerant();
 testDeniedStateBuildsGateAndActionRows();
 testApprovalRequiredWithEmptyAuditRefsAndRedactions();
 testExpiredStateIncludesExpirationAction();

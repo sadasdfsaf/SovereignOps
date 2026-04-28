@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { readFile, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
+import { validateMcpApprovalEvidenceRecordApiRequestBundle } from "../../schemas/src/mcpApprovalEvidenceRecord.ts";
+
 export interface McpApprovalEvidenceRecordsReplayCliResult {
   readonly exitCode: number;
   readonly stdout: string;
@@ -97,6 +99,11 @@ interface RedactionRecord {
 interface Redactor {
   readonly redactions: readonly RedactionRecord[];
   redact(value: unknown, valuePath: string): unknown;
+}
+
+interface SharedValidationIssue {
+  readonly path: string;
+  readonly message: string;
 }
 
 interface JsonDifference {
@@ -586,6 +593,8 @@ async function readFixtureJson(fixture: ResolvedFixturePath): Promise<unknown> {
 }
 
 function parseFixtureBundle(value: unknown): McpApprovalEvidenceRecordsFixtureBundle {
+  validateFixtureBundleWithSharedSchema(value);
+
   if (!isRecord(value)) {
     throw invalidFixture("fixture root must be a JSON object.");
   }
@@ -609,6 +618,108 @@ function parseFixtureBundle(value: unknown): McpApprovalEvidenceRecordsFixtureBu
     ...(apiBase === undefined ? {} : { apiBase }),
     requests: value.requests.map((request, index) => parseFixtureRequest(request, index)),
   };
+}
+
+function validateFixtureBundleWithSharedSchema(value: unknown): void {
+  const rawResult = validateMcpApprovalEvidenceRecordApiRequestBundle(value);
+  const sharedValue = sharedFixtureBundleForValidation(value);
+  const sharedResult = sharedValue === value
+    ? rawResult
+    : validateMcpApprovalEvidenceRecordApiRequestBundle(sharedValue);
+  const issues = sharedValue === value
+    ? rawResult.issues
+    : uniqueValidationIssues([
+        ...rawResult.issues.filter((issue) => !isAcceptedLocalAliasIssue(issue, value)),
+        ...sharedResult.issues,
+      ]);
+
+  if (issues.length > 0 || !sharedResult.ok) {
+    throw invalidFixture("Fixture bundle failed shared schema validation.", {
+      issues: issues.length > 0
+        ? issues.map((issue) => ({ path: issue.path, message: issue.message }))
+        : [{ path: "$", message: "shared schema validation failed" }],
+    });
+  }
+}
+
+function sharedFixtureBundleForValidation(value: unknown): unknown {
+  if (!isRecord(value) || !Array.isArray(value.requests)) {
+    return value;
+  }
+
+  return {
+    ...value,
+    requests: value.requests.map((request) => {
+      if (!isRecord(request)) {
+        return request;
+      }
+
+      const next: Record<string, unknown> = { ...request };
+      if (Object.hasOwn(next, "response")) {
+        next.expect = sharedExpectationForValidation(next.response);
+        delete next.response;
+      } else if (isRecord(next.expect)) {
+        next.expect = sharedExpectationForValidation(next.expect);
+      }
+      return next;
+    }),
+  };
+}
+
+function sharedExpectationForValidation(value: unknown): unknown {
+  if (!isRecord(value)) {
+    return value;
+  }
+  const expectation: Record<string, unknown> = { ...value };
+  delete expectation.body;
+  return expectation;
+}
+
+function isAcceptedLocalAliasIssue(issue: SharedValidationIssue, value: unknown): boolean {
+  const responseMatch = /^requests\[(\d+)\]\.response$/.exec(issue.path);
+  if (
+    responseMatch !== null &&
+    issue.message === "response is not allowed" &&
+    requestHasResponseAlias(value, Number(responseMatch[1]))
+  ) {
+    return true;
+  }
+
+  const expectMatch = /^requests\[(\d+)\]\.expect$/.exec(issue.path);
+  if (
+    expectMatch !== null &&
+    issue.message === "expect must be an object" &&
+    requestHasResponseAlias(value, Number(expectMatch[1]))
+  ) {
+    return true;
+  }
+
+  const expectedBodyMatch = /^requests\[(\d+)\]\.expect\.body$/.exec(issue.path);
+  return expectedBodyMatch !== null && issue.message === "body is not allowed";
+}
+
+function requestHasResponseAlias(value: unknown, index: number): boolean {
+  if (!isRecord(value) || !Array.isArray(value.requests)) {
+    return false;
+  }
+  const request = value.requests[index];
+  return isRecord(request) && Object.hasOwn(request, "response");
+}
+
+function uniqueValidationIssues(
+  issues: readonly SharedValidationIssue[],
+): readonly SharedValidationIssue[] {
+  const seen = new Set<string>();
+  const unique: SharedValidationIssue[] = [];
+  for (const issue of issues) {
+    const key = `${issue.path}\0${issue.message}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    unique.push(issue);
+  }
+  return unique;
 }
 
 function parseFixtureRequest(
@@ -1424,11 +1535,15 @@ function usageError(message: string): McpApprovalEvidenceRecordsReplayError {
   });
 }
 
-function invalidFixture(message: string): McpApprovalEvidenceRecordsReplayError {
+function invalidFixture(
+  message: string,
+  details?: Record<string, unknown>,
+): McpApprovalEvidenceRecordsReplayError {
   return new McpApprovalEvidenceRecordsReplayError({
     exitCode: 2,
     code: "invalid_fixture",
     message,
+    details,
   });
 }
 

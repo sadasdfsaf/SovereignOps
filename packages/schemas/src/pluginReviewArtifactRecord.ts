@@ -7,6 +7,8 @@ export const PLUGIN_REVIEW_ARTIFACT_RECORD_COMPARISON_SCHEMA_VERSION =
   "plugin-review-artifact-record-comparison/v1";
 export const PLUGIN_REVIEW_ARTIFACT_RECORD_CREATE_REQUEST_SCHEMA_VERSION =
   "plugin-review-artifact-record-create-request/v1";
+export const PLUGIN_REVIEW_ARTIFACT_RECORD_API_REQUESTS_SCHEMA_VERSION =
+  "plugin-review-artifact-records-requests.v1";
 export const JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema";
 
 export const pluginReviewArtifactRecordKinds = [
@@ -14,8 +16,19 @@ export const pluginReviewArtifactRecordKinds = [
   "pluginReviewArtifactRecordList",
   "pluginReviewArtifactRecordComparison",
   "pluginReviewArtifactRecordCreateRequest",
+  "pluginReviewArtifactRecordApiRequests",
 ] as const;
 export type PluginReviewArtifactRecordKind = (typeof pluginReviewArtifactRecordKinds)[number];
+
+export const pluginReviewArtifactRecordApiRouteMethods = [
+  "GET",
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+] as const;
+export type PluginReviewArtifactRecordApiRouteMethod =
+  (typeof pluginReviewArtifactRecordApiRouteMethods)[number];
 
 export const pluginReviewArtifactRecordDecisions = [
   "approved",
@@ -45,8 +58,10 @@ export interface PluginReviewArtifactRecordJsonSchema {
   readonly pattern?: string;
   readonly minLength?: number;
   readonly minimum?: number;
+  readonly maximum?: number;
   readonly minItems?: number;
   readonly items?: PluginReviewArtifactRecordJsonSchema;
+  readonly oneOf?: readonly PluginReviewArtifactRecordJsonSchema[];
 }
 
 export interface PluginReviewArtifactRecordSchemaDefinition {
@@ -163,11 +178,74 @@ export interface PluginReviewArtifactRecordCreateRequest {
   metadata?: PluginReviewArtifactRecordMetadata;
 }
 
+export type PluginReviewArtifactRecordApiJsonObject = {
+  readonly [key: string]: PluginReviewArtifactRecordApiJson;
+};
+export type PluginReviewArtifactRecordApiJson =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly PluginReviewArtifactRecordApiJson[]
+  | PluginReviewArtifactRecordApiJsonObject;
+
+export interface PluginReviewArtifactRecordApiFixtureRef {
+  readonly id: string;
+  readonly fixturePath: string;
+}
+
+export interface PluginReviewArtifactRecordApiRoute {
+  readonly method: PluginReviewArtifactRecordApiRouteMethod;
+  readonly path: string;
+}
+
+export interface PluginReviewArtifactRecordApiRequestPayload {
+  readonly headers?: Record<string, string>;
+  readonly body?: PluginReviewArtifactRecordApiJson;
+}
+
+export interface PluginReviewArtifactRecordApiExpectation {
+  readonly status: number;
+  readonly contentType?: string;
+  readonly kind?: string;
+  readonly schemaVersion?: string;
+  readonly pluginId?: string;
+  readonly recordId?: string;
+  readonly errorCode?: string;
+  readonly redactionCount?: number;
+  readonly approvalSessionCount?: number;
+  readonly entryCount?: number;
+  readonly recordCount?: number;
+  readonly matches?: boolean;
+  readonly differenceCount?: number;
+  readonly summary?: Record<string, number>;
+  readonly statuses?: Record<string, number>;
+  readonly pluginIds?: Record<string, number>;
+  readonly [key: string]: PluginReviewArtifactRecordApiJson | undefined;
+}
+
+export interface PluginReviewArtifactRecordApiRequestFixture {
+  readonly id: string;
+  readonly title: string;
+  readonly route: PluginReviewArtifactRecordApiRoute;
+  readonly request: PluginReviewArtifactRecordApiRequestPayload;
+  readonly expect: PluginReviewArtifactRecordApiExpectation;
+}
+
+export interface PluginReviewArtifactRecordApiRequestBundle {
+  readonly schemaVersion: typeof PLUGIN_REVIEW_ARTIFACT_RECORD_API_REQUESTS_SCHEMA_VERSION;
+  readonly generatedAt: string;
+  readonly apiBase: string;
+  readonly fixtureRefs?: readonly PluginReviewArtifactRecordApiFixtureRef[];
+  readonly requests: readonly PluginReviewArtifactRecordApiRequestFixture[];
+}
+
 export interface PluginReviewArtifactRecordObjectByKind {
   pluginReviewArtifactRecord: PluginReviewArtifactStoredRecord;
   pluginReviewArtifactRecordList: PluginReviewArtifactRecordList;
   pluginReviewArtifactRecordComparison: PluginReviewArtifactRecordComparison;
   pluginReviewArtifactRecordCreateRequest: PluginReviewArtifactRecordCreateRequest;
+  pluginReviewArtifactRecordApiRequests: PluginReviewArtifactRecordApiRequestBundle;
 }
 
 const ARTIFACT_FINGERPRINT_PATTERN = "^[a-f0-9]{32}$";
@@ -179,6 +257,7 @@ const REVIEW_ID_PATTERN = `^prv_${ID_BODY_PATTERN}$`;
 const PLUGIN_ID_PATTERN = `^plug_${ID_BODY_PATTERN}$`;
 const ARTIFACT_ID_PATTERN = `^art_${ID_BODY_PATTERN}$`;
 const ISO_TIMESTAMP_PATTERN = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$";
+const MEDIA_TYPE_PATTERN = "^[^\\s/]+/[^\\s]+$";
 const LOCAL_ARTIFACT_PATH_PATTERN =
   "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]+$";
 const PATH_REF_PATTERN = "^[A-Za-z][A-Za-z0-9_.\\[\\]-]{0,191}$";
@@ -195,6 +274,25 @@ const SAFE_METADATA_STRING_PATTERN =
 const SECRET_LIKE_METADATA_KEY_PATTERN = new RegExp(SECRET_LIKE_METADATA_KEY_PATTERN_SOURCE);
 const SECRET_LIKE_METADATA_VALUE_PATTERN = new RegExp(SECRET_LIKE_METADATA_VALUE_PATTERN_SOURCE);
 const LOCAL_PATH_VALUE_PATTERN = new RegExp(LOCAL_PATH_VALUE_PATTERN_SOURCE);
+const API_REQUEST_ID_PATTERN = "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$";
+const API_FIXTURE_REF_ID_PATTERN = "^[A-Za-z][A-Za-z0-9_.-]{0,95}$";
+const API_BASE_PATTERN = "^local://[a-z0-9][a-z0-9.-]{0,95}$";
+const API_ROUTE_PATH_PATTERN = "^/v[0-9]+/(?!.*//)(?!.*\\.\\.)[A-Za-z0-9._~:/-]+$";
+const SAFE_RELATIVE_JSON_FIXTURE_PATH_PATTERN =
+  "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/-]+\\.json$";
+const API_HEADER_NAME_PATTERN = "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$";
+const API_RAW_LOCAL_PATH_PATTERN_SOURCE =
+  "(?:\\b[A-Za-z]:[\\\\/][^\\s\"',;)}\\]]+|\\\\\\\\[^\\\\\\s\"',;)}\\]]+[\\\\][^\\s\"',;)}\\]]+|file://[^\\s\"',;)}\\]]+|/(?:Users|home|var|tmp|private|mnt|Volumes)/[^\\s\"',;)}\\]]+)";
+const API_PRIVATE_MARKER_PATTERN_SOURCE =
+  "(?:^|[\\\\/])\\." +
+  "codex-private" +
+  "(?:[\\\\/]|$)|[pP][rR][iI][vV][aA][tT][eE][- _]?[pP][lL][aA][nN](?:[- _]?[pP][aA][cC][kK])?|[pP][rR][iI][vV][aA][tT][eE][- _]?[mM][aA][rR][kK][eE][rR]";
+const API_RAW_SECRET_VALUE_PATTERN_SOURCE =
+  "(?:[bB][eE][aA][rR][eE][rR]\\s+(?!\\[REDACTED\\])\\S{8,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|(?:^|[^A-Za-z0-9])(?:sk|rk|pk|tok|pat|npm|ghp|gho)_[A-Za-z0-9_-]{8,}|(?:^|[^A-Za-z0-9])(?:sk|rk|pat|glpat|github_pat)-[A-Za-z0-9_-]{8,}|(?:[aA][pP][iI][_-]?[kK][eE][yY]|[aA][uU][tT][hH][oO][rR][iI][zZ][aA][tT][iI][oO][nN]|[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL]|[pP][aA][sS][sS][wW][oO][rR][dD]|[pP][rR][iI][vV][aA][tT][eE][_-]?[kK][eE][yY]|[sS][eE][cC][rR][eE][tT]|[sS][eE][sS][sS][iI][oO][nN][_-]?[tT][oO][kK][eE][nN]|[tT][oO][kK][eE][nN])\\s*[:=]\\s*(?!\\[REDACTED\\])\\S+)";
+const API_UNSAFE_PUBLIC_STRING_PATTERN_SOURCE =
+  `${API_RAW_LOCAL_PATH_PATTERN_SOURCE}|${API_PRIVATE_MARKER_PATTERN_SOURCE}|${API_RAW_SECRET_VALUE_PATTERN_SOURCE}`;
+const API_SAFE_PUBLIC_STRING_PATTERN = `^(?!.*(?:${API_UNSAFE_PUBLIC_STRING_PATTERN_SOURCE})).*\\S.*$`;
+const apiUnsafePublicStringPattern = new RegExp(API_UNSAFE_PUBLIC_STRING_PATTERN_SOURCE);
 
 const sourceRefSchema = objectSchema(
   "Plugin review artifact record source",
@@ -426,6 +524,110 @@ export const pluginReviewArtifactRecordCreateRequestSchema = deepFreeze(
   ),
 );
 
+const apiSafeJsonValueSchema: PluginReviewArtifactRecordJsonSchema = {
+  oneOf: [
+    { type: "string", pattern: API_SAFE_PUBLIC_STRING_PATTERN },
+    { type: "number" },
+    { type: "boolean" },
+    { type: "null" },
+    { type: "array" },
+    { type: "object" },
+  ],
+};
+
+const apiMetricMapSchema: PluginReviewArtifactRecordJsonSchema = {
+  type: "object",
+  additionalProperties: nonNegativeIntegerSchema(),
+};
+
+const apiFixtureRefSchema = objectSchema(
+  "Plugin review artifact records API fixture reference",
+  {
+    id: apiFixtureRefIdSchema(),
+    fixturePath: safeRelativeJsonFixturePathSchema(),
+  },
+  ["id", "fixturePath"],
+);
+
+const apiRouteSchema = objectSchema(
+  "Plugin review artifact records API route",
+  {
+    method: enumSchema(pluginReviewArtifactRecordApiRouteMethods),
+    path: apiRoutePathSchema(),
+  },
+  ["method", "path"],
+);
+
+const apiHeadersSchema: PluginReviewArtifactRecordJsonSchema = {
+  type: "object",
+  additionalProperties: {
+    type: "string",
+    pattern: API_SAFE_PUBLIC_STRING_PATTERN,
+  },
+};
+
+const apiRequestPayloadSchema = objectSchema(
+  "Plugin review artifact records API request payload",
+  {
+    headers: apiHeadersSchema,
+    body: apiSafeJsonValueSchema,
+  },
+  [],
+);
+
+const apiExpectationSchema = objectSchema(
+  "Plugin review artifact records API expectation",
+  {
+    status: httpStatusSchema(),
+    contentType: mediaTypeSchema(),
+    kind: safeApiPublicStringSchema(),
+    schemaVersion: safeApiPublicStringSchema(),
+    pluginId: safeApiPublicStringSchema(),
+    recordId: safeApiPublicStringSchema(),
+    errorCode: safeApiPublicStringSchema(),
+    redactionCount: nonNegativeIntegerSchema(),
+    approvalSessionCount: nonNegativeIntegerSchema(),
+    entryCount: nonNegativeIntegerSchema(),
+    recordCount: nonNegativeIntegerSchema(),
+    matches: { type: "boolean" },
+    differenceCount: nonNegativeIntegerSchema(),
+    summary: apiMetricMapSchema,
+    statuses: apiMetricMapSchema,
+    pluginIds: apiMetricMapSchema,
+  },
+  ["status"],
+);
+
+const apiRequestFixtureSchema = objectSchema(
+  "Plugin review artifact records API request fixture",
+  {
+    id: apiRequestIdSchema(),
+    title: safeApiPublicStringSchema(),
+    route: apiRouteSchema,
+    request: apiRequestPayloadSchema,
+    expect: apiExpectationSchema,
+  },
+  ["id", "title", "route", "request", "expect"],
+);
+
+export const pluginReviewArtifactRecordApiRequestsSchema = deepFreeze(
+  objectSchema(
+    "Plugin review artifact records API request fixture bundle",
+    {
+      schemaVersion: {
+        type: "string",
+        const: PLUGIN_REVIEW_ARTIFACT_RECORD_API_REQUESTS_SCHEMA_VERSION,
+      },
+      generatedAt: timestampSchema(),
+      apiBase: apiBaseSchema(),
+      fixtureRefs: arraySchema(apiFixtureRefSchema),
+      requests: arraySchema(apiRequestFixtureSchema, 1),
+    },
+    ["schemaVersion", "generatedAt", "apiBase", "requests"],
+    "artifact-records-api-requests",
+  ),
+);
+
 export const pluginReviewArtifactRecordSchemaDefinitions = deepFreeze({
   pluginReviewArtifactRecord: {
     kind: "pluginReviewArtifactRecord",
@@ -455,6 +657,14 @@ export const pluginReviewArtifactRecordSchemaDefinitions = deepFreeze({
       "Plugin review artifact record create request",
     schema: pluginReviewArtifactRecordCreateRequestSchema,
   },
+  pluginReviewArtifactRecordApiRequests: {
+    kind: "pluginReviewArtifactRecordApiRequests",
+    schemaVersion: PLUGIN_REVIEW_ARTIFACT_RECORD_API_REQUESTS_SCHEMA_VERSION,
+    title:
+      pluginReviewArtifactRecordApiRequestsSchema.title ??
+      "Plugin review artifact records API request fixture bundle",
+    schema: pluginReviewArtifactRecordApiRequestsSchema,
+  },
 } satisfies Record<PluginReviewArtifactRecordKind, PluginReviewArtifactRecordSchemaDefinition>);
 
 export const pluginReviewArtifactRecordSchemas = {
@@ -462,6 +672,7 @@ export const pluginReviewArtifactRecordSchemas = {
   pluginReviewArtifactRecordList: pluginReviewArtifactRecordListSchema,
   pluginReviewArtifactRecordComparison: pluginReviewArtifactRecordComparisonSchema,
   pluginReviewArtifactRecordCreateRequest: pluginReviewArtifactRecordCreateRequestSchema,
+  pluginReviewArtifactRecordApiRequests: pluginReviewArtifactRecordApiRequestsSchema,
 } as const satisfies Record<PluginReviewArtifactRecordKind, PluginReviewArtifactRecordJsonSchema>;
 
 export const pluginReviewArtifactRecordValidators = {
@@ -469,6 +680,7 @@ export const pluginReviewArtifactRecordValidators = {
   pluginReviewArtifactRecordList: validatePluginReviewArtifactRecordList,
   pluginReviewArtifactRecordComparison: validatePluginReviewArtifactRecordComparison,
   pluginReviewArtifactRecordCreateRequest: validatePluginReviewArtifactRecordCreateRequest,
+  pluginReviewArtifactRecordApiRequests: validatePluginReviewArtifactRecordApiRequestBundle,
 } as const;
 
 export function getPluginReviewArtifactRecordSchema(
@@ -529,6 +741,15 @@ export function validatePluginReviewArtifactRecordCreateRequest(
   return validationResult(value, issues);
 }
 
+export function validatePluginReviewArtifactRecordApiRequestBundle(
+  value: unknown,
+): ValidationResult<PluginReviewArtifactRecordApiRequestBundle> {
+  const issues: ValidationIssue[] = [];
+  collectApiPublicStringIssues(value, "$", issues);
+  validatePluginReviewArtifactRecordApiRequestBundleValue(value, "$", issues);
+  return validationResult(value, issues);
+}
+
 export function assertPluginReviewArtifactRecord(
   value: unknown,
 ): asserts value is PluginReviewArtifactStoredRecord {
@@ -562,6 +783,15 @@ export function assertPluginReviewArtifactRecordCreateRequest(
   const result = validatePluginReviewArtifactRecordCreateRequest(value);
   if (!result.ok) {
     throw new Error(formatValidationIssues("pluginReviewArtifactRecordCreateRequest", result.issues));
+  }
+}
+
+export function assertPluginReviewArtifactRecordApiRequestBundle(
+  value: unknown,
+): asserts value is PluginReviewArtifactRecordApiRequestBundle {
+  const result = validatePluginReviewArtifactRecordApiRequestBundle(value);
+  if (!result.ok) {
+    throw new Error(formatValidationIssues("pluginReviewArtifactRecordApiRequests", result.issues));
   }
 }
 
@@ -1038,6 +1268,275 @@ function validateComparisonConsistency(
   }
 }
 
+function validatePluginReviewArtifactRecordApiRequestBundleValue(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): PluginReviewArtifactRecordApiRequestBundle | undefined {
+  const record = requireRecordAtPath(value, path, issues);
+  if (!record) {
+    return undefined;
+  }
+
+  requireOnlyKeys(record, path, apiRequestBundleKeys, issues);
+  requireExactString(record, "schemaVersion", PLUGIN_REVIEW_ARTIFACT_RECORD_API_REQUESTS_SCHEMA_VERSION, issues, path);
+  requireTimestamp(record, "generatedAt", issues, path);
+  requirePattern(record, "apiBase", API_BASE_PATTERN, "apiBase must be a local:// API base", issues, path);
+
+  const fixtureRefs = record.fixtureRefs !== undefined
+    ? validateArray(record, "fixtureRefs", issues, validateApiFixtureRef, false, path)
+    : undefined;
+  const fixtureRefIds = validateApiFixtureRefIds(fixtureRefs, issues);
+  const requests = validateArray(record, "requests", issues, validateApiRequestFixture, true, path);
+  validateApiRequestIds(requests, issues);
+  validateApiFixtureRefObjects(record, fixtureRefIds, path, issues);
+  validateApiLocalFixturePathValues(record, path, issues);
+
+  return record as unknown as PluginReviewArtifactRecordApiRequestBundle;
+}
+
+function validateApiFixtureRef(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): PluginReviewArtifactRecordApiFixtureRef | undefined {
+  const record = requireRecordAtPath(value, path, issues);
+  if (!record) {
+    return undefined;
+  }
+  requireOnlyKeys(record, path, apiFixtureRefKeys, issues);
+  requirePattern(record, "id", API_FIXTURE_REF_ID_PATTERN, "id must be a non-empty fixture ref id", issues, path);
+  requireSafeRelativeJsonFixturePath(record, "fixturePath", issues, path);
+  return record as unknown as PluginReviewArtifactRecordApiFixtureRef;
+}
+
+function validateApiRequestFixture(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): PluginReviewArtifactRecordApiRequestFixture | undefined {
+  const record = requireRecordAtPath(value, path, issues);
+  if (!record) {
+    return undefined;
+  }
+  requireOnlyKeys(record, path, apiRequestFixtureKeys, issues);
+  requirePattern(record, "id", API_REQUEST_ID_PATTERN, "id must be a non-empty safe request id", issues, path);
+  requireSafeApiPublicString(record, "title", issues, path);
+
+  const route = requireRecord(record, "route", issues, path);
+  if (route) {
+    validateApiRoute(route, `${path}.route`, issues);
+  }
+  const request = requireRecord(record, "request", issues, path);
+  if (request) {
+    validateApiRequestPayload(request, `${path}.request`, issues);
+  }
+  const expectation = requireRecord(record, "expect", issues, path);
+  if (expectation) {
+    validateApiExpectation(expectation, `${path}.expect`, issues);
+  }
+
+  return record as unknown as PluginReviewArtifactRecordApiRequestFixture;
+}
+
+function validateApiRoute(record: Record<string, unknown>, path: string, issues: ValidationIssue[]): void {
+  requireOnlyKeys(record, path, apiRouteKeys, issues);
+  requireEnum(record, "method", pluginReviewArtifactRecordApiRouteMethods, issues, path);
+  requirePattern(record, "path", API_ROUTE_PATH_PATTERN, "path must be a /vN API route path", issues, path);
+}
+
+function validateApiRequestPayload(
+  record: Record<string, unknown>,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  requireOnlyKeys(record, path, apiRequestPayloadKeys, issues);
+  if (record.headers !== undefined) {
+    validateApiHeaders(record.headers, `${path}.headers`, issues);
+  }
+  if (record.body !== undefined) {
+    validateApiJsonValue(record.body, `${path}.body`, issues);
+  }
+}
+
+function validateApiHeaders(value: unknown, path: string, issues: ValidationIssue[]): void {
+  const record = requireRecordAtPath(value, path, issues);
+  if (!record) {
+    return;
+  }
+  for (const [key, headerValue] of Object.entries(record)) {
+    const headerPath = `${path}.${key}`;
+    if (!new RegExp(API_HEADER_NAME_PATTERN).test(key)) {
+      issues.push({ path: headerPath, message: "header names must be safe HTTP field names" });
+    }
+    if (typeof headerValue !== "string" || !isApiSafePublicString(headerValue)) {
+      issues.push({
+        path: headerPath,
+        message: "header values must be public strings without raw local paths, secrets, or private markers",
+      });
+    }
+  }
+}
+
+function validateApiExpectation(
+  record: Record<string, unknown>,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  requireOnlyKeys(record, path, apiExpectationKeys, issues);
+  requireHttpStatus(record, "status", issues, path);
+  if (record.contentType !== undefined) {
+    requirePattern(record, "contentType", MEDIA_TYPE_PATTERN, "contentType must be a media type", issues, path);
+  }
+  for (const key of apiExpectationStringKeys) {
+    if (record[key] !== undefined) {
+      requireSafeApiPublicString(record, key, issues, path);
+    }
+  }
+  for (const key of apiExpectationCountKeys) {
+    if (record[key] !== undefined) {
+      requireNonNegativeInteger(record, key, issues, path);
+    }
+  }
+  if (record.matches !== undefined) {
+    requireBoolean(record, "matches", issues, path);
+  }
+  for (const key of apiExpectationMetricMapKeys) {
+    if (record[key] !== undefined) {
+      validateApiMetricMap(record[key], `${path}.${key}`, issues);
+    }
+  }
+}
+
+function validateApiMetricMap(value: unknown, path: string, issues: ValidationIssue[]): void {
+  const record = requireRecordAtPath(value, path, issues);
+  if (!record) {
+    return;
+  }
+  for (const [key, metric] of Object.entries(record)) {
+    const metricPath = `${path}.${key}`;
+    if (!isApiSafePublicString(key)) {
+      issues.push({
+        path: metricPath,
+        message: "metric keys must be public strings without raw local paths, secrets, or private markers",
+      });
+    }
+    if (typeof metric !== "number" || !Number.isInteger(metric) || metric < 0) {
+      issues.push({ path: metricPath, message: "metric values must be non-negative integers" });
+    }
+  }
+}
+
+function validateApiJsonValue(value: unknown, path: string, issues: ValidationIssue[]): void {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "boolean" ||
+    (typeof value === "number" && Number.isFinite(value))
+  ) {
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const [index, item] of value.entries()) {
+      validateApiJsonValue(item, `${path}[${index}]`, issues);
+    }
+    return;
+  }
+  if (isRecord(value)) {
+    for (const [key, nested] of Object.entries(value)) {
+      validateApiJsonValue(nested, `${path}.${key}`, issues);
+    }
+    return;
+  }
+  issues.push({ path, message: "value must be JSON-compatible" });
+}
+
+function validateApiFixtureRefIds(
+  fixtureRefs: readonly PluginReviewArtifactRecordApiFixtureRef[] | undefined,
+  issues: ValidationIssue[],
+): Set<string> {
+  const ids = new Set<string>();
+  for (const [index, ref] of (fixtureRefs ?? []).entries()) {
+    if (ids.has(ref.id)) {
+      issues.push({ path: `fixtureRefs[${index}].id`, message: "fixture ref ids must be unique" });
+      continue;
+    }
+    ids.add(ref.id);
+  }
+  return ids;
+}
+
+function validateApiRequestIds(
+  requests: readonly PluginReviewArtifactRecordApiRequestFixture[] | undefined,
+  issues: ValidationIssue[],
+): void {
+  const ids = new Set<string>();
+  for (const [index, request] of (requests ?? []).entries()) {
+    if (ids.has(request.id)) {
+      issues.push({ path: `requests[${index}].id`, message: "request ids must be unique" });
+      continue;
+    }
+    ids.add(request.id);
+  }
+}
+
+function validateApiFixtureRefObjects(
+  value: unknown,
+  fixtureRefIds: ReadonlySet<string>,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (Array.isArray(value)) {
+    for (const [index, item] of value.entries()) {
+      validateApiFixtureRefObjects(item, fixtureRefIds, `${path}[${index}]`, issues);
+    }
+    return;
+  }
+  if (!isRecord(value)) {
+    return;
+  }
+  if (Object.hasOwn(value, "$fixtureRef")) {
+    requireOnlyKeys(value, path, apiFixtureRefObjectKeys, issues);
+    const ref = value.$fixtureRef;
+    if (typeof ref !== "string" || !new RegExp(API_FIXTURE_REF_ID_PATTERN).test(ref)) {
+      issues.push({ path: `${path}.$fixtureRef`, message: "$fixtureRef must be a fixture ref id" });
+    } else if (!fixtureRefIds.has(ref)) {
+      issues.push({ path: `${path}.$fixtureRef`, message: "$fixtureRef must reference fixtureRefs" });
+    }
+    return;
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    validateApiFixtureRefObjects(nested, fixtureRefIds, path === "$" ? key : `${path}.${key}`, issues);
+  }
+}
+
+function validateApiLocalFixturePathValues(value: unknown, path: string, issues: ValidationIssue[]): void {
+  if (Array.isArray(value)) {
+    for (const [index, item] of value.entries()) {
+      validateApiLocalFixturePathValues(item, `${path}[${index}]`, issues);
+    }
+    return;
+  }
+  if (!isRecord(value)) {
+    return;
+  }
+  const isRoute = Object.hasOwn(value, "method") && Object.hasOwn(value, "path");
+  for (const [key, nested] of Object.entries(value)) {
+    const nestedPath = path === "$" ? key : `${path}.${key}`;
+    if (key === "fixturePath" && typeof nested === "string") {
+      if (!isSafeRelativeJsonFixturePath(nested)) {
+        issues.push({ path: nestedPath, message: "fixturePath must be a safe relative JSON fixture path" });
+      }
+      continue;
+    }
+    if (key === "path" && !isRoute && typeof nested === "string" && !isSafeRelativeJsonFixturePath(nested)) {
+      issues.push({ path: nestedPath, message: "path must be a safe relative JSON fixture path" });
+      continue;
+    }
+    validateApiLocalFixturePathValues(nested, nestedPath, issues);
+  }
+}
+
 function objectSchema(
   title: string,
   properties: Record<string, PluginReviewArtifactRecordJsonSchema>,
@@ -1122,6 +1621,65 @@ function timestampSchema(): PluginReviewArtifactRecordJsonSchema {
   };
 }
 
+function mediaTypeSchema(): PluginReviewArtifactRecordJsonSchema {
+  return {
+    type: "string",
+    minLength: 1,
+    pattern: MEDIA_TYPE_PATTERN,
+  };
+}
+
+function safeApiPublicStringSchema(): PluginReviewArtifactRecordJsonSchema {
+  return {
+    type: "string",
+    minLength: 1,
+    pattern: API_SAFE_PUBLIC_STRING_PATTERN,
+  };
+}
+
+function apiRequestIdSchema(): PluginReviewArtifactRecordJsonSchema {
+  return {
+    type: "string",
+    pattern: API_REQUEST_ID_PATTERN,
+  };
+}
+
+function apiFixtureRefIdSchema(): PluginReviewArtifactRecordJsonSchema {
+  return {
+    type: "string",
+    pattern: API_FIXTURE_REF_ID_PATTERN,
+  };
+}
+
+function apiBaseSchema(): PluginReviewArtifactRecordJsonSchema {
+  return {
+    type: "string",
+    pattern: API_BASE_PATTERN,
+  };
+}
+
+function apiRoutePathSchema(): PluginReviewArtifactRecordJsonSchema {
+  return {
+    type: "string",
+    pattern: API_ROUTE_PATH_PATTERN,
+  };
+}
+
+function safeRelativeJsonFixturePathSchema(): PluginReviewArtifactRecordJsonSchema {
+  return {
+    type: "string",
+    pattern: SAFE_RELATIVE_JSON_FIXTURE_PATH_PATTERN,
+  };
+}
+
+function httpStatusSchema(): PluginReviewArtifactRecordJsonSchema {
+  return {
+    type: "integer",
+    minimum: 100,
+    maximum: 599,
+  };
+}
+
 function localArtifactPathSchema(): PluginReviewArtifactRecordJsonSchema {
   return {
     type: "string",
@@ -1169,6 +1727,45 @@ function nonNegativeIntegerSchema(): PluginReviewArtifactRecordJsonSchema {
     type: "integer",
     minimum: 0,
   };
+}
+
+function collectApiPublicStringIssues(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+  seen: WeakSet<object> = new WeakSet<object>(),
+): void {
+  if (typeof value === "string") {
+    if (!isApiSafePublicString(value)) {
+      issues.push({
+        path,
+        message: "public strings must not include raw local paths, secrets, or private markers",
+      });
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    if (seen.has(value)) {
+      return;
+    }
+    seen.add(value);
+    for (const [index, item] of value.entries()) {
+      collectApiPublicStringIssues(item, `${path}[${index}]`, issues, seen);
+    }
+    seen.delete(value);
+    return;
+  }
+  if (!isRecord(value)) {
+    return;
+  }
+  if (seen.has(value)) {
+    return;
+  }
+  seen.add(value);
+  for (const [key, nested] of Object.entries(value)) {
+    collectApiPublicStringIssues(nested, keyPath(path, key), issues, seen);
+  }
+  seen.delete(value);
 }
 
 function validationResult<TRecord>(value: unknown, issues: ValidationIssue[]): ValidationResult<TRecord> {
@@ -1275,6 +1872,21 @@ function requirePattern(
   }
 }
 
+function requireSafeApiPublicString(
+  record: Record<string, unknown>,
+  key: string,
+  issues: ValidationIssue[],
+  parentPath: string,
+): void {
+  const value = record[key];
+  if (typeof value !== "string" || !isApiSafePublicString(value)) {
+    issues.push({
+      path: keyPath(parentPath, key),
+      message: `${key} must be a public string without raw local paths, secrets, or private markers`,
+    });
+  }
+}
+
 function requireRecordId(
   record: Record<string, unknown>,
   key: string,
@@ -1378,6 +1990,18 @@ function requireBoolean(
   }
 }
 
+function requireHttpStatus(
+  record: Record<string, unknown>,
+  key: string,
+  issues: ValidationIssue[],
+  parentPath: string,
+): void {
+  const value = record[key];
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 100 || value > 599) {
+    issues.push({ path: keyPath(parentPath, key), message: `${key} must be an HTTP status from 100 to 599` });
+  }
+}
+
 function requireNonNegativeInteger(
   record: Record<string, unknown>,
   key: string,
@@ -1452,6 +2076,21 @@ function requireLocalArtifactPath(
   }
 }
 
+function requireSafeRelativeJsonFixturePath(
+  record: Record<string, unknown>,
+  key: string,
+  issues: ValidationIssue[],
+  parentPath: string,
+): void {
+  const value = record[key];
+  if (typeof value !== "string" || !isSafeRelativeJsonFixturePath(value)) {
+    issues.push({
+      path: keyPath(parentPath, key),
+      message: `${key} must be a safe relative JSON fixture path`,
+    });
+  }
+}
+
 function requirePathRef(
   record: Record<string, unknown>,
   key: string,
@@ -1512,6 +2151,18 @@ function isSafeMetadataKey(value: string): boolean {
 
 function isSafePersistedString(value: string): boolean {
   return !SECRET_LIKE_METADATA_VALUE_PATTERN.test(value) && !LOCAL_PATH_VALUE_PATTERN.test(value);
+}
+
+function isSafeRelativeJsonFixturePath(value: string): boolean {
+  return (
+    value.trim() === value &&
+    new RegExp(SAFE_RELATIVE_JSON_FIXTURE_PATH_PATTERN).test(value) &&
+    !apiUnsafePublicStringPattern.test(value)
+  );
+}
+
+function isApiSafePublicString(value: string): boolean {
+  return value.trim().length > 0 && !apiUnsafePublicStringPattern.test(value);
 }
 
 function keyPath(parentPath: string, key: string): string {
@@ -1642,4 +2293,49 @@ const comparisonDifferenceKeys = [
   "change",
   "baseArtifactFingerprint",
   "candidateArtifactFingerprint",
+] as const;
+
+const apiFixtureRefKeys = ["id", "fixturePath"] as const;
+
+const apiFixtureRefObjectKeys = ["$fixtureRef"] as const;
+
+const apiRouteKeys = ["method", "path"] as const;
+
+const apiRequestPayloadKeys = ["headers", "body"] as const;
+
+const apiExpectationStringKeys = [
+  "kind",
+  "schemaVersion",
+  "pluginId",
+  "recordId",
+  "errorCode",
+] as const;
+
+const apiExpectationCountKeys = [
+  "redactionCount",
+  "approvalSessionCount",
+  "entryCount",
+  "recordCount",
+  "differenceCount",
+] as const;
+
+const apiExpectationMetricMapKeys = ["summary", "statuses", "pluginIds"] as const;
+
+const apiExpectationKeys = [
+  "status",
+  "contentType",
+  ...apiExpectationStringKeys,
+  ...apiExpectationCountKeys,
+  "matches",
+  ...apiExpectationMetricMapKeys,
+] as const;
+
+const apiRequestFixtureKeys = ["id", "title", "route", "request", "expect"] as const;
+
+const apiRequestBundleKeys = [
+  "schemaVersion",
+  "generatedAt",
+  "apiBase",
+  "fixtureRefs",
+  "requests",
 ] as const;

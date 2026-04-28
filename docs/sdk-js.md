@@ -61,6 +61,14 @@ console.log(workspace.describe(), plan.dryRun);
   `packages/sdk-js/src/ingestConnectorMcpClient.ts`
 - Ingest connector MCP fixture fetch and client harness:
   `packages/sdk-js/src/ingestConnectorMcpFixtureFetch.ts`
+- Plugin review artifact API client:
+  `packages/sdk-js/src/pluginReviewArtifactClient.ts`
+- Plugin review artifact records API client:
+  `packages/sdk-js/src/pluginReviewArtifactRecordClient.ts`
+- MCP approval evidence preview API client:
+  `packages/sdk-js/src/mcpApprovalEvidenceClient.ts`
+- MCP approval evidence records API client:
+  `packages/sdk-js/src/mcpApprovalEvidenceRecordClient.ts`
 - Ingest connector guide: `docs/ingest-connectors.md`
 - Ingest API replay fixture:
   `examples/ingest-search/api-requests.json`
@@ -68,6 +76,14 @@ console.log(workspace.describe(), plan.dryRun);
   `examples/ingest-search/connector-api-requests.json`
 - Ingest connector MCP API replay fixture:
   `examples/ingest-search/connector-mcp-api-requests.json`
+- Plugin review artifact API replay fixture:
+  `examples/plugins/release-notes/review-artifact-api-requests.json`
+- Plugin review artifact records API replay fixture:
+  `examples/plugins/release-notes/review-artifact-records-requests.json`
+- MCP approval evidence preview API replay fixture:
+  `examples/mcp/approval-evidence-preview-requests.json`
+- MCP approval evidence records API replay fixture:
+  `examples/mcp/approval-evidence-records-requests.json`
 - Focused ingest/search API client test:
   `packages/sdk-js/tests/client-ingest-search.test.mjs`
 - Focused ingest/search fixture fetch test:
@@ -84,6 +100,14 @@ console.log(workspace.describe(), plan.dryRun);
   `packages/sdk-js/tests/ingest-connector-mcp-client.test.mjs`
 - Focused connector MCP fixture fetch test:
   `packages/sdk-js/tests/ingest-connector-mcp-fixture-fetch.test.mjs`
+- Focused plugin review artifact API client test:
+  `packages/sdk-js/tests/client-plugin-review-artifact.test.mjs`
+- Focused plugin review artifact records API client test:
+  `packages/sdk-js/tests/client-plugin-review-artifact-record.test.mjs`
+- Focused MCP approval evidence API client test:
+  `packages/sdk-js/tests/client-mcp-approval-evidence.test.mjs`
+- Focused MCP approval evidence records API client test:
+  `packages/sdk-js/tests/client-mcp-approval-evidence-record.test.mjs`
 - Workspace session retention cleanup API client:
   `packages/sdk-js/src/localWorkspaceSessionSnapshotRetentionCleanupApiClient.ts`
 - Workspace session retention cleanup inventory API client:
@@ -121,6 +145,26 @@ console.log(workspace.describe(), plan.dryRun);
   `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.invalid.json`,
   and
   `packages/schemas/fixtures/workspace-session-snapshot-retention-cleanup-inventory-request.schema.json`
+- Plugin review artifact request bundle schema fixtures:
+  `packages/schemas/fixtures/plugin-review-artifact-api-requests.valid.json`,
+  `packages/schemas/fixtures/plugin-review-artifact-api-requests.invalid.json`,
+  and
+  `packages/schemas/fixtures/plugin-review-artifact-api-requests.schema.json`
+- Plugin review artifact records request bundle schema fixtures:
+  `packages/schemas/fixtures/plugin-review-artifact-records-requests.valid.json`,
+  `packages/schemas/fixtures/plugin-review-artifact-records-requests.invalid.json`,
+  and
+  `packages/schemas/fixtures/plugin-review-artifact-records-requests.schema.json`
+- MCP approval evidence preview request bundle schema fixtures:
+  `packages/schemas/fixtures/mcp-approval-evidence-preview-requests.valid.json`,
+  `packages/schemas/fixtures/mcp-approval-evidence-preview-requests.invalid.json`,
+  and
+  `packages/schemas/fixtures/mcp-approval-evidence-preview-requests.schema.json`
+- MCP approval evidence records request bundle schema fixtures:
+  `packages/schemas/fixtures/mcp-approval-evidence-records-requests.valid.json`,
+  `packages/schemas/fixtures/mcp-approval-evidence-records-requests.invalid.json`,
+  and
+  `packages/schemas/fixtures/mcp-approval-evidence-records-requests.schema.json`
 
 ## Ingest Connector Preview Helpers
 
@@ -392,6 +436,36 @@ Connector fixture helper names:
 Keep connector fixture harnesses on the same local-only pattern: injected
 fetch, checked-in JSON, no global fetch fallback, JSON-only errors, and
 negative replay cases for unsupported method, path, and request-body coverage.
+
+## Review And Evidence Fixture Parity
+
+Use the review and approval evidence clients when tests need route-shaped
+local requests through an injected `FetchLike` without starting a service:
+
+- `PluginReviewArtifactClient` and `createPluginReviewArtifactClient`
+- `PluginReviewArtifactRecordClient` and `createPluginReviewArtifactRecordClient`
+- `McpApprovalEvidenceClient` and `createMcpApprovalEvidenceClient`
+- `McpApprovalEvidenceRecordClient` and `createMcpApprovalEvidenceRecordClient`
+
+The SDK tests should replay the checked-in request bundles in memory and
+validate them with the shared schema validators before fake fetch is called:
+
+- `validatePluginReviewArtifactApiRequestBundle`
+- `validatePluginReviewArtifactRecordApiRequestBundle`
+- `validateMcpApprovalEvidencePreviewRequestBundle`
+- `validateMcpApprovalEvidenceRecordApiRequestBundle`
+
+The same bundle schema fixtures feed API route tests, SDK fake-fetch tests, CLI replay, and Web state builders:
+
+- `packages/schemas/fixtures/plugin-review-artifact-api-requests.schema.json`
+- `packages/schemas/fixtures/plugin-review-artifact-records-requests.schema.json`
+- `packages/schemas/fixtures/mcp-approval-evidence-preview-requests.schema.json`
+- `packages/schemas/fixtures/mcp-approval-evidence-records-requests.schema.json`
+
+Keep these replay bundles local-only: `apiBase` should use `local://api/v1`,
+fixture references should stay repo-relative, request bodies should be JSON
+only, and sensitive-looking values should remain `[REDACTED]`. The SDK harness
+must report JSON-only fixture errors for method, path, or body drift and must not use global fetch as a fallback.
 
 ## Workspace Session Snapshot Retention Cleanup API Preview
 
@@ -737,6 +811,10 @@ node packages\sdk-js\tests\ingest-connector-client.test.mjs
 node packages\sdk-js\tests\ingest-connector-fixture-fetch.test.mjs
 node packages\sdk-js\tests\ingest-connector-mcp-client.test.mjs
 node packages\sdk-js\tests\ingest-connector-mcp-fixture-fetch.test.mjs
+node packages\sdk-js\tests\client-plugin-review-artifact.test.mjs
+node packages\sdk-js\tests\client-plugin-review-artifact-record.test.mjs
+node packages\sdk-js\tests\client-mcp-approval-evidence.test.mjs
+node packages\sdk-js\tests\client-mcp-approval-evidence-record.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-api-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention-cleanup-inventory-api-client.test.mjs
 node packages\sdk-js\tests\local-workspace-session-snapshot-retention.test.mjs

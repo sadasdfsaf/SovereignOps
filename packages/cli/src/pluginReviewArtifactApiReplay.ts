@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { readFile, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
+import { validatePluginReviewArtifactApiRequestBundle } from "../../schemas/src/pluginReviewArtifact.ts";
 import { createPluginReviewArtifactPreview } from "./pluginReviewArtifact.ts";
 
 export interface PluginReviewArtifactApiReplayCliResult {
@@ -92,6 +93,11 @@ interface RedactionRecord {
 interface Redactor {
   readonly redactions: readonly RedactionRecord[];
   redact(value: unknown, valuePath: string): unknown;
+}
+
+interface SharedValidationIssue {
+  readonly path: string;
+  readonly message: string;
 }
 
 const HELP_TEXT = {
@@ -648,6 +654,8 @@ async function resolveReferencedFixturePath(
 }
 
 function parseFixtureBundle(value: unknown): PluginReviewArtifactApiFixtureBundle {
+  validateFixtureBundleWithSharedSchema(value);
+
   if (!isRecord(value)) {
     throw invalidFixture("fixture root must be a JSON object.");
   }
@@ -672,6 +680,108 @@ function parseFixtureBundle(value: unknown): PluginReviewArtifactApiFixtureBundl
     fixtureRefs: parseFixtureRefs(value.fixtureRefs),
     requests: value.requests.map((request, index) => parseFixtureRequest(request, index)),
   };
+}
+
+function validateFixtureBundleWithSharedSchema(value: unknown): void {
+  const rawResult = validatePluginReviewArtifactApiRequestBundle(value);
+  const sharedValue = sharedFixtureBundleForValidation(value);
+  const sharedResult = sharedValue === value
+    ? rawResult
+    : validatePluginReviewArtifactApiRequestBundle(sharedValue);
+  const issues = sharedValue === value
+    ? rawResult.issues
+    : uniqueValidationIssues([
+        ...rawResult.issues.filter((issue) => !isAcceptedLocalAliasIssue(issue, value)),
+        ...sharedResult.issues,
+      ]);
+
+  if (issues.length > 0 || !sharedResult.ok) {
+    throw invalidFixture("Fixture bundle failed shared schema validation.", {
+      issues: issues.length > 0
+        ? issues.map((issue) => ({ path: issue.path, message: issue.message }))
+        : [{ path: "$", message: "shared schema validation failed" }],
+    });
+  }
+}
+
+function sharedFixtureBundleForValidation(value: unknown): unknown {
+  if (!isRecord(value) || !Array.isArray(value.requests)) {
+    return value;
+  }
+
+  return {
+    ...value,
+    requests: value.requests.map((request) => {
+      if (!isRecord(request)) {
+        return request;
+      }
+
+      const next: Record<string, unknown> = { ...request };
+      if (Object.hasOwn(next, "response")) {
+        next.expect = sharedExpectationForValidation(next.response);
+        delete next.response;
+      } else if (isRecord(next.expect)) {
+        next.expect = sharedExpectationForValidation(next.expect);
+      }
+      return next;
+    }),
+  };
+}
+
+function sharedExpectationForValidation(value: unknown): unknown {
+  if (!isRecord(value)) {
+    return value;
+  }
+  const expectation: Record<string, unknown> = { ...value };
+  delete expectation.body;
+  return expectation;
+}
+
+function isAcceptedLocalAliasIssue(issue: SharedValidationIssue, value: unknown): boolean {
+  const responseMatch = /^requests\[(\d+)\]\.response$/.exec(issue.path);
+  if (
+    responseMatch !== null &&
+    issue.message === "response is not allowed" &&
+    requestHasResponseAlias(value, Number(responseMatch[1]))
+  ) {
+    return true;
+  }
+
+  const expectMatch = /^requests\[(\d+)\]\.expect$/.exec(issue.path);
+  if (
+    expectMatch !== null &&
+    issue.message === "expect must be an object" &&
+    requestHasResponseAlias(value, Number(expectMatch[1]))
+  ) {
+    return true;
+  }
+
+  const expectedBodyMatch = /^requests\[(\d+)\]\.expect\.body$/.exec(issue.path);
+  return expectedBodyMatch !== null && issue.message === "body is not allowed";
+}
+
+function requestHasResponseAlias(value: unknown, index: number): boolean {
+  if (!isRecord(value) || !Array.isArray(value.requests)) {
+    return false;
+  }
+  const request = value.requests[index];
+  return isRecord(request) && Object.hasOwn(request, "response");
+}
+
+function uniqueValidationIssues(
+  issues: readonly SharedValidationIssue[],
+): readonly SharedValidationIssue[] {
+  const seen = new Set<string>();
+  const unique: SharedValidationIssue[] = [];
+  for (const issue of issues) {
+    const key = `${issue.path}\0${issue.message}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    unique.push(issue);
+  }
+  return unique;
 }
 
 function parseFixtureRefs(value: unknown): readonly PluginReviewArtifactApiFixtureRef[] {
@@ -1233,11 +1343,15 @@ function usageError(message: string): PluginReviewArtifactApiReplayError {
   });
 }
 
-function invalidFixture(message: string): PluginReviewArtifactApiReplayError {
+function invalidFixture(
+  message: string,
+  details?: Record<string, unknown>,
+): PluginReviewArtifactApiReplayError {
   return new PluginReviewArtifactApiReplayError({
     exitCode: 2,
     code: "invalid_fixture",
     message,
+    details,
   });
 }
 

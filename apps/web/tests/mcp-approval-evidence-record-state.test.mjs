@@ -67,6 +67,48 @@ function buildRecord(overrides = {}) {
   };
 }
 
+function buildPublicFixtureBundle() {
+  return {
+    schemaVersion: "mcp-approval-evidence-records-requests.v1",
+    generatedAt: timestamps.replay,
+    apiBase: "local://mcp-approval-evidence-records",
+    requests: [
+      {
+        id: "api_mcp_approval_evidence_records_public_create",
+        title: "Create public approval evidence record",
+        route: {
+          method: "POST",
+          path: "/v1/mcp/approval-evidence/records",
+        },
+        request: {
+          body: {
+            record: {
+              id: "aer_public_record",
+              status: "approved",
+            },
+          },
+        },
+        expect: {
+          status: 201,
+          contentType: "application/json",
+          kind: "mcp-approval-evidence.record",
+          schemaVersion: "mcp-approval-evidence-record/v1",
+          recordId: "aer_public_record",
+        },
+      },
+    ],
+  };
+}
+
+function buildMalformedPublicFixtureBundle() {
+  const fixture = buildPublicFixtureBundle();
+  fixture.generatedAt = "not-a-date";
+  fixture.apiBase = "https://example.test/api";
+  fixture.requests[0].route.path = "records";
+  fixture.requests[0].expect.status = 99;
+  return fixture;
+}
+
 function testListSuccessBuildsPureRecordState() {
   const payload = {
     call: "list",
@@ -126,6 +168,69 @@ function testListSuccessBuildsPureRecordState() {
       (action) => action.id === "open_records",
     ),
     true,
+  );
+}
+
+function testPublicFixtureBundleSchemaFeedback() {
+  const fixture = buildPublicFixtureBundle();
+  const original = structuredClone(fixture);
+  const state = buildMcpApprovalEvidenceRecordState(fixture);
+
+  assert.deepEqual(fixture, original);
+  assert.equal(state.generatedAt, timestamps.replay);
+  assert.equal(state.phase, "empty");
+  assert.deepEqual(state.errorStates, []);
+
+  const malformed = buildMalformedPublicFixtureBundle();
+  const errorStates = buildMcpApprovalEvidenceRecordErrorStates(malformed);
+  assert.deepEqual(
+    errorStates,
+    buildMcpApprovalEvidenceRecordErrorStates(structuredClone(malformed)),
+  );
+  assert.equal(errorStates.length, 1);
+  assert.equal(errorStates[0].context, "records");
+  assert.equal(
+    errorStates[0].errorState.description.startsWith(
+      "MCP approval evidence records fixture bundle schema validation failed with 4 issues:",
+    ),
+    true,
+  );
+  assert.equal(
+    errorStates[0].errorState.description.includes(
+      "apiBase: apiBase must be a local:// API base",
+    ),
+    true,
+  );
+  assert.equal(
+    errorStates[0].errorState.description.includes(
+      "requests[0].expect.status: status must be an HTTP status from 100 to 599",
+    ),
+    true,
+  );
+
+  const malformedState = buildMcpApprovalEvidenceRecordState(malformed);
+  assert.equal(malformedState.phase, "error");
+  assert.equal(malformedState.status, "error");
+  assert.equal(
+    malformedState.errorStates[0].errorState.description,
+    errorStates[0].errorState.description,
+  );
+}
+
+function testDirectResponseShapeWithFixtureSchemaVersionRemainsTolerant() {
+  const payload = {
+    schemaVersion: "mcp-approval-evidence-records-requests.v1",
+    generatedAt: timestamps.replay,
+    records: [buildRecord({ id: "mcpae_direct_response" })],
+  };
+  const state = buildMcpApprovalEvidenceRecordState(payload);
+
+  assert.equal(state.phase, "success");
+  assert.equal(state.status, "complete");
+  assert.deepEqual(state.errorStates, []);
+  assert.deepEqual(
+    state.recordRows.map((row) => [row.recordId, row.approvalStatus]),
+    [["mcpae_direct_response", "approved"]],
   );
 }
 
@@ -312,6 +417,8 @@ function testSafeDisplayRedactionAndDefensiveClones() {
 }
 
 testListSuccessBuildsPureRecordState();
+testPublicFixtureBundleSchemaFeedback();
+testDirectResponseShapeWithFixtureSchemaVersionRemainsTolerant();
 testLoadingEmptyAndErrorStates();
 testComparisonDriftAndEvidenceHealth();
 testSafeDisplayRedactionAndDefensiveClones();

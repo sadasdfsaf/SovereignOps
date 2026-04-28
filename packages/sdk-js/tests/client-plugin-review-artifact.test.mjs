@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import {
@@ -11,6 +14,11 @@ import {
 import {
   createPluginReviewArtifactClient,
 } from "../src/pluginReviewArtifactClient.ts";
+import {
+  validatePluginReviewArtifactApiRequestBundle,
+} from "../../schemas/src/pluginReviewArtifact.ts";
+
+const schemasFixturesDir = fileURLToPath(new URL("../../schemas/fixtures/", import.meta.url));
 
 const reviewId = "plugin-review-plugin.local-tools-aaaaaaaaaaaaaaaa";
 const sandboxReviewId = "sandbox-review-bbbbbbbbbbbbbbbb";
@@ -39,6 +47,41 @@ test("previews plugin review artifacts with stable request body and headers", as
   assert.equal(fetch.calls[0].init.headers.authorization, "Bearer test-key");
   assert.equal(fetch.calls[0].init.headers["content-type"], "application/json");
   assert.deepEqual(JSON.parse(fetch.calls[0].init.body), validRequest());
+});
+
+test("validates public plugin review artifact request bundle and aligns the SDK preview route", async () => {
+  const bundle = await validatedPublicBundle(
+    "plugin-review-artifact-api-requests.valid.json",
+    validatePluginReviewArtifactApiRequestBundle,
+  );
+  const invalidBundle = await readSchemaFixtureJson("plugin-review-artifact-api-requests.invalid.json");
+  const invalidResult = validatePluginReviewArtifactApiRequestBundle(invalidBundle);
+  const fixture = fixtureRequest(bundle, "api_plugin_review_artifact_preview_release_notes");
+  const response = previewResponseFromFixture(fixture);
+  const fetch = fakeFetch([
+    jsonResponse(fixture.expect.status, response),
+  ]);
+  const client = createPluginReviewArtifactClient({
+    baseUrl: baseUrlForFixture(bundle),
+    fetch,
+  });
+
+  const preview = await client.preview(validRequest());
+
+  assert.equal(invalidResult.ok, false);
+  assert.deepEqual(
+    ["fixtureRefs[0].fixturePath", "requests[0].request.headers.authorization", "requests[1].id"]
+      .every((path) => invalidResult.issues.some((issue) => issue.path === path)),
+    true,
+  );
+  assert.equal(fixture.route.method, "POST");
+  assert.equal(fixture.route.path, "/v1/plugins/review-artifacts/preview");
+  assert.equal(fetch.calls[0].url, "local://plugin-review-artifact-api/v1/plugins/review-artifacts/preview");
+  assert.equal(fetch.calls[0].init.method, fixture.route.method);
+  assert.equal(preview.kind, fixture.expect.kind);
+  assert.equal(preview.artifact.manifest.id, fixture.expect.pluginId);
+  assert.equal(preview.localOnly, true);
+  assert.equal(preview.redacted, true);
 });
 
 test("validates preview requests before fetch is called", async () => {
@@ -415,6 +458,41 @@ function baseManifest() {
     ],
     minimumHostVersion: "0.3.0",
   };
+}
+
+function previewResponseFromFixture(fixture) {
+  const response = validPreview();
+  response.kind = fixture.expect.kind;
+  response.artifact.manifest.id = fixture.expect.pluginId;
+  response.artifact.sandboxReview.pluginId = fixture.expect.pluginId;
+  return response;
+}
+
+async function validatedPublicBundle(file, validator) {
+  const bundle = await readSchemaFixtureJson(file);
+  const result = validator(bundle);
+
+  assert.equal(result.ok, true, formatIssues(result.issues));
+  assert.equal(Object.isFrozen(result.value), true);
+  return result.value;
+}
+
+async function readSchemaFixtureJson(file) {
+  return JSON.parse(await readFile(join(schemasFixturesDir, file), "utf8"));
+}
+
+function fixtureRequest(bundle, id) {
+  const fixture = bundle.requests.find((request) => request.id === id);
+  assert.notEqual(fixture, undefined);
+  return fixture;
+}
+
+function baseUrlForFixture(bundle) {
+  return new URL("v1/", bundle.apiBase.endsWith("/") ? bundle.apiBase : `${bundle.apiBase}/`).href;
+}
+
+function formatIssues(issues) {
+  return issues.map((issue) => `${issue.path}: ${issue.message}`).join("; ");
 }
 
 function fakeFetch(items) {

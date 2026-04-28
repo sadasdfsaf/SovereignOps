@@ -239,9 +239,11 @@ test("reports plugin review artifact records replay mismatches in JSON output", 
   const mismatchPath = await writeFixture("mismatch.json", {
     schemaVersion: "plugin-review-artifact-records-requests.v1",
     generatedAt: "2026-04-27T13:25:00.000Z",
+    apiBase: "local://plugin-review-artifact-records-api",
     requests: [
       {
         id: "api_plugin_review_artifact_records_mismatch",
+        title: "Mismatch plugin review artifact record",
         route: {
           method: "POST",
           path: "/v1/plugins/review-artifacts/records",
@@ -302,6 +304,102 @@ test("reports plugin review artifact records replay mismatches in JSON output", 
   assert.deepEqual(payload.requests[0].expectationIssues, ["kind"]);
 });
 
+test("rejects malformed plugin review artifact records bundles through shared validator paths", async () => {
+  const invalidPath = await writeFixture("shared-invalid-records.json", {
+    schemaVersion: "plugin-review-artifact-records-requests.v1",
+    generatedAt: "2026-04-27T13:26:00.000Z",
+    apiBase: "local://plugin-review-artifact-records-api",
+    requests: [
+      {
+        id: "api_plugin_review_artifact_records_missing_request",
+        title: "Missing request object",
+        route: {
+          method: "POST",
+          path: "/v1/plugins/review-artifacts/records",
+        },
+        expect: {
+          status: 400,
+        },
+      },
+    ],
+  });
+  const result = await runPluginReviewArtifactRecordsReplayCli([
+    "plugin-review-artifact-records",
+    "replay",
+    "--fixture",
+    invalidPath,
+  ]);
+  assert.ok(result);
+  const payload = JSON.parse(result.stderr);
+
+  assert.equal(result.exitCode, 2);
+  assert.equal(result.stdout, "");
+  assert.equal(payload.error.code, "invalid_fixture");
+  assert.match(payload.error.message, /shared schema validation/);
+  assert.equal(hasIssuePath(payload, "requests[0].request"), true);
+});
+
+test("rejects duplicate plugin review artifact records ids and unsafe fixture refs via shared validation", async () => {
+  const duplicatePath = await writeFixture("duplicate-records.json", {
+    schemaVersion: "plugin-review-artifact-records-requests.v1",
+    generatedAt: "2026-04-27T13:27:00.000Z",
+    apiBase: "local://plugin-review-artifact-records-api",
+    requests: [
+      buildCreateRequest("api_plugin_review_artifact_records_duplicate"),
+      buildCreateRequest("api_plugin_review_artifact_records_duplicate"),
+    ],
+  });
+  const unsafeRefPath = await writeFixture("unsafe-ref-records.json", {
+    schemaVersion: "plugin-review-artifact-records-requests.v1",
+    generatedAt: "2026-04-27T13:28:00.000Z",
+    apiBase: "local://plugin-review-artifact-records-api",
+    fixtureRefs: [
+      {
+        id: "recordRef",
+        fixturePath: "private-plan-pack/record.json",
+      },
+    ],
+    requests: [
+      {
+        ...buildCreateRequest("api_plugin_review_artifact_records_unsafe_ref"),
+        request: {
+          body: {
+            record: {
+              $fixtureRef: "recordRef",
+            },
+          },
+        },
+      },
+    ],
+  });
+
+  const duplicate = await runPluginReviewArtifactRecordsReplayCli([
+    "plugin-review-artifact-records",
+    "replay",
+    "--fixture",
+    duplicatePath,
+  ]);
+  const unsafeRef = await runPluginReviewArtifactRecordsReplayCli([
+    "plugin-review-artifact-records",
+    "replay",
+    "--fixture",
+    unsafeRefPath,
+  ]);
+  assert.ok(duplicate);
+  assert.ok(unsafeRef);
+  const duplicatePayload = JSON.parse(duplicate.stderr);
+  const unsafeRefPayload = JSON.parse(unsafeRef.stderr);
+
+  assert.equal(duplicate.exitCode, 2);
+  assert.equal(duplicate.stdout, "");
+  assert.equal(duplicatePayload.error.code, "invalid_fixture");
+  assert.equal(hasIssuePath(duplicatePayload, "requests[1].id"), true);
+  assert.equal(unsafeRef.exitCode, 2);
+  assert.equal(unsafeRef.stdout, "");
+  assert.equal(unsafeRefPayload.error.code, "invalid_fixture");
+  assert.equal(hasIssuePath(unsafeRefPayload, "fixtureRefs[0].fixturePath"), true);
+});
+
 test("rejects private plugin review artifact records fixture paths as JSON-only errors", async () => {
   const unsafeCases = [
     {
@@ -340,16 +438,18 @@ test("redacts secret-like plugin review artifact records headers, bodies, and re
   const secretFixturePath = await writeFixture("secret-records.json", {
     schemaVersion: "plugin-review-artifact-records-requests.v1",
     generatedAt: "2026-04-27T13:30:00.000Z",
+    apiBase: "local://plugin-review-artifact-records-api",
     requests: [
       {
         id: "api_plugin_review_artifact_records_secret_redaction",
+        title: "Redact plugin review artifact record",
         route: {
           method: "POST",
           path: "/v1/plugins/review-artifacts/records",
         },
         request: {
           headers: {
-            authorization: "Bearer replay-secret-token-001",
+            authorization: "[REDACTED]",
             "x-fixture-scope": "public-release-notes-example",
           },
           body: {
@@ -357,11 +457,11 @@ test("redacts secret-like plugin review artifact records headers, bodies, and re
               ...buildRecord("prar_secret_001"),
               artifact: {
                 kind: "plugin_review_artifact",
-                note: "Use Bearer record-secret-token-002 only for redaction coverage.",
-                apiToken: "fixture-api-token-003",
+                note: "Use [REDACTED] only for redaction coverage.",
+                apiToken: "[REDACTED]",
               },
               metadata: {
-                sessionToken: "fixture-session-token-004",
+                sessionToken: "[REDACTED]",
               },
             },
           },
@@ -376,6 +476,7 @@ test("redacts secret-like plugin review artifact records headers, bodies, and re
       },
       {
         id: "api_plugin_review_artifact_records_error_redaction",
+        title: "Redact plugin review artifact records error",
         route: {
           method: "POST",
           path: "/v1/plugins/review-artifacts/records",
@@ -431,10 +532,6 @@ test("redacts secret-like plugin review artifact records headers, bodies, and re
   const error = payload.requests[1];
 
   for (const secret of [
-    "replay-secret-token-001",
-    "record-secret-token-002",
-    "fixture-api-token-003",
-    "fixture-session-token-004",
     "fixture-error-token-005",
     "fixture-error-key-006",
     "fixture-response-token-007",
@@ -484,9 +581,32 @@ function buildRecord(id) {
   };
 }
 
+function buildCreateRequest(id) {
+  return {
+    id,
+    title: `Create record ${id}`,
+    route: {
+      method: "POST",
+      path: "/v1/plugins/review-artifacts/records",
+    },
+    request: {
+      body: {
+        record: buildRecord("prar_shared_validator_001"),
+      },
+    },
+    expect: {
+      status: 201,
+    },
+  };
+}
+
 async function writeFixture(name, value) {
   await mkdir(tempDir, { recursive: true });
   const outputPath = path.join(tempDir, name);
   await writeFile(outputPath, `${JSON.stringify(value, null, 2)}\n`);
   return outputPath;
+}
+
+function hasIssuePath(payload, suffix) {
+  return payload.error.details.issues.some((issue) => issue.path.endsWith(suffix));
 }

@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "mcp-approval-evidence-records-requests.v1",
+  "generatedAt": "2026-04-27T12:30:00.000Z",
+  "apiBase": "local://mcp-approval-evidence-records",
+  "fixtureRefs": [
+    {
+      "id": "approvalEvidenceRecord",
+      "fixturePath": "../private-plan/approval-evidence-record.json"
+    }
+  ],
+  "requests": [
+    {
+      "id": "duplicate_record",
+      "title": "Create unsafe MCP approval evidence record",
+      "route": {
+        "method": "POST",
+        "path": "/v1/mcp/approval-evidence/records"
+      },
+      "request": {
+        "headers": {
+          "authorization": "Bearer sk-example-local-test-value"
+        },
+        "body": {
+          "record": {
+            "id": "aer_local_notes_001",
+            "metadata": {
+              "source": "C:/Users/operator/private-plan/approval-evidence-record.json"
+            }
+          }
+        }
+      },
+      "expect": {
+        "status": 201,
+        "contentType": "application/json"
+      }
+    },
+    {
+      "id": "duplicate_record",
+      "title": "Duplicate record request id",
+      "route": {
+        "method": "GET",
+        "path": "/v1/mcp/approval-evidence/records"
+      },
+      "request": {
+        "headers": {
+          "x-fixture-scope": "public-local-example"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json"
+      }
+    }
+  ]
+}

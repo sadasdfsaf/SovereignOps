@@ -138,9 +138,11 @@ test("supports an injected dispatcher without network access", async () => {
   const fixture = await writeFixture("injected-dispatcher.json", {
     schemaVersion: "plugin-review-artifact-api-requests.v1",
     generatedAt: "2026-04-27T10:00:00.000Z",
+    apiBase: "local://plugin-review-artifact-api",
     requests: [
       {
         id: "api_injected_dispatcher",
+        title: "Injected dispatcher preview",
         route: {
           method: "POST",
           path: "/v1/plugins/review-artifacts/preview",
@@ -209,7 +211,8 @@ test("reports malformed plugin review artifact API fixtures as JSON-only errors"
   const invalidPath = await writeFixture("invalid-plugin-review-artifact-api.json", {
     schemaVersion: "plugin-review-artifact-api-requests.v1",
     generatedAt: "2026-04-27T10:15:00.000Z",
-    requests: [{ id: "api_missing_route" }],
+    apiBase: "local://plugin-review-artifact-api",
+    requests: [{ id: "api_missing_route", title: "Missing route" }],
   });
   const result = await runPluginReviewArtifactApiReplayCli([
     "plugin-review-artifact-api",
@@ -223,7 +226,69 @@ test("reports malformed plugin review artifact API fixtures as JSON-only errors"
   assert.equal(result.exitCode, 2);
   assert.equal(result.stdout, "");
   assert.equal(payload.error.code, "invalid_fixture");
-  assert.match(payload.error.message, /fixture\.requests\[0\]\.route/);
+  assert.match(payload.error.message, /shared schema validation/);
+  assert.equal(hasIssuePath(payload, "requests[0].route"), true);
+});
+
+test("rejects duplicate plugin review artifact API ids and unsafe fixture refs via shared validation", async () => {
+  const duplicatePath = await writeFixture("duplicate-plugin-review-artifact-api.json", {
+    schemaVersion: "plugin-review-artifact-api-requests.v1",
+    generatedAt: "2026-04-27T10:20:00.000Z",
+    apiBase: "local://plugin-review-artifact-api",
+    requests: [
+      buildPreviewRequest("api_duplicate_review_artifact"),
+      buildPreviewRequest("api_duplicate_review_artifact"),
+    ],
+  });
+  const unsafeRefPath = await writeFixture("unsafe-ref-plugin-review-artifact-api.json", {
+    schemaVersion: "plugin-review-artifact-api-requests.v1",
+    generatedAt: "2026-04-27T10:21:00.000Z",
+    apiBase: "local://plugin-review-artifact-api",
+    fixtureRefs: [
+      {
+        id: "unsafeRef",
+        fixturePath: "../private.json",
+      },
+    ],
+    requests: [
+      {
+        ...buildPreviewRequest("api_unsafe_ref_review_artifact"),
+        request: {
+          body: {
+            manifest: {
+              $fixtureRef: "unsafeRef",
+            },
+          },
+        },
+      },
+    ],
+  });
+
+  const duplicate = await runPluginReviewArtifactApiReplayCli([
+    "plugin-review-artifact-api",
+    "replay",
+    "--fixture",
+    duplicatePath,
+  ]);
+  const unsafeRef = await runPluginReviewArtifactApiReplayCli([
+    "plugin-review-artifact-api",
+    "replay",
+    "--fixture",
+    unsafeRefPath,
+  ]);
+  assert.ok(duplicate);
+  assert.ok(unsafeRef);
+  const duplicatePayload = JSON.parse(duplicate.stderr);
+  const unsafeRefPayload = JSON.parse(unsafeRef.stderr);
+
+  assert.equal(duplicate.exitCode, 2);
+  assert.equal(duplicate.stdout, "");
+  assert.equal(duplicatePayload.error.code, "invalid_fixture");
+  assert.equal(hasIssuePath(duplicatePayload, "requests[1].id"), true);
+  assert.equal(unsafeRef.exitCode, 2);
+  assert.equal(unsafeRef.stdout, "");
+  assert.equal(unsafeRefPayload.error.code, "invalid_fixture");
+  assert.equal(hasIssuePath(unsafeRefPayload, "fixtureRefs[0].fixturePath"), true);
 });
 
 test("local dispatcher returns JSON API errors for missing routes", async () => {
@@ -244,4 +309,27 @@ async function writeFixture(name, value) {
   const outputPath = path.join(tempDir, name);
   await writeFile(outputPath, `${JSON.stringify(value, null, 2)}\n`);
   return outputPath;
+}
+
+function buildPreviewRequest(id) {
+  return {
+    id,
+    title: `Preview request ${id}`,
+    route: {
+      method: "POST",
+      path: "/v1/plugins/review-artifacts/preview",
+    },
+    request: {
+      body: {
+        ok: true,
+      },
+    },
+    expect: {
+      status: 200,
+    },
+  };
+}
+
+function hasIssuePath(payload, suffix) {
+  return payload.error.details.issues.some((issue) => issue.path.endsWith(suffix));
 }

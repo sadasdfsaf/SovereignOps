@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import {
@@ -10,6 +13,11 @@ import {
   createMcpApprovalEvidenceClient,
   toApiResult,
 } from "../src/index.ts";
+import {
+  validateMcpApprovalEvidencePreviewRequestBundle,
+} from "../../schemas/src/mcpApprovalEvidence.ts";
+
+const schemasFixturesDir = fileURLToPath(new URL("../../schemas/fixtures/", import.meta.url));
 
 const redaction = "[REDACTED]";
 const secretPlaceholder = "[redacted:token:2b5f]";
@@ -46,6 +54,48 @@ test("previews MCP approval evidence with stable request body and headers", asyn
   assert.equal(fetch.calls[0].init.headers["content-type"], "application/json");
   assert.equal(fetch.calls[0].init.headers["x-sdk-test"], "mcp-approval-evidence");
   assert.deepEqual(JSON.parse(fetch.calls[0].init.body), request);
+});
+
+test("validates public MCP approval evidence request bundle and drives SDK preview with fixture data", async () => {
+  const bundle = await validatedPublicBundle(
+    "mcp-approval-evidence-preview-requests.valid.json",
+    validateMcpApprovalEvidencePreviewRequestBundle,
+  );
+  const invalidBundle = await readSchemaFixtureJson("mcp-approval-evidence-preview-requests.invalid.json");
+  const invalidResult = validateMcpApprovalEvidencePreviewRequestBundle(invalidBundle);
+  const fixture = fixtureRequest(bundle, "api_mcp_approval_evidence_preview_local_tasks");
+  const request = previewRequestFromFixture(fixture);
+  const response = previewResponseFromFixture(fixture);
+  const fetch = fakeFetch([
+    jsonResponse(fixture.expect.status, response),
+  ]);
+  const client = createMcpApprovalEvidenceClient({
+    baseUrl: baseUrlForFixture(bundle),
+    fetch,
+  });
+
+  const preview = await client.preview(request);
+
+  assert.equal(invalidResult.ok, false);
+  assert.deepEqual(
+    [
+      "fixtureRefs[0].fixturePath",
+      "requests[0].request.headers.authorization",
+      "requests[0].request.body.approvalSessions[0].metadata.source",
+      "requests[1].id",
+    ].every((path) => invalidResult.issues.some((issue) => issue.path === path)),
+    true,
+  );
+  assert.equal(fixture.route.method, "POST");
+  assert.equal(fixture.route.path, "/v1/mcp/approval-evidence/preview");
+  assert.equal(fetch.calls[0].url, "local://mcp-approval-evidence-preview/v1/mcp/approval-evidence/preview");
+  assert.equal(fetch.calls[0].init.method, fixture.route.method);
+  assert.deepEqual(JSON.parse(fetch.calls[0].init.body), request);
+  assert.equal(preview.kind, fixture.expect.kind);
+  assert.equal(preview.schemaVersion, fixture.expect.schemaVersion);
+  assert.equal(preview.summary.approvalSessionCount, fixture.expect.approvalSessionCount);
+  assert.equal(preview.summary.returnedEvidenceCount, fixture.expect.entryCount);
+  assert.equal(preview.evidence.length, fixture.expect.entryCount);
 });
 
 test("supports snapshot request bodies and list-style filters", async () => {
@@ -452,6 +502,102 @@ function approvalEvidenceItem() {
     },
     fingerprint: approvalFingerprint,
   };
+}
+
+function previewRequestFromFixture(fixture) {
+  const { generatedAt, ...request } = fixture.request.body;
+  assert.equal(typeof generatedAt, "string");
+  return request;
+}
+
+function previewResponseFromFixture(fixture) {
+  const sessions = fixture.request.body.approvalSessions;
+  const evidence = sessions.map((session, index) => ({
+    id: session.id,
+    timestamp: session.updatedAt,
+    source: "approval_session",
+    kind: session.status === "approved" ? "approval_session_approved" : "approval_session_pending",
+    status: session.status === "approved" ? "approved" : "approval_required",
+    title: session.status === "approved" ? "Approval session approved" : "Approval session pending",
+    subject: {
+      type: "approval_session",
+      id: session.id,
+    },
+    actorId: session.actor?.id,
+    request: redactSecretFields(session.request),
+    metadata: redactSecretFields(session.metadata ?? {}),
+    fingerprint: `sha256:${String(index + 1).repeat(64)}`,
+  }));
+
+  return {
+    kind: fixture.expect.kind,
+    schemaVersion: fixture.expect.schemaVersion,
+    localOnly: true,
+    redacted: true,
+    fingerprint: responseFingerprint,
+    filters: {},
+    summary: {
+      inputRecordCount: sessions.length,
+      totalEvidenceCount: fixture.expect.entryCount,
+      returnedEvidenceCount: fixture.expect.entryCount,
+      filteredEvidenceCount: 0,
+      approvalSessionCount: fixture.expect.approvalSessionCount,
+      auditRecordCount: 0,
+      approvalRequiredCount: sessions.filter((session) => session.status === "pending").length,
+      terminalDecisionCount: sessions.filter((session) => session.status !== "pending").length,
+      sources: {
+        approval_session: fixture.expect.entryCount,
+      },
+      statuses: fixture.expect.statuses,
+    },
+    evidence,
+  };
+}
+
+function redactSecretFields(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => redactSecretFields(item));
+  }
+  if (isRecord(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nested]) => [
+        key,
+        /token/i.test(key) ? redaction : redactSecretFields(nested),
+      ]),
+    );
+  }
+  return value;
+}
+
+async function validatedPublicBundle(file, validator) {
+  const bundle = await readSchemaFixtureJson(file);
+  const result = validator(bundle);
+
+  assert.equal(result.ok, true, formatIssues(result.issues));
+  assert.equal(Object.isFrozen(result.value), true);
+  return result.value;
+}
+
+async function readSchemaFixtureJson(file) {
+  return JSON.parse(await readFile(join(schemasFixturesDir, file), "utf8"));
+}
+
+function fixtureRequest(bundle, id) {
+  const fixture = bundle.requests.find((request) => request.id === id);
+  assert.notEqual(fixture, undefined);
+  return fixture;
+}
+
+function baseUrlForFixture(bundle) {
+  return new URL("v1/", bundle.apiBase.endsWith("/") ? bundle.apiBase : `${bundle.apiBase}/`).href;
+}
+
+function formatIssues(issues) {
+  return issues.map((issue) => `${issue.path}: ${issue.message}`).join("; ");
+}
+
+function isRecord(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function fakeFetch(items) {

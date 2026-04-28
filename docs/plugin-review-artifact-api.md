@@ -36,6 +36,9 @@ The Round 27 API and SDK slice is expected to use these repo-relative files:
 - `packages/schemas/fixtures/plugin-review-artifact-preview.valid.json`
 - `packages/schemas/fixtures/plugin-review-artifact-preview.invalid.json`
 - `packages/schemas/fixtures/plugin-review-artifact-preview.schema.json`
+- `packages/schemas/fixtures/plugin-review-artifact-api-requests.valid.json`
+- `packages/schemas/fixtures/plugin-review-artifact-api-requests.invalid.json`
+- `packages/schemas/fixtures/plugin-review-artifact-api-requests.schema.json`
 - `apps/web/src/pluginReviewArtifactApiState.ts`
 - `apps/web/tests/plugin-review-artifact-api-state.test.mjs`
 - `docs/openapi.yaml`
@@ -98,6 +101,33 @@ The valid and invalid fixtures should stay in `packages/schemas/fixtures/` and
 the exported schema should stay at
 `packages/schemas/fixtures/plugin-review-artifact-preview.schema.json`.
 
+## Request Bundle Schema
+
+`packages/schemas/src/pluginReviewArtifact.ts` also exposes the shared request
+bundle contract for the API, SDK, CLI, and Web parity surface:
+
+- `PLUGIN_REVIEW_ARTIFACT_API_REQUESTS_SCHEMA_VERSION`
+- `pluginReviewArtifactApiRequestsSchema`
+- `pluginReviewArtifactSchemaDefinitions`
+- `pluginReviewArtifactValidators`
+- `validatePluginReviewArtifactObject`
+- `assertPluginReviewArtifactObject`
+- `validatePluginReviewArtifactApiRequestBundle`
+- `assertPluginReviewArtifactApiRequestBundle`
+
+The public request bundle fixtures are:
+
+- `packages/schemas/fixtures/plugin-review-artifact-api-requests.valid.json`
+- `packages/schemas/fixtures/plugin-review-artifact-api-requests.invalid.json`
+- `packages/schemas/fixtures/plugin-review-artifact-api-requests.schema.json`
+
+The bundle schema validates the checked-in API replay fixture before the route
+test, SDK fake-fetch harness, CLI replay command, and Web review helper consume
+it. It locks request ids, `POST /v1/plugins/review-artifacts/preview`, local
+`apiBase` values, repo-relative fixture references, JSON-only request bodies,
+and expected response fields so every layer observes the same local replay
+contract.
+
 ## Web Helper
 
 `apps/web/src/pluginReviewArtifactApiState.ts` should expose
@@ -120,7 +150,8 @@ Once the parent API and SDK files are integrated:
 - `apps/web/package.json` should run
   `tests/plugin-review-artifact-api-state.test.mjs`.
 - `scripts/release_check.py` should include
-  `plugin-review-artifact-api-alignment`.
+  `plugin-review-artifact-api-alignment`, the shared request bundle validators,
+  and the generated request bundle JSON schema fixtures.
 - `scripts/repo_health.py` should include the API docs, tests, fixtures, and
   implementation files.
 
@@ -128,10 +159,13 @@ Once the parent API and SDK files are integrated:
 
 - Use repo-relative paths only.
 - Keep fixture input and output JSON local-only.
+- Keep request bundle `apiBase` values on `local://` endpoints.
+- Keep request bundle fixture references repo-relative and inside the workspace.
 - Keep `externalCalls: 0` on artifact-derived records.
 - Store redacted values as `[REDACTED]`.
 - Do not place host-specific paths, private planning folders, raw credentials,
-  package cache paths, or live service URLs in docs or fixtures.
+  package cache paths, unredacted secret-shaped values, or live service URLs in
+  docs or fixtures.
 
 ## Validation
 
@@ -144,4 +178,7 @@ python -m json.tool examples\plugins\release-notes\review-artifact-api-requests.
 python -m json.tool packages\schemas\fixtures\plugin-review-artifact-preview.valid.json
 python -m json.tool packages\schemas\fixtures\plugin-review-artifact-preview.invalid.json
 python -m json.tool packages\schemas\fixtures\plugin-review-artifact-preview.schema.json
+python -m json.tool packages\schemas\fixtures\plugin-review-artifact-api-requests.valid.json
+python -m json.tool packages\schemas\fixtures\plugin-review-artifact-api-requests.invalid.json
+python -m json.tool packages\schemas\fixtures\plugin-review-artifact-api-requests.schema.json
 ```

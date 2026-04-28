@@ -178,6 +178,38 @@ Approval sessions are local review records created with `createApprovalSessionSt
 
 Session snapshots include `request`, optional `actor`, `reason`, `ruleId`, `metadata`, timestamps, and terminal decision fields such as `approvedAt`, `rejectedAt`, or `expiredAt`.
 
+## Approval Evidence Request Bundles
+
+Approval evidence previews and records share the same local replay shape across
+API route tests, SDK fake-fetch tests, CLI replay, gateway builders, and Web
+state helpers. The public request bundle fixtures are
+`examples/mcp/approval-evidence-preview-requests.json` and
+`examples/mcp/approval-evidence-records-requests.json`.
+
+`packages/schemas/src/mcpApprovalEvidence.ts` exports
+`MCP_APPROVAL_EVIDENCE_PREVIEW_REQUESTS_SCHEMA_VERSION`,
+`mcpApprovalEvidencePreviewRequestsSchema`,
+`mcpApprovalEvidenceSchemaDefinitions`, `mcpApprovalEvidenceValidators`,
+`validateMcpApprovalEvidencePreviewRequestBundle`, and
+`assertMcpApprovalEvidencePreviewRequestBundle`.
+
+`packages/schemas/src/mcpApprovalEvidenceRecord.ts` exports
+`MCP_APPROVAL_EVIDENCE_RECORD_API_REQUESTS_SCHEMA_VERSION`,
+`mcpApprovalEvidenceRecordApiRequestsSchema`,
+`mcpApprovalEvidenceRecordSchemaDefinitions`,
+`mcpApprovalEvidenceRecordValidators`,
+`validateMcpApprovalEvidenceRecordApiRequestBundle`, and
+`assertMcpApprovalEvidenceRecordApiRequestBundle`.
+
+Generated JSON schema fixtures stay public and checked in at
+`packages/schemas/fixtures/mcp-approval-evidence-preview-requests.schema.json`
+and
+`packages/schemas/fixtures/mcp-approval-evidence-records-requests.schema.json`.
+The matching valid and invalid fixtures live beside them. Request bundles must
+keep `apiBase` on `local://` endpoints, keep fixture references repo-relative,
+use JSON-only bodies, and preserve `[REDACTED]` placeholders for
+sensitive-looking values.
+
 ## Audit Outputs
 
 | Event type | Required fields | Optional fields |

@@ -110,9 +110,11 @@ test("reports malformed MCP approval evidence replay fixtures as JSON-only error
   const invalidShapePath = await writeFixture("missing-method.json", {
     schemaVersion: "mcp-approval-evidence-preview-requests.v1",
     generatedAt: "2026-04-27T12:15:00.000Z",
+    apiBase: "local://mcp-approval-evidence-api",
     requests: [
       {
         id: "api_missing_method",
+        title: "Missing method",
         route: {
           path: "/v1/mcp/approval-evidence/preview",
         },
@@ -128,9 +130,11 @@ test("reports malformed MCP approval evidence replay fixtures as JSON-only error
   const missingBodyPath = await writeFixture("missing-body.json", {
     schemaVersion: "mcp-approval-evidence-preview-requests.v1",
     generatedAt: "2026-04-27T12:15:00.000Z",
+    apiBase: "local://mcp-approval-evidence-api",
     requests: [
       {
         id: "api_missing_body",
+        title: "Missing body",
         route: {
           method: "POST",
           path: "/v1/mcp/approval-evidence/preview",
@@ -175,11 +179,73 @@ test("reports malformed MCP approval evidence replay fixtures as JSON-only error
   assert.equal(invalidShape.exitCode, 2);
   assert.equal(invalidShape.stdout, "");
   assert.equal(invalidPayload.error.code, "invalid_fixture");
-  assert.match(invalidPayload.error.message, /route\.method/);
+  assert.match(invalidPayload.error.message, /shared schema validation/);
+  assert.equal(hasIssuePath(invalidPayload, "requests[0].route.method"), true);
   assert.equal(missingBody.exitCode, 2);
   assert.equal(missingBody.stdout, "");
   assert.equal(missingBodyPayload.error.code, "invalid_fixture");
   assert.match(missingBodyPayload.error.message, /request\.body is required/);
+});
+
+test("rejects duplicate MCP approval evidence ids and unsafe fixture refs via shared validation", async () => {
+  const duplicatePath = await writeFixture("duplicate-approval-evidence-preview.json", {
+    schemaVersion: "mcp-approval-evidence-preview-requests.v1",
+    generatedAt: "2026-04-27T12:16:00.000Z",
+    apiBase: "local://mcp-approval-evidence-api",
+    requests: [
+      buildPreviewRequest("api_mcp_approval_evidence_duplicate"),
+      buildPreviewRequest("api_mcp_approval_evidence_duplicate"),
+    ],
+  });
+  const unsafeRefPath = await writeFixture("unsafe-ref-approval-evidence-preview.json", {
+    schemaVersion: "mcp-approval-evidence-preview-requests.v1",
+    generatedAt: "2026-04-27T12:17:00.000Z",
+    apiBase: "local://mcp-approval-evidence-api",
+    fixtureRefs: [
+      {
+        id: "approvalRef",
+        fixturePath: "../approval-session.json",
+      },
+    ],
+    requests: [
+      {
+        ...buildPreviewRequest("api_mcp_approval_evidence_unsafe_ref"),
+        request: {
+          body: {
+            approvalSessions: {
+              $fixtureRef: "approvalRef",
+            },
+          },
+        },
+      },
+    ],
+  });
+
+  const duplicate = await runMcpApprovalEvidenceReplayCli([
+    "mcp-approval-evidence",
+    "replay",
+    "--fixture",
+    duplicatePath,
+  ]);
+  const unsafeRef = await runMcpApprovalEvidenceReplayCli([
+    "mcp-approval-evidence",
+    "replay",
+    "--fixture",
+    unsafeRefPath,
+  ]);
+  assert.ok(duplicate);
+  assert.ok(unsafeRef);
+  const duplicatePayload = JSON.parse(duplicate.stderr);
+  const unsafeRefPayload = JSON.parse(unsafeRef.stderr);
+
+  assert.equal(duplicate.exitCode, 2);
+  assert.equal(duplicate.stdout, "");
+  assert.equal(duplicatePayload.error.code, "invalid_fixture");
+  assert.equal(hasIssuePath(duplicatePayload, "requests[1].id"), true);
+  assert.equal(unsafeRef.exitCode, 2);
+  assert.equal(unsafeRef.stdout, "");
+  assert.equal(unsafeRefPayload.error.code, "invalid_fixture");
+  assert.equal(hasIssuePath(unsafeRefPayload, "fixtureRefs[0].fixturePath"), true);
 });
 
 test("rejects unsafe MCP approval evidence fixture paths as JSON-only errors", async () => {
@@ -234,9 +300,11 @@ test("rejects MCP approval evidence fixtures for the wrong endpoint", async () =
   const wrongEndpointPath = await writeFixture("wrong-endpoint.json", {
     schemaVersion: "mcp-approval-evidence-preview-requests.v1",
     generatedAt: "2026-04-27T12:20:00.000Z",
+    apiBase: "local://mcp-approval-evidence-api",
     requests: [
       {
         id: "api_wrong_endpoint",
+        title: "Wrong endpoint",
         route: {
           method: "POST",
           path: "/v1/mcp/approval-evidence/missing",
@@ -308,4 +376,27 @@ async function writeTextFixture(name, text) {
   const outputPath = path.join(tempDir, name);
   await writeFile(outputPath, text);
   return outputPath;
+}
+
+function buildPreviewRequest(id) {
+  return {
+    id,
+    title: `Preview approval evidence ${id}`,
+    route: {
+      method: "POST",
+      path: "/v1/mcp/approval-evidence/preview",
+    },
+    request: {
+      body: {
+        approvalSessions: [],
+      },
+    },
+    expect: {
+      status: 200,
+    },
+  };
+}
+
+function hasIssuePath(payload, suffix) {
+  return payload.error.details.issues.some((issue) => issue.path.endsWith(suffix));
 }

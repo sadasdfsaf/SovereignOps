@@ -1,3 +1,6 @@
+import {
+  validatePluginReviewArtifactApiRequestBundle,
+} from "../../../packages/schemas/src/pluginReviewArtifact.ts";
 import type {
   IngestSearchEmptyState,
   IngestSearchErrorState,
@@ -147,6 +150,7 @@ export interface PluginReviewArtifactApiErrorState {
 }
 
 type AnyRecord = Record<string, unknown>;
+type SchemaValidationIssue = { path: string; message: string };
 
 interface ApiRecord {
   id: string;
@@ -186,6 +190,8 @@ interface SourceFileInput {
 
 const DEFAULT_TIMESTAMP = "1970-01-01T00:00:00.000Z";
 const DEFAULT_PREVIEW_ROUTE = "/v1/plugins/review-artifacts/preview";
+const PUBLIC_API_REQUEST_BUNDLE_SCHEMA_VERSION =
+  "plugin-review-artifact-api-requests.v1";
 
 export function buildPluginReviewArtifactApiState(
   input: unknown,
@@ -411,7 +417,10 @@ function normalizeBridge(
   );
   const records = normalizeApiRecords(root, generatedAt, options.apiBase);
   const preview = selectPreview(records, rootRecord);
-  const errorStates = collectErrorStates(records);
+  const errorStates = [
+    ...collectPublicFixtureSchemaErrorStates(rootRecord),
+    ...collectErrorStates(records),
+  ];
 
   if (options.error !== undefined) {
     errorStates.push(buildPluginReviewArtifactApiErrorState("response", options.error));
@@ -1345,6 +1354,81 @@ function collectErrorStates(
   return errors;
 }
 
+function collectPublicFixtureSchemaErrorStates(
+  root: AnyRecord | undefined,
+): PluginReviewArtifactApiErrorState[] {
+  if (!isPublicApiFixtureBundle(root)) {
+    return [];
+  }
+
+  const result = validatePluginReviewArtifactApiRequestBundle(root);
+  if (result.ok) {
+    return [];
+  }
+
+  return [
+    buildPluginReviewArtifactApiErrorState(
+      "requests",
+      schemaValidationErrorDescription(
+        "Plugin review artifact API fixture bundle",
+        result.issues,
+      ),
+    ),
+  ];
+}
+
+function isPublicApiFixtureBundle(root: AnyRecord | undefined): boolean {
+  if (
+    stringField(root, "schemaVersion", "schema_version") !==
+    PUBLIC_API_REQUEST_BUNDLE_SCHEMA_VERSION
+  ) {
+    return false;
+  }
+
+  return hasFixtureRefs(root) || hasFixtureExpectationsWithoutReplayResponses(root);
+}
+
+function hasFixtureRefs(root: AnyRecord | undefined): boolean {
+  return root !== undefined && hasOwn(root, "fixtureRefs");
+}
+
+function hasFixtureExpectationsWithoutReplayResponses(
+  root: AnyRecord | undefined,
+): boolean {
+  const requests = arrayField(root, "requests");
+  if (requests.length === 0) {
+    return root !== undefined && hasOwn(root, "requests");
+  }
+
+  return requests
+    .filter(isRecord)
+    .some((request) => hasOwn(request, "expect") || !hasOwn(request, "response"));
+}
+
+function schemaValidationErrorDescription(
+  label: string,
+  issues: readonly SchemaValidationIssue[],
+): string {
+  const sortedIssues = [...issues].sort(compareSchemaIssues);
+  const details = sortedIssues
+    .map((issue) => `${issue.path}: ${issue.message}`)
+    .join("; ");
+  return `${label} schema validation failed with ${formatCount(
+    sortedIssues.length,
+    "issue",
+  )}: ${details}`;
+}
+
+function compareSchemaIssues(
+  left: SchemaValidationIssue,
+  right: SchemaValidationIssue,
+): number {
+  return (
+    left.path.localeCompare(right.path) ||
+    left.message.localeCompare(right.message)
+  );
+}
+
 function responseStatusError(record: ApiRecord): string | undefined {
   if (record.status !== undefined && record.status >= 400) {
     return `Request failed with status ${record.status}.`;
@@ -1774,6 +1858,10 @@ function optionalStringList(value: string | undefined): string[] {
 
 function isRecord(value: unknown): value is AnyRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasOwn(record: AnyRecord | undefined, key: string): boolean {
+  return record !== undefined && Object.prototype.hasOwnProperty.call(record, key);
 }
 
 function isDefined<T>(value: T | undefined): value is T {

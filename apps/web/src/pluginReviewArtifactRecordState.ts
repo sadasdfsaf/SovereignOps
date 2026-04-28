@@ -1,3 +1,6 @@
+import {
+  validatePluginReviewArtifactRecordApiRequestBundle,
+} from "../../../packages/schemas/src/pluginReviewArtifactRecord.ts";
 import type {
   IngestSearchEmptyState,
   IngestSearchErrorState,
@@ -189,6 +192,7 @@ export interface PluginReviewArtifactRecordErrorState {
 }
 
 type AnyRecord = Record<string, unknown>;
+type SchemaValidationIssue = { path: string; message: string };
 
 interface NormalizedInput {
   call: PluginReviewArtifactRecordCall;
@@ -232,6 +236,8 @@ interface ComparisonDraft {
 }
 
 const DEFAULT_TIMESTAMP = "1970-01-01T00:00:00.000Z";
+const PUBLIC_RECORD_REQUEST_BUNDLE_SCHEMA_VERSION =
+  "plugin-review-artifact-records-requests.v1";
 const REDACTED = "[REDACTED]";
 const SECRET_KEY_PATTERN =
   /(?:api[-_]?key|authorization|bearer|credential|password|secret|session|token)/i;
@@ -536,7 +542,10 @@ function normalizeInput(
     options.defaultTimestamp,
   );
   const call = options.call ?? inferCall(root);
-  const errorStates = collectErrorStates(root, call);
+  const errorStates = [
+    ...collectPublicFixtureSchemaErrorStates(rootRecord),
+    ...collectErrorStates(root, call),
+  ];
 
   if (options.error !== undefined) {
     errorStates.push(buildPluginReviewArtifactRecordErrorState(call, options.error));
@@ -1425,6 +1434,81 @@ function collectErrorStates(
   return errors;
 }
 
+function collectPublicFixtureSchemaErrorStates(
+  root: AnyRecord | undefined,
+): PluginReviewArtifactRecordErrorState[] {
+  if (!isPublicRecordFixtureBundle(root)) {
+    return [];
+  }
+
+  const result = validatePluginReviewArtifactRecordApiRequestBundle(root);
+  if (result.ok) {
+    return [];
+  }
+
+  return [
+    buildPluginReviewArtifactRecordErrorState(
+      "records",
+      schemaValidationErrorDescription(
+        "Plugin review artifact records fixture bundle",
+        result.issues,
+      ),
+    ),
+  ];
+}
+
+function isPublicRecordFixtureBundle(root: AnyRecord | undefined): boolean {
+  if (
+    stringField(root, "schemaVersion", "schema_version") !==
+    PUBLIC_RECORD_REQUEST_BUNDLE_SCHEMA_VERSION
+  ) {
+    return false;
+  }
+
+  return hasFixtureRefs(root) || hasFixtureExpectationsWithoutReplayResponses(root);
+}
+
+function hasFixtureRefs(root: AnyRecord | undefined): boolean {
+  return root !== undefined && hasOwn(root, "fixtureRefs");
+}
+
+function hasFixtureExpectationsWithoutReplayResponses(
+  root: AnyRecord | undefined,
+): boolean {
+  const requests = arrayField(root, "requests");
+  if (requests.length === 0) {
+    return root !== undefined && hasOwn(root, "requests");
+  }
+
+  return requests
+    .filter(isRecord)
+    .some((request) => hasOwn(request, "expect") || !hasOwn(request, "response"));
+}
+
+function schemaValidationErrorDescription(
+  label: string,
+  issues: readonly SchemaValidationIssue[],
+): string {
+  const sortedIssues = [...issues].sort(compareSchemaIssues);
+  const details = sortedIssues
+    .map((issue) => `${issue.path}: ${issue.message}`)
+    .join("; ");
+  return `${label} schema validation failed with ${formatCount(
+    sortedIssues.length,
+    "issue",
+  )}: ${details}`;
+}
+
+function compareSchemaIssues(
+  left: SchemaValidationIssue,
+  right: SchemaValidationIssue,
+): number {
+  return (
+    left.path.localeCompare(right.path) ||
+    left.message.localeCompare(right.message)
+  );
+}
+
 function normalizeOptionRecord(value: unknown): AnyRecord | undefined {
   return isRecord(value) ? clonePlain(value) : undefined;
 }
@@ -1850,6 +1934,10 @@ function optionalStringList(value: string | undefined): string[] {
 
 function isRecord(value: unknown): value is AnyRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasOwn(record: AnyRecord | undefined, key: string): boolean {
+  return record !== undefined && Object.prototype.hasOwnProperty.call(record, key);
 }
 
 function isDefined<T>(value: T | undefined): value is T {

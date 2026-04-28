@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "plugin-review-artifact-api-requests.v1",
+  "generatedAt": "2026-04-27T09:30:00.000Z",
+  "apiBase": "local://plugin-review-artifact-api",
+  "fixtureRefs": [
+    {
+      "id": "releaseNotesManifest",
+      "fixturePath": "examples/plugins/release-notes/plugin.json"
+    }
+  ],
+  "requests": [
+    {
+      "id": "api_plugin_review_artifact_preview_release_notes",
+      "title": "Preview release notes review artifact",
+      "route": {
+        "method": "POST",
+        "path": "/v1/plugins/review-artifacts/preview"
+      },
+      "request": {
+        "headers": {
+          "content-type": "application/json",
+          "authorization": "[REDACTED]"
+        },
+        "body": {
+          "manifest": {
+            "$fixtureRef": "releaseNotesManifest"
+          },
+          "generatedAt": "2026-04-27T09:30:00.000Z",
+          "sandboxReviews": [
+            {
+              "id": "sandbox_release_notes_warning",
+              "outcome": "warning",
+              "title": "Release notes fixture coverage warning",
+              "checkedAt": "2026-04-27T09:05:00.000Z",
+              "pluginId": "plugin.release-notes.local-draft",
+              "findingCount": 1,
+              "details": {
+                "apiToken": "[REDACTED]",
+                "note": "Sample input includes redaction coverage before sharing."
+              }
+            }
+          ],
+          "automationGateSummaries": [
+            {
+              "gateId": "release_note_review",
+              "label": "Release note review",
+              "status": "required",
+              "pluginIds": [
+                "plugin.release-notes.local-draft"
+              ],
+              "ruleIds": [
+                "rule_release_notes_fixture"
+              ],
+              "affectedRuleCount": 1,
+              "lastCheckedAt": "2026-04-27T09:10:00.000Z",
+              "details": {
+                "authorization": "[REDACTED]"
+              }
+            }
+          ],
+          "automationAuditSummaries": [
+            {
+              "status": "warning",
+              "count": 2,
+              "pluginId": "plugin.release-notes.local-draft",
+              "ruleId": "rule_release_notes_fixture",
+              "lastEventAt": "2026-04-27T09:15:00.000Z",
+              "details": {
+                "sessionToken": "[REDACTED]"
+              }
+            }
+          ],
+          "sources": {
+            "manifest": {
+              "path": "examples/plugins/release-notes/plugin.json",
+              "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "bytes": 1280
+            },
+            "automationAuditSummaries": [
+              {
+                "path": "examples/plugins/release-notes/review-artifact.json",
+                "sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "bytes": 2048,
+                "itemCount": 1
+              }
+            ]
+          }
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json",
+        "kind": "plugin-review-artifact.preview",
+        "schemaVersion": "plugin-review-artifact-preview.v1",
+        "pluginId": "plugin.release-notes.local-draft",
+        "redactionCount": 3,
+        "summary": {
+          "capabilityCount": 3,
+          "toolCount": 1,
+          "resourceCount": 1,
+          "promptCount": 1,
+          "sandboxReviewCount": 1,
+          "sandboxFailureCount": 0,
+          "sandboxWarningCount": 1,
+          "sandboxFindingCount": 1,
+          "automationGateSummaryCount": 1,
+          "requiredGateCount": 1,
+          "automationAuditSummaryCount": 1,
+          "automationAuditEventCount": 2,
+          "redactionCount": 3
+        }
+      }
+    },
+    {
+      "id": "api_plugin_review_artifact_preview_invalid_manifest",
+      "title": "Report invalid preview manifest",
+      "route": {
+        "method": "POST",
+        "path": "/v1/plugins/review-artifacts/preview"
+      },
+      "request": {
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "manifest": {
+            "id": "plugin.release-notes.local-draft"
+          },
+          "sources": {
+            "manifest": {
+              "path": "examples/plugins/release-notes/plugin.json",
+              "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "bytes": 1280
+            },
+            "automationAuditSummaries": [
+              {
+                "path": "examples/plugins/release-notes/review-artifact.json",
+                "sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "bytes": 2048,
+                "itemCount": 1
+              }
+            ]
+          },
+          "generatedAt": "2026-04-27T09:30:00.000Z"
+        }
+      },
+      "expect": {
+        "status": 400,
+        "contentType": "application/json",
+        "errorCode": "invalid_plugin_review_artifact"
+      }
+    }
+  ]
+}

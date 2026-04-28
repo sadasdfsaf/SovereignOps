@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "plugin-review-artifact-api-requests.v1",
+  "generatedAt": "2026-04-27T09:30:00.000Z",
+  "apiBase": "local://plugin-review-artifact-api",
+  "fixtureRefs": [
+    {
+      "id": "releaseNotesManifest",
+      "fixturePath": "C:/Users/operator/private-plan/plugin.json"
+    }
+  ],
+  "requests": [
+    {
+      "id": "duplicate_preview",
+      "title": "Preview unsafe plugin review artifact",
+      "route": {
+        "method": "POST",
+        "path": "/v1/plugins/review-artifacts/preview"
+      },
+      "request": {
+        "headers": {
+          "content-type": "application/json",
+          "authorization": "Bearer sk-example-local-test-value"
+        },
+        "body": {
+          "manifest": {
+            "$fixtureRef": "releaseNotesManifest"
+          },
+          "sources": {
+            "manifest": {
+              "path": "../private-plan/plugin.json",
+              "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "bytes": 1280
+            }
+          }
+        }
+      },
+      "expect": {
+        "status": 200,
+        "contentType": "application/json"
+      }
+    },
+    {
+      "id": "duplicate_preview",
+      "title": "Duplicate preview request id",
+      "route": {
+        "method": "POST",
+        "path": "/v1/plugins/review-artifacts/preview"
+      },
+      "request": {
+        "headers": {
+          "content-type": "application/json"
+        }
+      },
+      "expect": {
+        "status": 400,
+        "contentType": "application/json"
+      }
+    }
+  ]
+}

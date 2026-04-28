@@ -979,7 +979,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
     ),
     CheckSpec(
         name="plugin-review-artifact-api-alignment",
-        description="Validate plugin review artifact API, SDK, CLI replay, schema, Web, and docs wiring.",
+        description="Validate plugin review artifact API, SDK, CLI replay, schema, shared request bundle validators, generated request bundle JSON schema fixtures, Web, and docs wiring.",
         command=(PYTHON, "-m", "unittest", "tests.test_plugin_review_artifact_api_alignment"),
         required_paths=(
             "docs/plugin-review-artifact-api.md",
@@ -997,6 +997,9 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "packages/schemas/fixtures/plugin-review-artifact-preview.valid.json",
             "packages/schemas/fixtures/plugin-review-artifact-preview.invalid.json",
             "packages/schemas/fixtures/plugin-review-artifact-preview.schema.json",
+            "packages/schemas/fixtures/plugin-review-artifact-api-requests.valid.json",
+            "packages/schemas/fixtures/plugin-review-artifact-api-requests.invalid.json",
+            "packages/schemas/fixtures/plugin-review-artifact-api-requests.schema.json",
             "apps/web/src/pluginReviewArtifactApiState.ts",
             "apps/web/tests/plugin-review-artifact-api-state.test.mjs",
             "docs/openapi.yaml",
@@ -1006,7 +1009,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
     ),
     CheckSpec(
         name="plugin-review-artifact-records-api-alignment",
-        description="Validate persisted plugin review artifact record API, SDK, CLI replay, schema, Web, and docs wiring.",
+        description="Validate persisted plugin review artifact record API, SDK, CLI replay, schema, shared request bundle validators, generated request bundle JSON schema fixtures, Web, and docs wiring.",
         command=(PYTHON, "-m", "unittest", "tests.test_plugin_review_artifact_records_api_alignment"),
         required_paths=(
             "docs/plugin-review-artifact-records-api.md",
@@ -1032,6 +1035,9 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "packages/schemas/fixtures/plugin-review-artifact-record-comparison.schema.json",
             "packages/schemas/fixtures/plugin-review-artifact-record-create-request.valid.json",
             "packages/schemas/fixtures/plugin-review-artifact-record-create-request.schema.json",
+            "packages/schemas/fixtures/plugin-review-artifact-records-requests.valid.json",
+            "packages/schemas/fixtures/plugin-review-artifact-records-requests.invalid.json",
+            "packages/schemas/fixtures/plugin-review-artifact-records-requests.schema.json",
             "apps/web/src/pluginReviewArtifactRecordState.ts",
             "apps/web/tests/plugin-review-artifact-record-state.test.mjs",
             "docs/openapi.yaml",
@@ -1041,7 +1047,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
     ),
     CheckSpec(
         name="mcp-approval-evidence-api-alignment",
-        description="Validate MCP approval evidence gateway, API, SDK, CLI replay, schema, Web, and docs wiring.",
+        description="Validate MCP approval evidence gateway, API, SDK, CLI replay, schema, shared request bundle validators, generated request bundle JSON schema fixtures, Web, and docs wiring.",
         command=(PYTHON, "-m", "unittest", "tests.test_mcp_approval_evidence_api_alignment"),
         required_paths=(
             "docs/mcp-approval-evidence-api.md",
@@ -1061,6 +1067,9 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "packages/schemas/fixtures/mcp-approval-evidence.valid.json",
             "packages/schemas/fixtures/mcp-approval-evidence.invalid.json",
             "packages/schemas/fixtures/mcp-approval-evidence.schema.json",
+            "packages/schemas/fixtures/mcp-approval-evidence-preview-requests.valid.json",
+            "packages/schemas/fixtures/mcp-approval-evidence-preview-requests.invalid.json",
+            "packages/schemas/fixtures/mcp-approval-evidence-preview-requests.schema.json",
             "apps/web/src/mcpApprovalEvidenceApiState.ts",
             "apps/web/tests/mcp-approval-evidence-api-state.test.mjs",
             "docs/openapi.yaml",
@@ -1070,7 +1079,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
     ),
     CheckSpec(
         name="mcp-approval-evidence-records-api-alignment",
-        description="Validate persisted MCP approval evidence record API, SDK, CLI replay, schema, Web, and docs wiring.",
+        description="Validate persisted MCP approval evidence record API, SDK, CLI replay, schema, shared request bundle validators, generated request bundle JSON schema fixtures, Web, and docs wiring.",
         command=(PYTHON, "-m", "unittest", "tests.test_mcp_approval_evidence_records_api_alignment"),
         required_paths=(
             "docs/mcp-approval-evidence-records-api.md",
@@ -1096,6 +1105,9 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "packages/schemas/fixtures/mcp-approval-evidence-record-comparison.schema.json",
             "packages/schemas/fixtures/mcp-approval-evidence-record-create-request.valid.json",
             "packages/schemas/fixtures/mcp-approval-evidence-record-create-request.schema.json",
+            "packages/schemas/fixtures/mcp-approval-evidence-records-requests.valid.json",
+            "packages/schemas/fixtures/mcp-approval-evidence-records-requests.invalid.json",
+            "packages/schemas/fixtures/mcp-approval-evidence-records-requests.schema.json",
             "apps/web/src/mcpApprovalEvidenceRecordState.ts",
             "apps/web/tests/mcp-approval-evidence-record-state.test.mjs",
             "docs/openapi.yaml",

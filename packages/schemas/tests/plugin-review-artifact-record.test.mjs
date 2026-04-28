@@ -5,12 +5,14 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import {
+  PLUGIN_REVIEW_ARTIFACT_RECORD_API_REQUESTS_SCHEMA_VERSION,
   PLUGIN_REVIEW_ARTIFACT_RECORD_COMPARISON_SCHEMA_VERSION,
   PLUGIN_REVIEW_ARTIFACT_RECORD_CREATE_REQUEST_SCHEMA_VERSION,
   PLUGIN_REVIEW_ARTIFACT_RECORD_LIST_SCHEMA_VERSION,
   PLUGIN_REVIEW_ARTIFACT_RECORD_SCHEMA_VERSION,
   arePluginReviewArtifactRecordsCompatible,
   assertPluginReviewArtifactRecord,
+  assertPluginReviewArtifactRecordApiRequestBundle,
   assertPluginReviewArtifactRecordComparison,
   assertPluginReviewArtifactRecordCreateRequest,
   assertPluginReviewArtifactRecordList,
@@ -21,6 +23,8 @@ import {
   isPluginReviewArtifactRecordFingerprint,
   isPluginReviewArtifactRecordId,
   isPluginReviewArtifactRecordPath,
+  pluginReviewArtifactRecordApiRequestsSchema,
+  pluginReviewArtifactRecordApiRouteMethods,
   pluginReviewArtifactRecordComparisonChanges,
   pluginReviewArtifactRecordComparisonSchema,
   pluginReviewArtifactRecordCreateRequestSchema,
@@ -32,6 +36,7 @@ import {
   pluginReviewArtifactRecordSchemas,
   pluginReviewArtifactRecordValidators,
   validatePluginReviewArtifactRecord,
+  validatePluginReviewArtifactRecordApiRequestBundle,
   validatePluginReviewArtifactRecordComparison,
   validatePluginReviewArtifactRecordCreateRequest,
   validatePluginReviewArtifactRecordList,
@@ -39,6 +44,7 @@ import {
 } from "../src/pluginReviewArtifactRecord.ts";
 
 const fixturesDir = fileURLToPath(new URL("../fixtures/", import.meta.url));
+const examplesDir = fileURLToPath(new URL("../../../examples/", import.meta.url));
 
 const fixtureCases = [
   {
@@ -69,6 +75,13 @@ const fixtureCases = [
     schema: pluginReviewArtifactRecordCreateRequestSchema,
     validator: validatePluginReviewArtifactRecordCreateRequest,
   },
+  {
+    kind: "pluginReviewArtifactRecordApiRequests",
+    fixture: "plugin-review-artifact-records-requests.valid.json",
+    schemaFixture: "plugin-review-artifact-records-requests.schema.json",
+    schema: pluginReviewArtifactRecordApiRequestsSchema,
+    validator: validatePluginReviewArtifactRecordApiRequestBundle,
+  },
 ];
 
 test("exposes persisted plugin review artifact record schema metadata", () => {
@@ -82,14 +95,20 @@ test("exposes persisted plugin review artifact record schema metadata", () => {
     PLUGIN_REVIEW_ARTIFACT_RECORD_CREATE_REQUEST_SCHEMA_VERSION,
     "plugin-review-artifact-record-create-request/v1",
   );
+  assert.equal(
+    PLUGIN_REVIEW_ARTIFACT_RECORD_API_REQUESTS_SCHEMA_VERSION,
+    "plugin-review-artifact-records-requests.v1",
+  );
   assert.deepEqual(pluginReviewArtifactRecordKinds, [
     "pluginReviewArtifactRecord",
     "pluginReviewArtifactRecordList",
     "pluginReviewArtifactRecordComparison",
     "pluginReviewArtifactRecordCreateRequest",
+    "pluginReviewArtifactRecordApiRequests",
   ]);
   assert.deepEqual(pluginReviewArtifactRecordDecisions, ["approved", "approval_required", "denied"]);
   assert.deepEqual(pluginReviewArtifactRecordComparisonChanges, ["added", "removed", "changed"]);
+  assert.deepEqual(pluginReviewArtifactRecordApiRouteMethods, ["GET", "POST", "PUT", "PATCH", "DELETE"]);
 
   for (const { kind, schema } of fixtureCases) {
     assert.equal(pluginReviewArtifactRecordSchemaDefinitions[kind].kind, kind);
@@ -132,14 +151,39 @@ test("valid fixtures satisfy runtime validators and JSON schema contracts", asyn
   const list = await readFixtureJson("plugin-review-artifact-record-list.valid.json");
   const comparison = await readFixtureJson("plugin-review-artifact-record-comparison.valid.json");
   const createRequest = await readFixtureJson("plugin-review-artifact-record-create-request.valid.json");
+  const apiRequests = await readFixtureJson("plugin-review-artifact-records-requests.valid.json");
 
   assert.doesNotThrow(() => assertPluginReviewArtifactRecord(record));
   assert.doesNotThrow(() => assertPluginReviewArtifactRecordList(list));
   assert.doesNotThrow(() => assertPluginReviewArtifactRecordComparison(comparison));
   assert.doesNotThrow(() => assertPluginReviewArtifactRecordCreateRequest(createRequest));
+  assert.doesNotThrow(() => assertPluginReviewArtifactRecordApiRequestBundle(apiRequests));
   assert.equal(isPluginReviewArtifactRecordId(record.id), true);
   assert.equal(isPluginReviewArtifactRecordFingerprint(record.artifactFingerprint), true);
   assert.equal(getPluginReviewArtifactRecordIdForFingerprint(record.artifactFingerprint), record.id);
+});
+
+test("public plugin review artifact records API request bundle satisfies runtime validator and schema", async () => {
+  const publicBundle = await readExampleJson("plugins/release-notes/review-artifact-records-requests.json");
+  const fixture = await readFixtureJson("plugin-review-artifact-records-requests.valid.json");
+
+  assert.deepEqual(fixture, publicBundle);
+
+  const runtimeResult = validatePluginReviewArtifactRecordApiRequestBundle(publicBundle);
+  const genericResult = validatePluginReviewArtifactRecordObject(
+    "pluginReviewArtifactRecordApiRequests",
+    publicBundle,
+  );
+  const schemaIssues = validateWithJsonSchema(pluginReviewArtifactRecordApiRequestsSchema, publicBundle);
+
+  assert.equal(runtimeResult.ok, true, formatIssues(runtimeResult.issues));
+  assert.equal(genericResult.ok, true, formatIssues(genericResult.issues));
+  assert.equal(pluginReviewArtifactRecordValidators.pluginReviewArtifactRecordApiRequests(publicBundle).ok, true);
+  assert.deepEqual(schemaIssues, [], formatIssues(schemaIssues));
+  assert.doesNotThrow(() => assertPluginReviewArtifactRecordApiRequestBundle(publicBundle));
+  assert.doesNotThrow(
+    () => assertPluginReviewArtifactRecordObject("pluginReviewArtifactRecordApiRequests", publicBundle),
+  );
 });
 
 test("successful record validation returns a cloned and deeply frozen value", async () => {
@@ -158,6 +202,25 @@ test("successful record validation returns a cloned and deeply frozen value", as
   assert.equal(result.value.summary.pendingGateCount, 1);
   assert.throws(() => {
     result.value.source.artifactPath = "changed.json";
+  }, TypeError);
+});
+
+test("successful records API request bundle validation returns a cloned and deeply frozen value", async () => {
+  const fixture = await readFixtureJson("plugin-review-artifact-records-requests.valid.json");
+  const result = validatePluginReviewArtifactRecordApiRequestBundle(fixture);
+
+  assert.equal(result.ok, true, formatIssues(result.issues));
+  assert.notEqual(result.value, fixture);
+  assert.notEqual(result.value.requests, fixture.requests);
+  assert.notEqual(result.value.requests[0].request, fixture.requests[0].request);
+  assert.equal(Object.isFrozen(result.value), true);
+  assert.equal(Object.isFrozen(result.value.requests), true);
+  assert.equal(Object.isFrozen(result.value.requests[0].request), true);
+
+  fixture.requests[0].id = "changed";
+  assert.equal(result.value.requests[0].id, "api_plugin_review_artifact_records_create_release_notes");
+  assert.throws(() => {
+    result.value.requests[0].id = "changed";
   }, TypeError);
 });
 
@@ -202,6 +265,21 @@ test("invalid fixture reports useful runtime paths and JSON schema issues", asyn
   assert.ok(issuePaths(schemaIssues).includes("$.metadata.localPath"));
   assert.ok(issuePaths(schemaIssues).includes("$.metadata.safeLabel"));
   assert.ok(issuePaths(schemaIssues).includes("$.metadata.nested"));
+});
+
+test("invalid plugin review artifact records API request bundle reports useful paths", async () => {
+  const fixture = await readFixtureJson("plugin-review-artifact-records-requests.invalid.json");
+  const runtimeResult = validatePluginReviewArtifactRecordApiRequestBundle(fixture);
+  const schemaIssues = validateWithJsonSchema(pluginReviewArtifactRecordApiRequestsSchema, fixture);
+  const paths = issuePaths(runtimeResult.issues);
+
+  assert.equal(runtimeResult.ok, false);
+  assert.ok(paths.includes("fixtureRefs[0].fixturePath"));
+  assert.ok(paths.includes("requests[0].request.headers.authorization"));
+  assert.ok(paths.includes("requests[0].request.body.record.metadata.source"));
+  assert.ok(paths.includes("requests[1].id"));
+  assert.ok(schemaIssues.length > 0);
+  assert.ok(issuePaths(schemaIssues).includes("$.fixtureRefs[0].fixturePath"));
 });
 
 test("compatibility keys are deterministic and comparison summaries are checked", async () => {
@@ -278,6 +356,10 @@ test("helpers accept only stable record ids, fingerprints, and safe paths", () =
 
 async function readFixtureJson(file) {
   return JSON.parse(await readFile(join(fixturesDir, file), "utf8"));
+}
+
+async function readExampleJson(file) {
+  return JSON.parse(await readFile(join(examplesDir, file), "utf8"));
 }
 
 function issuePaths(issues) {

@@ -190,9 +190,11 @@ test("reports malformed MCP approval evidence records fixtures as JSON-only erro
   const invalidBodyPath = await writeFixture("missing-record.json", {
     schemaVersion: "mcp-approval-evidence-records-requests.v1",
     generatedAt: "2026-04-27T12:35:00.000Z",
+    apiBase: "local://mcp-approval-evidence-records-api",
     requests: [
       {
         id: "api_missing_record",
+        title: "Missing record body",
         route: {
           method: "POST",
           path: "/v1/mcp/approval-evidence/records",
@@ -232,6 +234,102 @@ test("reports malformed MCP approval evidence records fixtures as JSON-only erro
   assert.equal(invalidBody.stdout, "");
   assert.equal(invalidBodyPayload.error.code, "invalid_fixture");
   assert.match(invalidBodyPayload.error.message, /request\.body\.record/);
+});
+
+test("rejects malformed MCP approval evidence records bundles through shared validator paths", async () => {
+  const invalidPath = await writeFixture("shared-invalid-records.json", {
+    schemaVersion: "mcp-approval-evidence-records-requests.v1",
+    generatedAt: "2026-04-27T12:36:00.000Z",
+    apiBase: "local://mcp-approval-evidence-records-api",
+    requests: [
+      {
+        id: "api_mcp_approval_evidence_records_missing_request",
+        title: "Missing request object",
+        route: {
+          method: "POST",
+          path: "/v1/mcp/approval-evidence/records",
+        },
+        expect: {
+          status: 400,
+        },
+      },
+    ],
+  });
+  const result = await runMcpApprovalEvidenceRecordsReplayCli([
+    "mcp-approval-evidence-records",
+    "replay",
+    "--fixture",
+    invalidPath,
+  ]);
+  assert.ok(result);
+  const payload = JSON.parse(result.stderr);
+
+  assert.equal(result.exitCode, 2);
+  assert.equal(result.stdout, "");
+  assert.equal(payload.error.code, "invalid_fixture");
+  assert.match(payload.error.message, /shared schema validation/);
+  assert.equal(hasIssuePath(payload, "requests[0].request"), true);
+});
+
+test("rejects duplicate MCP approval evidence records ids and unsafe fixture refs via shared validation", async () => {
+  const duplicatePath = await writeFixture("duplicate-approval-evidence-records.json", {
+    schemaVersion: "mcp-approval-evidence-records-requests.v1",
+    generatedAt: "2026-04-27T12:37:00.000Z",
+    apiBase: "local://mcp-approval-evidence-records-api",
+    requests: [
+      buildCreateRequest("api_mcp_approval_evidence_records_duplicate"),
+      buildCreateRequest("api_mcp_approval_evidence_records_duplicate"),
+    ],
+  });
+  const unsafeRefPath = await writeFixture("unsafe-ref-approval-evidence-records.json", {
+    schemaVersion: "mcp-approval-evidence-records-requests.v1",
+    generatedAt: "2026-04-27T12:38:00.000Z",
+    apiBase: "local://mcp-approval-evidence-records-api",
+    fixtureRefs: [
+      {
+        id: "evidenceRecordRef",
+        fixturePath: "private-plan-pack/evidence-record.json",
+      },
+    ],
+    requests: [
+      {
+        ...buildCreateRequest("api_mcp_approval_evidence_records_unsafe_ref"),
+        request: {
+          body: {
+            record: {
+              $fixtureRef: "evidenceRecordRef",
+            },
+          },
+        },
+      },
+    ],
+  });
+
+  const duplicate = await runMcpApprovalEvidenceRecordsReplayCli([
+    "mcp-approval-evidence-records",
+    "replay",
+    "--fixture",
+    duplicatePath,
+  ]);
+  const unsafeRef = await runMcpApprovalEvidenceRecordsReplayCli([
+    "mcp-approval-evidence-records",
+    "replay",
+    "--fixture",
+    unsafeRefPath,
+  ]);
+  assert.ok(duplicate);
+  assert.ok(unsafeRef);
+  const duplicatePayload = JSON.parse(duplicate.stderr);
+  const unsafeRefPayload = JSON.parse(unsafeRef.stderr);
+
+  assert.equal(duplicate.exitCode, 2);
+  assert.equal(duplicate.stdout, "");
+  assert.equal(duplicatePayload.error.code, "invalid_fixture");
+  assert.equal(hasIssuePath(duplicatePayload, "requests[1].id"), true);
+  assert.equal(unsafeRef.exitCode, 2);
+  assert.equal(unsafeRef.stdout, "");
+  assert.equal(unsafeRefPayload.error.code, "invalid_fixture");
+  assert.equal(hasIssuePath(unsafeRefPayload, "fixtureRefs[0].fixturePath"), true);
 });
 
 test("rejects unsafe MCP approval evidence records fixture paths as JSON-only errors", async () => {
@@ -292,9 +390,11 @@ test("rejects MCP approval evidence records fixtures for the wrong endpoint", as
   const wrongEndpointPath = await writeFixture("wrong-endpoint.json", {
     schemaVersion: "mcp-approval-evidence-records-requests.v1",
     generatedAt: "2026-04-27T12:40:00.000Z",
+    apiBase: "local://mcp-approval-evidence-records-api",
     requests: [
       {
         id: "api_wrong_endpoint",
+        title: "Wrong endpoint",
         route: {
           method: "POST",
           path: "/v1/mcp/approval-evidence/preview",
@@ -330,9 +430,11 @@ test("redacts secret-like values in MCP approval evidence records request bodies
   const secretFixturePath = await writeFixture("secret-records.json", {
     schemaVersion: "mcp-approval-evidence-records-requests.v1",
     generatedAt: "2026-04-27T12:45:00.000Z",
+    apiBase: "local://mcp-approval-evidence-records-api",
     requests: [
       {
         id: "api_secret_body_redaction",
+        title: "Redact MCP approval evidence record",
         route: {
           method: "POST",
           path: "/v1/mcp/approval-evidence/records",
@@ -344,12 +446,12 @@ test("redacts secret-like values in MCP approval evidence records request bodies
               request: {
                 toolName: "sync_local_notes",
                 arguments: {
-                  apiToken: "fixture-api-token-001",
-                  note: "Use Bearer fixture-secret-token-002 only for redaction coverage.",
+                  apiToken: "[REDACTED]",
+                  note: "Use [REDACTED] only for redaction coverage.",
                 },
               },
               metadata: {
-                sessionToken: "fixture-session-token-003",
+                sessionToken: "[REDACTED]",
               },
             },
           },
@@ -424,6 +526,25 @@ function buildRecord() {
   };
 }
 
+function buildCreateRequest(id) {
+  return {
+    id,
+    title: `Create approval evidence record ${id}`,
+    route: {
+      method: "POST",
+      path: "/v1/mcp/approval-evidence/records",
+    },
+    request: {
+      body: {
+        record: buildRecord(),
+      },
+    },
+    expect: {
+      status: 201,
+    },
+  };
+}
+
 async function writeFixture(name, value) {
   return writeTextFixture(name, `${JSON.stringify(value, null, 2)}\n`);
 }
@@ -433,4 +554,8 @@ async function writeTextFixture(name, text) {
   const outputPath = path.join(tempDir, name);
   await writeFile(outputPath, text);
   return outputPath;
+}
+
+function hasIssuePath(payload, suffix) {
+  return payload.error.details.issues.some((issue) => issue.path.endsWith(suffix));
 }

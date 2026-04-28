@@ -81,6 +81,49 @@ function buildRecord(overrides = {}) {
   };
 }
 
+function buildPublicFixtureBundle() {
+  return {
+    schemaVersion: "plugin-review-artifact-records-requests.v1",
+    generatedAt: timestamps.middle,
+    apiBase: "local://plugin-review-artifact-records",
+    requests: [
+      {
+        id: "api_plugin_review_artifact_records_public_create",
+        title: "Create public plugin review artifact record",
+        route: {
+          method: "POST",
+          path: "/v1/plugins/review-artifacts/records",
+        },
+        request: {
+          body: {
+            record: {
+              id: "prar_public_record",
+              pluginId: "plugin.review-helper",
+            },
+          },
+        },
+        expect: {
+          status: 201,
+          contentType: "application/json",
+          kind: "plugin-review-artifact.record",
+          schemaVersion: "plugin-review-artifact-record/v1",
+          recordId: "prar_public_record",
+          pluginId: "plugin.review-helper",
+        },
+      },
+    ],
+  };
+}
+
+function buildMalformedPublicFixtureBundle() {
+  const fixture = buildPublicFixtureBundle();
+  fixture.generatedAt = "not-a-date";
+  fixture.apiBase = "https://example.test/api";
+  fixture.requests[0].route.path = "records";
+  fixture.requests[0].expect.status = 99;
+  return fixture;
+}
+
 function testEmptyAndErrorStates() {
   const empty = buildPluginReviewArtifactRecordState({
     call: "list",
@@ -131,6 +174,69 @@ function testEmptyAndErrorStates() {
         retryLabel: "Retry redactions",
       },
     },
+  );
+}
+
+function testPublicFixtureBundleSchemaFeedback() {
+  const fixture = buildPublicFixtureBundle();
+  const original = structuredClone(fixture);
+  const state = buildPluginReviewArtifactRecordState(fixture);
+
+  assert.deepEqual(fixture, original);
+  assert.equal(state.generatedAt, timestamps.middle);
+  assert.equal(state.phase, "empty");
+  assert.deepEqual(state.errorStates, []);
+
+  const malformed = buildMalformedPublicFixtureBundle();
+  const errorStates = buildPluginReviewArtifactRecordErrorStates(malformed);
+  assert.deepEqual(
+    errorStates,
+    buildPluginReviewArtifactRecordErrorStates(structuredClone(malformed)),
+  );
+  assert.equal(errorStates.length, 1);
+  assert.equal(errorStates[0].context, "records");
+  assert.equal(
+    errorStates[0].errorState.description.startsWith(
+      "Plugin review artifact records fixture bundle schema validation failed with 4 issues:",
+    ),
+    true,
+  );
+  assert.equal(
+    errorStates[0].errorState.description.includes(
+      "apiBase: apiBase must be a local:// API base",
+    ),
+    true,
+  );
+  assert.equal(
+    errorStates[0].errorState.description.includes(
+      "requests[0].expect.status: status must be an HTTP status from 100 to 599",
+    ),
+    true,
+  );
+
+  const malformedState = buildPluginReviewArtifactRecordState(malformed);
+  assert.equal(malformedState.phase, "error");
+  assert.equal(malformedState.status, "error");
+  assert.equal(
+    malformedState.errorStates[0].errorState.description,
+    errorStates[0].errorState.description,
+  );
+}
+
+function testDirectResponseShapeWithFixtureSchemaVersionRemainsTolerant() {
+  const payload = {
+    schemaVersion: "plugin-review-artifact-records-requests.v1",
+    generatedAt: timestamps.new,
+    records: [buildRecord({ id: "prar_direct_response" })],
+  };
+  const state = buildPluginReviewArtifactRecordState(payload);
+
+  assert.equal(state.phase, "success");
+  assert.equal(state.status, "complete");
+  assert.deepEqual(state.errorStates, []);
+  assert.deepEqual(
+    state.recordCards.map((card) => [card.recordId, card.pluginName]),
+    [["prar_direct_response", "Local Notes"]],
   );
 }
 
@@ -390,6 +496,8 @@ function deepFreeze(value) {
 }
 
 testEmptyAndErrorStates();
+testPublicFixtureBundleSchemaFeedback();
+testDirectResponseShapeWithFixtureSchemaVersionRemainsTolerant();
 testPopulatedListAndSorting();
 testCreateAndGetNormalization();
 testCompareMatchAndMismatch();

@@ -33,6 +33,9 @@ service.
 - `packages/schemas/fixtures/plugin-review-artifact-record-comparison.schema.json`
 - `packages/schemas/fixtures/plugin-review-artifact-record-create-request.valid.json`
 - `packages/schemas/fixtures/plugin-review-artifact-record-create-request.schema.json`
+- `packages/schemas/fixtures/plugin-review-artifact-records-requests.valid.json`
+- `packages/schemas/fixtures/plugin-review-artifact-records-requests.invalid.json`
+- `packages/schemas/fixtures/plugin-review-artifact-records-requests.schema.json`
 - `apps/web/src/pluginReviewArtifactRecordState.ts`
 - `apps/web/tests/plugin-review-artifact-record-state.test.mjs`
 - `docs/openapi.yaml`
@@ -84,6 +87,33 @@ only, with `[REDACTED]` values for any sensitive-looking field.
 fixtures must include local-only status, redaction status, artifact fingerprint,
 record fingerprint, created timestamp, and summary counts.
 
+## Request Bundle Schema
+
+`packages/schemas/src/pluginReviewArtifactRecord.ts` also exposes the shared
+records request bundle contract for API, SDK, CLI, plugin SDK, and Web parity:
+
+- `PLUGIN_REVIEW_ARTIFACT_RECORD_API_REQUESTS_SCHEMA_VERSION`
+- `pluginReviewArtifactRecordApiRequestsSchema`
+- `pluginReviewArtifactRecordSchemaDefinitions`
+- `pluginReviewArtifactRecordValidators`
+- `validatePluginReviewArtifactRecordObject`
+- `assertPluginReviewArtifactRecordObject`
+- `validatePluginReviewArtifactRecordApiRequestBundle`
+- `assertPluginReviewArtifactRecordApiRequestBundle`
+
+The public request bundle fixtures are:
+
+- `packages/schemas/fixtures/plugin-review-artifact-records-requests.valid.json`
+- `packages/schemas/fixtures/plugin-review-artifact-records-requests.invalid.json`
+- `packages/schemas/fixtures/plugin-review-artifact-records-requests.schema.json`
+
+The bundle schema validates the checked-in records replay fixture before create,
+list, get, and compare requests are consumed by API route tests, SDK fake-fetch
+tests, CLI replay, and Web state builders. It locks request ids, the
+`/v1/plugins/review-artifacts/records` endpoint family, local `apiBase` values,
+repo-relative fixture references, JSON-only request bodies, and expected
+record/comparison response fields.
+
 ## Web Helper
 
 `buildPluginReviewArtifactRecordState` converts create, list, get, and compare
@@ -94,17 +124,22 @@ without depending on browser APIs.
 ## Release Wiring
 
 The release check includes `plugin-review-artifact-records-api-alignment` so API
-routes, docs, schemas, SDK, CLI, Web helpers, examples, and health checks stay
-linked. The repository health script tracks the public files listed above.
+routes, docs, schemas, shared request bundle validators, generated request
+bundle JSON schema fixtures, SDK, CLI, Web helpers, examples, and health checks
+stay linked. The repository health script tracks the public files listed above.
 
 ## Guardrails
 
 - Records stay local-only and redacted.
+- Request bundles keep `apiBase` on `local://` endpoints and fixture references
+  repo-relative.
 - Record ids and fingerprints are deterministic for the same normalized artifact payload.
 - The store rejects duplicate ids unless the caller uses a comparison workflow.
 - Missing redaction metadata is a validation error.
 - Fixture paths stay inside the workspace and never reference private planning files.
 - Store redacted values as `[REDACTED]`.
+- Reject raw credentials, unredacted secret-shaped values, absolute paths, and
+  live service URLs in request bundle fixtures.
 
 ## Validation
 
@@ -114,3 +149,6 @@ linked. The repository health script tracks the public files listed above.
 - `python -m json.tool packages\schemas\fixtures\plugin-review-artifact-record.valid.json`
 - `python -m json.tool packages\schemas\fixtures\plugin-review-artifact-record.invalid.json`
 - `python -m json.tool packages\schemas\fixtures\plugin-review-artifact-record.schema.json`
+- `python -m json.tool packages\schemas\fixtures\plugin-review-artifact-records-requests.valid.json`
+- `python -m json.tool packages\schemas\fixtures\plugin-review-artifact-records-requests.invalid.json`
+- `python -m json.tool packages\schemas\fixtures\plugin-review-artifact-records-requests.schema.json`

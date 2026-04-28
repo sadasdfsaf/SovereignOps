@@ -214,6 +214,9 @@ def make_release_root(root: Path) -> None:
         "packages/schemas/fixtures/mcp-approval-evidence.valid.json",
         "packages/schemas/fixtures/mcp-approval-evidence.invalid.json",
         "packages/schemas/fixtures/mcp-approval-evidence.schema.json",
+        "packages/schemas/fixtures/mcp-approval-evidence-preview-requests.valid.json",
+        "packages/schemas/fixtures/mcp-approval-evidence-preview-requests.invalid.json",
+        "packages/schemas/fixtures/mcp-approval-evidence-preview-requests.schema.json",
         "packages/schemas/fixtures/mcp-approval-evidence-record.valid.json",
         "packages/schemas/fixtures/mcp-approval-evidence-record.invalid.json",
         "packages/schemas/fixtures/mcp-approval-evidence-record.schema.json",
@@ -223,9 +226,15 @@ def make_release_root(root: Path) -> None:
         "packages/schemas/fixtures/mcp-approval-evidence-record-comparison.schema.json",
         "packages/schemas/fixtures/mcp-approval-evidence-record-create-request.valid.json",
         "packages/schemas/fixtures/mcp-approval-evidence-record-create-request.schema.json",
+        "packages/schemas/fixtures/mcp-approval-evidence-records-requests.valid.json",
+        "packages/schemas/fixtures/mcp-approval-evidence-records-requests.invalid.json",
+        "packages/schemas/fixtures/mcp-approval-evidence-records-requests.schema.json",
         "packages/schemas/fixtures/plugin-review-artifact-preview.valid.json",
         "packages/schemas/fixtures/plugin-review-artifact-preview.invalid.json",
         "packages/schemas/fixtures/plugin-review-artifact-preview.schema.json",
+        "packages/schemas/fixtures/plugin-review-artifact-api-requests.valid.json",
+        "packages/schemas/fixtures/plugin-review-artifact-api-requests.invalid.json",
+        "packages/schemas/fixtures/plugin-review-artifact-api-requests.schema.json",
         "packages/schemas/fixtures/plugin-review-artifact-record.valid.json",
         "packages/schemas/fixtures/plugin-review-artifact-record.invalid.json",
         "packages/schemas/fixtures/plugin-review-artifact-record.schema.json",
@@ -235,6 +244,9 @@ def make_release_root(root: Path) -> None:
         "packages/schemas/fixtures/plugin-review-artifact-record-comparison.schema.json",
         "packages/schemas/fixtures/plugin-review-artifact-record-create-request.valid.json",
         "packages/schemas/fixtures/plugin-review-artifact-record-create-request.schema.json",
+        "packages/schemas/fixtures/plugin-review-artifact-records-requests.valid.json",
+        "packages/schemas/fixtures/plugin-review-artifact-records-requests.invalid.json",
+        "packages/schemas/fixtures/plugin-review-artifact-records-requests.schema.json",
         "packages/sdk-js/src/pluginReviewArtifactClient.ts",
         "packages/sdk-js/src/mcpApprovalEvidenceClient.ts",
         "packages/sdk-js/src/mcpApprovalEvidenceRecordClient.ts",
@@ -411,6 +423,46 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("tests.test_validate_openapi_workspace_session_snapshot_retention_cleanup", output.getvalue())
         self.assertIn("SKIP release-notes-smoke:", output.getvalue())
         self.assertIn("SKIP cargo-check: missing tool: cargo", output.getvalue())
+
+    def test_review_and_evidence_release_gates_track_request_bundle_schemas(self) -> None:
+        checks = {spec.name: spec for spec in release_check.CHECK_SPECS}
+        expected_by_gate = {
+            "plugin-review-artifact-api-alignment": {
+                "packages/schemas/src/pluginReviewArtifact.ts",
+                "packages/schemas/tests/plugin-review-artifact.test.mjs",
+                "packages/schemas/fixtures/plugin-review-artifact-api-requests.valid.json",
+                "packages/schemas/fixtures/plugin-review-artifact-api-requests.invalid.json",
+                "packages/schemas/fixtures/plugin-review-artifact-api-requests.schema.json",
+            },
+            "plugin-review-artifact-records-api-alignment": {
+                "packages/schemas/src/pluginReviewArtifactRecord.ts",
+                "packages/schemas/tests/plugin-review-artifact-record.test.mjs",
+                "packages/schemas/fixtures/plugin-review-artifact-records-requests.valid.json",
+                "packages/schemas/fixtures/plugin-review-artifact-records-requests.invalid.json",
+                "packages/schemas/fixtures/plugin-review-artifact-records-requests.schema.json",
+            },
+            "mcp-approval-evidence-api-alignment": {
+                "packages/schemas/src/mcpApprovalEvidence.ts",
+                "packages/schemas/tests/mcp-approval-evidence.test.mjs",
+                "packages/schemas/fixtures/mcp-approval-evidence-preview-requests.valid.json",
+                "packages/schemas/fixtures/mcp-approval-evidence-preview-requests.invalid.json",
+                "packages/schemas/fixtures/mcp-approval-evidence-preview-requests.schema.json",
+            },
+            "mcp-approval-evidence-records-api-alignment": {
+                "packages/schemas/src/mcpApprovalEvidenceRecord.ts",
+                "packages/schemas/tests/mcp-approval-evidence-record.test.mjs",
+                "packages/schemas/fixtures/mcp-approval-evidence-records-requests.valid.json",
+                "packages/schemas/fixtures/mcp-approval-evidence-records-requests.invalid.json",
+                "packages/schemas/fixtures/mcp-approval-evidence-records-requests.schema.json",
+            },
+        }
+
+        for gate, expected in expected_by_gate.items():
+            with self.subTest(gate=gate):
+                spec = checks[gate]
+                self.assertLessEqual(expected, set(spec.required_paths))
+                self.assertIn("shared request bundle validators", spec.description)
+                self.assertIn("generated request bundle JSON schema fixtures", spec.description)
 
     def test_retention_cleanup_release_gate_tracks_round44_files(self) -> None:
         required = set(release_check.WORKSPACE_SESSION_SNAPSHOT_RETENTION_CLEANUP_REQUIRED_PATHS)

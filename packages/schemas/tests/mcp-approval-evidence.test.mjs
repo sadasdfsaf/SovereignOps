@@ -5,23 +5,33 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import {
+  MCP_APPROVAL_EVIDENCE_PREVIEW_REQUESTS_SCHEMA_VERSION,
   MCP_APPROVAL_EVIDENCE_SCHEMA_VERSION,
   assertMcpApprovalEvidence,
+  assertMcpApprovalEvidenceObject,
+  assertMcpApprovalEvidencePreviewRequestBundle,
   getMcpApprovalEvidenceSchema,
   isMcpApprovalAuditEventId,
   isMcpApprovalEvidenceId,
   isMcpApprovalPolicyDecision,
   isMcpApprovalSessionId,
   isMcpApprovalStatus,
+  mcpApprovalEvidenceApiRouteMethods,
   mcpApprovalAuditEventTypes,
   mcpApprovalEvidenceKinds,
+  mcpApprovalEvidencePreviewRequestsSchema,
   mcpApprovalEvidenceSchema,
   mcpApprovalEvidenceSchemaDefinition,
+  mcpApprovalEvidenceSchemaDefinitions,
+  mcpApprovalEvidenceSchemas,
+  mcpApprovalEvidenceValidators,
   mcpApprovalPolicyDecisions,
   mcpApprovalSessionRefRoles,
   mcpApprovalStatuses,
   normalizeMcpApprovalPolicyDecision,
   normalizeMcpApprovalStatus,
+  validateMcpApprovalEvidenceObject,
+  validateMcpApprovalEvidencePreviewRequestBundle,
   validateMcpApprovalAuditEventRef,
   validateMcpApprovalEvidence,
   validateMcpApprovalRedactionSummary,
@@ -29,14 +39,30 @@ import {
 } from "../src/mcpApprovalEvidence.ts";
 
 const fixturesDir = fileURLToPath(new URL("../fixtures/", import.meta.url));
+const examplesDir = fileURLToPath(new URL("../../../examples/", import.meta.url));
 
 test("exposes MCP approval evidence schema metadata and normalized enums", () => {
   assert.equal(MCP_APPROVAL_EVIDENCE_SCHEMA_VERSION, "mcp-approval-evidence/v1");
-  assert.deepEqual(mcpApprovalEvidenceKinds, ["mcpApprovalEvidence"]);
+  assert.equal(
+    MCP_APPROVAL_EVIDENCE_PREVIEW_REQUESTS_SCHEMA_VERSION,
+    "mcp-approval-evidence-preview-requests.v1",
+  );
+  assert.deepEqual(mcpApprovalEvidenceKinds, [
+    "mcpApprovalEvidence",
+    "mcpApprovalEvidencePreviewRequests",
+  ]);
   assert.equal(mcpApprovalEvidenceSchemaDefinition.kind, "mcpApprovalEvidence");
   assert.equal(mcpApprovalEvidenceSchemaDefinition.schemaVersion, MCP_APPROVAL_EVIDENCE_SCHEMA_VERSION);
   assert.equal(mcpApprovalEvidenceSchemaDefinition.schema, mcpApprovalEvidenceSchema);
   assert.equal(getMcpApprovalEvidenceSchema("mcpApprovalEvidence"), mcpApprovalEvidenceSchema);
+  assert.equal(
+    getMcpApprovalEvidenceSchema("mcpApprovalEvidencePreviewRequests"),
+    mcpApprovalEvidenceSchemas.mcpApprovalEvidencePreviewRequests,
+  );
+  assert.equal(
+    mcpApprovalEvidenceSchemaDefinitions.mcpApprovalEvidencePreviewRequests.schema,
+    mcpApprovalEvidencePreviewRequestsSchema,
+  );
   assert.equal(
     mcpApprovalEvidenceSchema.$id,
     "https://schemas.sovereignops.local/mcp/approval-evidence.schema.json",
@@ -46,6 +72,7 @@ test("exposes MCP approval evidence schema metadata and normalized enums", () =>
   assert.deepEqual(mcpApprovalStatuses, ["pending", "approved", "rejected", "expired"]);
   assert.deepEqual(mcpApprovalSessionRefRoles, ["subject", "related"]);
   assert.deepEqual(mcpApprovalAuditEventTypes, ["policy_decision", "operation_succeeded", "operation_failed"]);
+  assert.deepEqual(mcpApprovalEvidenceApiRouteMethods, ["GET", "POST", "PUT", "PATCH", "DELETE"]);
 
   assert.equal(normalizeMcpApprovalPolicyDecision("Require Approval"), "require_approval");
   assert.equal(normalizeMcpApprovalPolicyDecision("approval-required"), "require_approval");
@@ -54,6 +81,13 @@ test("exposes MCP approval evidence schema metadata and normalized enums", () =>
   assert.equal(normalizeMcpApprovalStatus(" APPROVE "), "approved");
   assert.equal(normalizeMcpApprovalStatus("rejected"), "rejected");
   assert.equal(normalizeMcpApprovalStatus("queued"), undefined);
+});
+
+test("MCP approval evidence preview API request schema export fixture matches source export", async () => {
+  assert.deepEqual(
+    await readFixtureJson("mcp-approval-evidence-preview-requests.schema.json"),
+    JSON.parse(JSON.stringify(mcpApprovalEvidencePreviewRequestsSchema)),
+  );
 });
 
 test("valid fixture satisfies runtime validators and schema contract", async () => {
@@ -75,6 +109,24 @@ test("valid fixture satisfies runtime validators and schema contract", async () 
   assert.doesNotThrow(() => assertMcpApprovalEvidence(fixture));
 });
 
+test("public MCP approval evidence preview API request bundle satisfies runtime validator and schema", async () => {
+  const publicBundle = await readExampleJson("mcp/approval-evidence-preview-requests.json");
+  const fixture = await readFixtureJson("mcp-approval-evidence-preview-requests.valid.json");
+
+  assert.deepEqual(fixture, publicBundle);
+
+  const runtimeResult = validateMcpApprovalEvidencePreviewRequestBundle(publicBundle);
+  const genericResult = validateMcpApprovalEvidenceObject("mcpApprovalEvidencePreviewRequests", publicBundle);
+  const schemaIssues = validateWithJsonSchema(mcpApprovalEvidencePreviewRequestsSchema, publicBundle);
+
+  assert.equal(runtimeResult.ok, true, formatIssues(runtimeResult.issues));
+  assert.equal(genericResult.ok, true, formatIssues(genericResult.issues));
+  assert.equal(mcpApprovalEvidenceValidators.mcpApprovalEvidencePreviewRequests(publicBundle).ok, true);
+  assert.deepEqual(schemaIssues, [], formatIssues(schemaIssues));
+  assert.doesNotThrow(() => assertMcpApprovalEvidencePreviewRequestBundle(publicBundle));
+  assert.doesNotThrow(() => assertMcpApprovalEvidenceObject("mcpApprovalEvidencePreviewRequests", publicBundle));
+});
+
 test("successful validation returns a cloned and deeply frozen value", async () => {
   const fixture = await readFixtureJson("mcp-approval-evidence.valid.json");
   const result = validateMcpApprovalEvidence(fixture);
@@ -91,6 +143,25 @@ test("successful validation returns a cloned and deeply frozen value", async () 
   assert.equal(result.value.sessionRefs[0].sessionId, "approval_localnotes_primary");
   assert.throws(() => {
     result.value.sessionRefs[0].sessionId = "approval_changed";
+  }, TypeError);
+});
+
+test("successful preview API request bundle validation returns a cloned and deeply frozen value", async () => {
+  const fixture = await readFixtureJson("mcp-approval-evidence-preview-requests.valid.json");
+  const result = validateMcpApprovalEvidencePreviewRequestBundle(fixture);
+
+  assert.equal(result.ok, true, formatIssues(result.issues));
+  assert.notEqual(result.value, fixture);
+  assert.notEqual(result.value.requests, fixture.requests);
+  assert.notEqual(result.value.requests[0].request, fixture.requests[0].request);
+  assert.equal(Object.isFrozen(result.value), true);
+  assert.equal(Object.isFrozen(result.value.requests), true);
+  assert.equal(Object.isFrozen(result.value.requests[0].request), true);
+
+  fixture.requests[0].id = "changed";
+  assert.equal(result.value.requests[0].id, "api_mcp_approval_evidence_preview_local_tasks");
+  assert.throws(() => {
+    result.value.requests[0].id = "changed";
   }, TypeError);
 });
 
@@ -128,6 +199,22 @@ test("invalid fixture reports useful runtime paths and schema issues", async () 
   assert.ok(issuePaths(schemaIssues).includes("$.metadata.accessToken"));
 });
 
+test("invalid MCP approval evidence preview API request bundle reports useful paths", async () => {
+  const fixture = await readFixtureJson("mcp-approval-evidence-preview-requests.invalid.json");
+  const runtimeResult = validateMcpApprovalEvidencePreviewRequestBundle(fixture);
+  const schemaIssues = validateWithJsonSchema(mcpApprovalEvidencePreviewRequestsSchema, fixture);
+  const paths = issuePaths(runtimeResult.issues);
+
+  assert.equal(runtimeResult.ok, false);
+  assert.ok(paths.includes("fixtureRefs[0].fixturePath"));
+  assert.ok(paths.includes("requests[0].request.headers.authorization"));
+  assert.ok(paths.includes("requests[0].request.body.approvalSessions[0].metadata.source"));
+  assert.ok(paths.includes("requests[0].request.body.approvalSessions[0].metadata.note"));
+  assert.ok(paths.includes("requests[1].id"));
+  assert.ok(schemaIssues.length > 0);
+  assert.ok(issuePaths(schemaIssues).includes("$.fixtureRefs[0].fixturePath"));
+});
+
 test("session and audit refs must be sorted by canonical ids", async () => {
   const fixture = await readFixtureJson("mcp-approval-evidence.valid.json");
 
@@ -162,6 +249,10 @@ test("rejects raw secret-like metadata fields", async () => {
 
 async function readFixtureJson(file) {
   return JSON.parse(await readFile(join(fixturesDir, file), "utf8"));
+}
+
+async function readExampleJson(file) {
+  return JSON.parse(await readFile(join(examplesDir, file), "utf8"));
 }
 
 function issuePaths(issues) {

@@ -29,6 +29,9 @@ This document covers the local-first API, SDK, CLI fixture, schema, gateway, and
 - `packages/schemas/fixtures/mcp-approval-evidence-record-comparison.schema.json`
 - `packages/schemas/fixtures/mcp-approval-evidence-record-create-request.valid.json`
 - `packages/schemas/fixtures/mcp-approval-evidence-record-create-request.schema.json`
+- `packages/schemas/fixtures/mcp-approval-evidence-records-requests.valid.json`
+- `packages/schemas/fixtures/mcp-approval-evidence-records-requests.invalid.json`
+- `packages/schemas/fixtures/mcp-approval-evidence-records-requests.schema.json`
 - `apps/web/src/mcpApprovalEvidenceRecordState.ts`
 - `apps/web/tests/mcp-approval-evidence-record-state.test.mjs`
 - `docs/openapi.yaml`
@@ -60,21 +63,56 @@ The OpenAPI operation ids are `createMcpApprovalEvidenceRecord`, `listMcpApprova
 
 `MCP_APPROVAL_EVIDENCE_RECORD_SCHEMA_VERSION`, `mcpApprovalEvidenceRecordSchema`, `mcpApprovalEvidenceRecordSchemaDefinitions`, `validateMcpApprovalEvidenceRecord`, and `assertMcpApprovalEvidenceRecord` define the persisted record contract. Valid fixtures must include local-only status, redaction status, source preview fingerprint, record fingerprint, created timestamp, and evidence references.
 
+## Request Bundle Schema
+
+`packages/schemas/src/mcpApprovalEvidenceRecord.ts` also exposes the shared
+records request bundle contract for API, SDK, CLI, gateway, and Web parity:
+
+- `MCP_APPROVAL_EVIDENCE_RECORD_API_REQUESTS_SCHEMA_VERSION`
+- `mcpApprovalEvidenceRecordApiRequestsSchema`
+- `mcpApprovalEvidenceRecordSchemaDefinitions`
+- `mcpApprovalEvidenceRecordValidators`
+- `validateMcpApprovalEvidenceRecordObject`
+- `assertMcpApprovalEvidenceRecordObject`
+- `validateMcpApprovalEvidenceRecordApiRequestBundle`
+- `assertMcpApprovalEvidenceRecordApiRequestBundle`
+
+The public request bundle fixtures are:
+
+- `packages/schemas/fixtures/mcp-approval-evidence-records-requests.valid.json`
+- `packages/schemas/fixtures/mcp-approval-evidence-records-requests.invalid.json`
+- `packages/schemas/fixtures/mcp-approval-evidence-records-requests.schema.json`
+
+The bundle schema validates the checked-in records replay fixture before create,
+list, get, and compare requests are consumed by API route tests, SDK fake-fetch
+tests, CLI replay, gateway record checks, and Web state builders. It locks
+request ids, the `/v1/mcp/approval-evidence/records` endpoint family, local
+`apiBase` values, repo-relative fixture references, JSON-only request bodies,
+and expected redacted record/comparison response fields.
+
 ## Web Helper
 
 `buildMcpApprovalEvidenceRecordState` converts create, list, get, and compare API output into pure view state. It highlights empty record stores, stale baselines, fingerprint drift, missing evidence references, redaction status, and next actions without depending on browser APIs.
 
 ## Release Wiring
 
-The release check includes `mcp-approval-evidence-records-api-alignment` so API routes, docs, schemas, SDK, CLI, Web helpers, examples, and health checks stay linked. The repository health script tracks the public files listed above.
+The release check includes `mcp-approval-evidence-records-api-alignment` so API
+routes, docs, schemas, shared request bundle validators, generated request
+bundle JSON schema fixtures, SDK, CLI, Web helpers, examples, and health checks
+stay linked. The repository health script tracks the public files listed above.
 
 ## Guardrails
 
 - Records stay local-only and redacted.
+- Request bundles keep `apiBase` on `local://` endpoints and fixture references
+  repo-relative.
 - Record ids and fingerprints are deterministic for the same normalized evidence payload.
 - The store rejects duplicate ids unless the caller explicitly uses a comparison workflow.
 - Missing redaction metadata is a validation error.
 - Fixture paths stay inside the workspace and never reference private planning files.
+- Store redacted values as `[REDACTED]`.
+- Reject raw credentials, unredacted secret-shaped values, absolute paths, and
+  live service URLs in request bundle fixtures.
 
 ## Validation
 
@@ -84,3 +122,6 @@ The release check includes `mcp-approval-evidence-records-api-alignment` so API 
 - `python -m json.tool packages\schemas\fixtures\mcp-approval-evidence-record.valid.json`
 - `python -m json.tool packages\schemas\fixtures\mcp-approval-evidence-record.invalid.json`
 - `python -m json.tool packages\schemas\fixtures\mcp-approval-evidence-record.schema.json`
+- `python -m json.tool packages\schemas\fixtures\mcp-approval-evidence-records-requests.valid.json`
+- `python -m json.tool packages\schemas\fixtures\mcp-approval-evidence-records-requests.invalid.json`
+- `python -m json.tool packages\schemas\fixtures\mcp-approval-evidence-records-requests.schema.json`

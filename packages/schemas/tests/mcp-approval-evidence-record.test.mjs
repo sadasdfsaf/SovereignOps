@@ -5,12 +5,14 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import {
+  MCP_APPROVAL_EVIDENCE_RECORD_API_REQUESTS_SCHEMA_VERSION,
   MCP_APPROVAL_EVIDENCE_RECORD_COMPARISON_SCHEMA_VERSION,
   MCP_APPROVAL_EVIDENCE_RECORD_CREATE_REQUEST_SCHEMA_VERSION,
   MCP_APPROVAL_EVIDENCE_RECORD_LIST_SCHEMA_VERSION,
   MCP_APPROVAL_EVIDENCE_RECORD_SCHEMA_VERSION,
   areMcpApprovalEvidenceRecordsCompatible,
   assertMcpApprovalEvidenceRecord,
+  assertMcpApprovalEvidenceRecordApiRequestBundle,
   assertMcpApprovalEvidenceRecordComparison,
   assertMcpApprovalEvidenceRecordCreateRequest,
   assertMcpApprovalEvidenceRecordList,
@@ -20,6 +22,8 @@ import {
   getMcpApprovalEvidenceRecordSchema,
   isMcpApprovalEvidenceRecordFingerprint,
   isMcpApprovalEvidenceRecordId,
+  mcpApprovalEvidenceRecordApiRequestsSchema,
+  mcpApprovalEvidenceRecordApiRouteMethods,
   mcpApprovalEvidenceReferenceRoles,
   mcpApprovalEvidenceRecordComparisonChanges,
   mcpApprovalEvidenceRecordComparisonSchema,
@@ -31,6 +35,7 @@ import {
   mcpApprovalEvidenceRecordSchemas,
   mcpApprovalEvidenceRecordValidators,
   validateMcpApprovalEvidenceRecord,
+  validateMcpApprovalEvidenceRecordApiRequestBundle,
   validateMcpApprovalEvidenceRecordComparison,
   validateMcpApprovalEvidenceRecordCreateRequest,
   validateMcpApprovalEvidenceRecordList,
@@ -38,6 +43,7 @@ import {
 } from "../src/mcpApprovalEvidenceRecord.ts";
 
 const fixturesDir = fileURLToPath(new URL("../fixtures/", import.meta.url));
+const examplesDir = fileURLToPath(new URL("../../../examples/", import.meta.url));
 
 const fixtureCases = [
   {
@@ -68,6 +74,13 @@ const fixtureCases = [
     schema: mcpApprovalEvidenceRecordCreateRequestSchema,
     validator: validateMcpApprovalEvidenceRecordCreateRequest,
   },
+  {
+    kind: "mcpApprovalEvidenceRecordApiRequests",
+    fixture: "mcp-approval-evidence-records-requests.valid.json",
+    schemaFixture: "mcp-approval-evidence-records-requests.schema.json",
+    schema: mcpApprovalEvidenceRecordApiRequestsSchema,
+    validator: validateMcpApprovalEvidenceRecordApiRequestBundle,
+  },
 ];
 
 test("exposes persisted MCP approval evidence record schema metadata", () => {
@@ -81,14 +94,20 @@ test("exposes persisted MCP approval evidence record schema metadata", () => {
     MCP_APPROVAL_EVIDENCE_RECORD_CREATE_REQUEST_SCHEMA_VERSION,
     "mcp-approval-evidence-record-create-request/v1",
   );
+  assert.equal(
+    MCP_APPROVAL_EVIDENCE_RECORD_API_REQUESTS_SCHEMA_VERSION,
+    "mcp-approval-evidence-records-requests.v1",
+  );
   assert.deepEqual(mcpApprovalEvidenceRecordKinds, [
     "mcpApprovalEvidenceRecord",
     "mcpApprovalEvidenceRecordList",
     "mcpApprovalEvidenceRecordComparison",
     "mcpApprovalEvidenceRecordCreateRequest",
+    "mcpApprovalEvidenceRecordApiRequests",
   ]);
   assert.deepEqual(mcpApprovalEvidenceReferenceRoles, ["source", "supporting"]);
   assert.deepEqual(mcpApprovalEvidenceRecordComparisonChanges, ["added", "removed", "changed"]);
+  assert.deepEqual(mcpApprovalEvidenceRecordApiRouteMethods, ["GET", "POST", "PUT", "PATCH", "DELETE"]);
 
   for (const { kind, schema } of fixtureCases) {
     assert.equal(mcpApprovalEvidenceRecordSchemaDefinitions[kind].kind, kind);
@@ -131,14 +150,39 @@ test("valid fixtures satisfy runtime validators and JSON schema contracts", asyn
   const list = await readFixtureJson("mcp-approval-evidence-record-list.valid.json");
   const comparison = await readFixtureJson("mcp-approval-evidence-record-comparison.valid.json");
   const createRequest = await readFixtureJson("mcp-approval-evidence-record-create-request.valid.json");
+  const apiRequests = await readFixtureJson("mcp-approval-evidence-records-requests.valid.json");
 
   assert.doesNotThrow(() => assertMcpApprovalEvidenceRecord(record));
   assert.doesNotThrow(() => assertMcpApprovalEvidenceRecordList(list));
   assert.doesNotThrow(() => assertMcpApprovalEvidenceRecordComparison(comparison));
   assert.doesNotThrow(() => assertMcpApprovalEvidenceRecordCreateRequest(createRequest));
+  assert.doesNotThrow(() => assertMcpApprovalEvidenceRecordApiRequestBundle(apiRequests));
   assert.equal(isMcpApprovalEvidenceRecordId(record.id), true);
   assert.equal(isMcpApprovalEvidenceRecordFingerprint(record.fingerprint), true);
   assert.equal(getMcpApprovalEvidenceRecordIdForFingerprint(record.fingerprint), record.id);
+});
+
+test("public MCP approval evidence records API request bundle satisfies runtime validator and schema", async () => {
+  const publicBundle = await readExampleJson("mcp/approval-evidence-records-requests.json");
+  const fixture = await readFixtureJson("mcp-approval-evidence-records-requests.valid.json");
+
+  assert.deepEqual(fixture, publicBundle);
+
+  const runtimeResult = validateMcpApprovalEvidenceRecordApiRequestBundle(publicBundle);
+  const genericResult = validateMcpApprovalEvidenceRecordObject(
+    "mcpApprovalEvidenceRecordApiRequests",
+    publicBundle,
+  );
+  const schemaIssues = validateWithJsonSchema(mcpApprovalEvidenceRecordApiRequestsSchema, publicBundle);
+
+  assert.equal(runtimeResult.ok, true, formatIssues(runtimeResult.issues));
+  assert.equal(genericResult.ok, true, formatIssues(genericResult.issues));
+  assert.equal(mcpApprovalEvidenceRecordValidators.mcpApprovalEvidenceRecordApiRequests(publicBundle).ok, true);
+  assert.deepEqual(schemaIssues, [], formatIssues(schemaIssues));
+  assert.doesNotThrow(() => assertMcpApprovalEvidenceRecordApiRequestBundle(publicBundle));
+  assert.doesNotThrow(
+    () => assertMcpApprovalEvidenceRecordObject("mcpApprovalEvidenceRecordApiRequests", publicBundle),
+  );
 });
 
 test("successful record validation returns a cloned and deeply frozen value", async () => {
@@ -157,6 +201,25 @@ test("successful record validation returns a cloned and deeply frozen value", as
   assert.equal(result.value.evidenceRefs[0].evidenceId, "mcpae_localNotesReview");
   assert.throws(() => {
     result.value.evidenceRefs[0].evidenceId = "mcpae_changed";
+  }, TypeError);
+});
+
+test("successful records API request bundle validation returns a cloned and deeply frozen value", async () => {
+  const fixture = await readFixtureJson("mcp-approval-evidence-records-requests.valid.json");
+  const result = validateMcpApprovalEvidenceRecordApiRequestBundle(fixture);
+
+  assert.equal(result.ok, true, formatIssues(result.issues));
+  assert.notEqual(result.value, fixture);
+  assert.notEqual(result.value.requests, fixture.requests);
+  assert.notEqual(result.value.requests[0].request, fixture.requests[0].request);
+  assert.equal(Object.isFrozen(result.value), true);
+  assert.equal(Object.isFrozen(result.value.requests), true);
+  assert.equal(Object.isFrozen(result.value.requests[0].request), true);
+
+  fixture.requests[0].id = "changed";
+  assert.equal(result.value.requests[0].id, "api_mcp_approval_evidence_records_create_local_notes");
+  assert.throws(() => {
+    result.value.requests[0].id = "changed";
   }, TypeError);
 });
 
@@ -198,6 +261,21 @@ test("invalid fixture reports useful runtime paths and JSON schema issues", asyn
   assert.ok(issuePaths(schemaIssues).includes("$.localOnly"));
   assert.ok(issuePaths(schemaIssues).includes("$.metadata.accessToken"));
   assert.ok(issuePaths(schemaIssues).includes("$.metadata.rawArguments"));
+});
+
+test("invalid MCP approval evidence records API request bundle reports useful paths", async () => {
+  const fixture = await readFixtureJson("mcp-approval-evidence-records-requests.invalid.json");
+  const runtimeResult = validateMcpApprovalEvidenceRecordApiRequestBundle(fixture);
+  const schemaIssues = validateWithJsonSchema(mcpApprovalEvidenceRecordApiRequestsSchema, fixture);
+  const paths = issuePaths(runtimeResult.issues);
+
+  assert.equal(runtimeResult.ok, false);
+  assert.ok(paths.includes("fixtureRefs[0].fixturePath"));
+  assert.ok(paths.includes("requests[0].request.headers.authorization"));
+  assert.ok(paths.includes("requests[0].request.body.record.metadata.source"));
+  assert.ok(paths.includes("requests[1].id"));
+  assert.ok(schemaIssues.length > 0);
+  assert.ok(issuePaths(schemaIssues).includes("$.fixtureRefs[0].fixturePath"));
 });
 
 test("compatibility keys are deterministic and redaction aware", async () => {
@@ -251,6 +329,10 @@ test("rejects redaction-sensitive fields on persisted records", async () => {
 
 async function readFixtureJson(file) {
   return JSON.parse(await readFile(join(fixturesDir, file), "utf8"));
+}
+
+async function readExampleJson(file) {
+  return JSON.parse(await readFile(join(examplesDir, file), "utf8"));
 }
 
 function issuePaths(issues) {
