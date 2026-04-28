@@ -15,6 +15,7 @@ REQUIRED_SECTIONS = (
     "## Scope At A Glance",
     "## Module Summary",
     "## Validation Commands",
+    "## Fixture Drift And Status Dashboard",
     "## Known Tool Gaps",
     "## Local-First And Privacy Posture",
     "## Interpreting Status",
@@ -43,6 +44,9 @@ REQUIRED_COMMANDS = (
     "python scripts\\public_boundary_guard.py --json",
     "python scripts\\loc_budget.py --summary",
     "python scripts\\env_guard.py",
+    "npm run fixtures:check",
+    "python scripts/fixture_drift.py --json",
+    "python scripts/status_dashboard.py --json",
     "node scripts/node-check.mjs",
 )
 
@@ -51,6 +55,9 @@ REQUIRED_PHRASES = (
     "privacy posture",
     "shell-specific",
     "skipped optional check",
+    "skipped optional tooling",
+    "local-only deterministic fixtures",
+    "response schema coverage",
     "blocked public-content wording",
     "commands they ran",
 )

@@ -103,6 +103,8 @@ EXPECTED_ALIGNMENT_REFERENCES = (
     "`tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py`",
     "`tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py`",
     "`tests/test_validate_openapi_mcp_approval_evidence_records_api_fixture.py`",
+    "`tests/test_api_fixture_contract_docs.py`",
+    "`tests/test_schema_alignment_docs.py`",
     "`[REDACTED]`",
     "`[redacted]`",
 )
@@ -115,6 +117,27 @@ EXPECTED_COMMANDS = (
     "python scripts\\validate_mcp_gateway_fixtures.py",
     "python scripts\\fixture_drift.py --json",
     "python -m unittest discover -s tests",
+)
+
+EXPECTED_FIXTURE_REPORT_FIELDS = (
+    "`kind`",
+    "`schemaVersion`",
+    "`totalFixtures`",
+    "`totalRequests`",
+    "`fixtures`",
+    "`routes`",
+    "`methods`",
+    "`statuses`",
+    "`error.code`",
+    "`error.message`",
+    "`successResponseSchemaRefs`",
+    "`path`",
+    "`apiBase`",
+    "`method`",
+    "`generatedAt`",
+    "`fixtureRefs`",
+    "`request`",
+    "`expect`",
 )
 
 
@@ -159,6 +182,19 @@ class SchemaAlignmentDocsTests(unittest.TestCase):
             "single command entrypoint",
             "openapi-fixture-drift",
             "release gate runs the same entrypoint",
+            "Fixture response schema drift coverage",
+            "success response schema component refs",
+            "Request fixture body references in OpenAPI point",
+            "response fixture expectations point back to the generated schema fixtures",
+            "fixture drift JSON report is deterministic",
+            "Fixture report rows include",
+            "route report rows include",
+            "success-only `successResponseSchemaRefs`",
+            "Report keys, route rows, fixture path lists, method counters, and status counters",
+            "Request bundle schemas validate the envelope fields",
+            "Response schema fixtures validate the full response records",
+            "deterministic JSON report fields",
+            "request/response alignment with generated schema fixtures",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, self.text)
@@ -166,6 +202,11 @@ class SchemaAlignmentDocsTests(unittest.TestCase):
         for command in EXPECTED_COMMANDS:
             with self.subTest(command=command):
                 self.assertIn(f"`{command}`", self.text)
+
+    def test_documents_fixture_drift_report_field_names(self) -> None:
+        for field in EXPECTED_FIXTURE_REPORT_FIELDS:
+            with self.subTest(field=field):
+                self.assertIn(field, self.text)
 
     def test_document_avoids_restricted_public_content_terms(self) -> None:
         restricted_terms = sorted({"".join(parts) for parts in RESTRICTED_PUBLIC_TERM_PARTS})

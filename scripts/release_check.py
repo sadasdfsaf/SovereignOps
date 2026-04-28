@@ -38,10 +38,15 @@ SCHEMA_CONTRACT_REQUIRED_PATHS: tuple[str, ...] = (
 OPENAPI_FIXTURE_CONTRACT_REQUIRED_PATHS: tuple[str, ...] = (
     "scripts/openapi_fixture_contract.py",
     "tests/test_openapi_fixture_contract.py",
+    "tests/test_openapi_fixture_contract_security.py",
 )
 
 OPENAPI_FIXTURE_DRIFT_REQUIRED_PATHS: tuple[str, ...] = (
     *OPENAPI_FIXTURE_CONTRACT_REQUIRED_PATHS,
+    "docs/api-fixture-contracts.md",
+    "tests/test_api_fixture_contract_docs.py",
+    "tests/test_fixture_drift.py",
+    "tests/test_fixture_drift_response_schemas.py",
     "tests/test_validate_openapi_plugin_review_artifact_api_fixture.py",
     "tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py",
     "tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py",
@@ -555,6 +560,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
         command=(PYTHON, "scripts/status_dashboard.py", "--json"),
         required_paths=(
             "scripts/status_dashboard.py",
+            "tests/test_status_dashboard_fixture_drift.py",
             "docs/status.md",
             "docs/ci.md",
             "docs/development-quickstart.md",
@@ -577,6 +583,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "tests.test_contributing_quickstart",
             "tests.test_release_checklist_docs",
             "tests.test_status_dashboard",
+            "tests.test_status_dashboard_fixture_drift",
             "tests.test_status_docs",
         ),
         required_paths=(
@@ -592,6 +599,7 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "tests/test_contributing_quickstart.py",
             "tests/test_release_checklist_docs.py",
             "tests/test_status_dashboard.py",
+            "tests/test_status_dashboard_fixture_drift.py",
             "tests/test_status_docs.py",
         ),
     ),
@@ -638,6 +646,10 @@ CHECK_SPECS: tuple[CheckSpec, ...] = (
             "tests.test_schema_alignment_docs",
             "tests.test_validate_openapi_schema_components",
             "tests.test_openapi_fixture_contract",
+            "tests.test_openapi_fixture_contract_security",
+            "tests.test_fixture_drift",
+            "tests.test_fixture_drift_response_schemas",
+            "tests.test_api_fixture_contract_docs",
             "tests.test_validate_openapi_plugin_review_artifact_api_fixture",
             "tests.test_validate_openapi_plugin_review_artifact_records_api_fixture",
             "tests.test_validate_openapi_mcp_approval_evidence_api_fixture",

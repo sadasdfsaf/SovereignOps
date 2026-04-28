@@ -92,6 +92,7 @@ def make_release_root(root: Path) -> None:
         "docs/plugin-review-artifact-api.md",
         "docs/plugin-review-artifact-records-api.md",
         "docs/plugin-review-artifacts.md",
+        "docs/api-fixture-contracts.md",
         "docs/status.md",
         "docs/ci.md",
         "docs/development-quickstart.md",
@@ -165,6 +166,11 @@ def make_release_root(root: Path) -> None:
         "tests/test_schema_alignment_docs.py",
         "tests/test_validate_openapi_schema_components.py",
         "tests/test_openapi_fixture_contract.py",
+        "tests/test_openapi_fixture_contract_security.py",
+        "tests/test_fixture_drift.py",
+        "tests/test_fixture_drift_response_schemas.py",
+        "tests/test_api_fixture_contract_docs.py",
+        "tests/test_status_dashboard_fixture_drift.py",
         "tests/test_validate_openapi_plugin_review_artifact_api_fixture.py",
         "tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py",
         "tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py",
@@ -410,9 +416,14 @@ class ReleaseCheckTests(unittest.TestCase):
         self.assertIn("tests.test_schema_alignment_docs", output.getvalue())
         self.assertIn("RUN status-dashboard: python scripts/status_dashboard.py --json", output.getvalue())
         self.assertIn("RUN bootstrap-docs: python -m unittest tests.test_adr_docs", output.getvalue())
+        self.assertIn("tests.test_status_dashboard_fixture_drift", output.getvalue())
         self.assertIn("RUN openapi-fixture-drift: python scripts/fixture_drift.py --json", output.getvalue())
         self.assertIn("RUN schema-contract-alignment: python -m unittest tests.test_schema_alignment_docs", output.getvalue())
         self.assertIn("tests.test_openapi_fixture_contract", output.getvalue())
+        self.assertIn("tests.test_openapi_fixture_contract_security", output.getvalue())
+        self.assertIn("tests.test_fixture_drift", output.getvalue())
+        self.assertIn("tests.test_fixture_drift_response_schemas", output.getvalue())
+        self.assertIn("tests.test_api_fixture_contract_docs", output.getvalue())
         self.assertIn("tests.test_validate_openapi_plugin_review_artifact_api_fixture", output.getvalue())
         self.assertIn("tests.test_validate_openapi_plugin_review_artifact_records_api_fixture", output.getvalue())
         self.assertIn("tests.test_validate_openapi_mcp_approval_evidence_api_fixture", output.getvalue())
@@ -506,6 +517,11 @@ class ReleaseCheckTests(unittest.TestCase):
             "scripts/fixture_drift.py",
             "scripts/openapi_fixture_contract.py",
             "tests/test_openapi_fixture_contract.py",
+            "tests/test_openapi_fixture_contract_security.py",
+            "docs/api-fixture-contracts.md",
+            "tests/test_api_fixture_contract_docs.py",
+            "tests/test_fixture_drift.py",
+            "tests/test_fixture_drift_response_schemas.py",
             "tests/test_validate_openapi_plugin_review_artifact_api_fixture.py",
             "tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py",
             "tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py",

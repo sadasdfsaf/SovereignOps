@@ -35,6 +35,7 @@ interface ParsedArgv {
 const HELP_TEXT = {
   usage: [
     "sovereignops fixture drift check [--fixture <path>] [--openapi <path>]",
+    "sovereignops fixture drift report [--fixture <path>] [--openapi <path>]",
     "sovereignops fixtures verify [--fixture <path>] [--openapi <path>]",
   ],
   options: {
@@ -316,7 +317,9 @@ function fixtureDriftCommandLength(positionals: readonly string[]): number {
   if (
     positionals[0] === "fixture" &&
     positionals[1] === "drift" &&
-    (positionals[2] === "check" || positionals[2] === "verify")
+    (positionals[2] === "check" ||
+      positionals[2] === "report" ||
+      positionals[2] === "verify")
   ) {
     return 3;
   }

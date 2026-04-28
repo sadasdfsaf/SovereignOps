@@ -16,6 +16,7 @@ EXPECTED_SECTIONS = (
     "## Local Execution Expectations",
     "## Route And OpenAPI Drift",
     "## Schema Fixture Alignment",
+    "## Deterministic JSON Report",
     "## Command Entrypoints",
     "## Review Checklist",
 )
@@ -39,6 +40,9 @@ EXPECTED_REFERENCES = (
     "`stdin://`",
     "`workspace://`",
     "`local://`",
+    "`error.code`",
+    "`error.message`",
+    "`successResponseSchemaRefs`",
 )
 
 EXPECTED_CONTRACT_PHRASES = (
@@ -50,9 +54,38 @@ EXPECTED_CONTRACT_PHRASES = (
     "Every fixture route method and path must map",
     "Expected success statuses must appear",
     "Path parameters are compared by route template",
+    "Response schema drift coverage",
+    "OpenAPI component refs visible",
     "Generated JSON schema fixtures",
     "should not be hand-edited",
+    "Generated request bundle JSON schema fixtures validate the bundle envelope",
+    "Generated response schema fixtures validate the complete response bodies",
+    "Request body references in OpenAPI must point",
     "redaction placeholders",
+    "canonical JSON report",
+    "Report keys, route rows, fixture lists, method counters, and status counters",
+    "stable JSON",
+)
+
+EXPECTED_REPORT_FIELDS = (
+    "`kind`",
+    "`schemaVersion`",
+    "`totalFixtures`",
+    "`totalRequests`",
+    "`fixtures`",
+    "`routes`",
+    "`methods`",
+    "`statuses`",
+    "`path`",
+    "`apiBase`",
+    "`method`",
+    "`error.code`",
+    "`error.message`",
+    "`successResponseSchemaRefs`",
+    "`generatedAt`",
+    "`fixtureRefs`",
+    "`request`",
+    "`expect`",
 )
 
 PRIVATE_MARKERS = (
@@ -90,6 +123,11 @@ class ApiFixtureContractDocsTests(unittest.TestCase):
         for phrase in EXPECTED_CONTRACT_PHRASES:
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, self.text)
+
+    def test_documents_deterministic_json_report_fields(self) -> None:
+        for field in EXPECTED_REPORT_FIELDS:
+            with self.subTest(field=field):
+                self.assertIn(field, self.text)
 
     def test_document_avoids_private_marker_leakage_and_restricted_terms(self) -> None:
         for marker in PRIVATE_MARKERS:

@@ -98,8 +98,13 @@ Python contract checks must use the standard library unless a service already ow
 - Ingest connector MCP components (`IngestConnectorMcpResourceListResponse`, `IngestConnectorMcpResourceResponse`, `IngestConnectorMcpPreviewRequest`, and `IngestConnectorMcpPreviewResponse`) stay aligned with `packages/schemas/src/ingestConnectorMcpApi.ts`.
 - Plugin review artifact and MCP approval evidence request bundle schemas stay aligned with the checked-in API replay fixtures before SDK fake-fetch harnesses, CLI replay commands, and Web state helpers consume them.
 - OpenAPI fixture drift tests use `scripts/openapi_fixture_contract.py` and `tests/test_openapi_fixture_contract.py` to compare checked-in replay fixtures with documented OpenAPI route blocks, response statuses, path parameters, tags, and request body references.
+- Fixture response schema drift coverage combines documented OpenAPI response statuses, success response schema component refs, and replay fixture `expect` fields for `contentType`, `schemaVersion`, count summaries, ids, and stable error codes.
+- Request fixture body references in OpenAPI point to the same component names exported from TypeScript schema definitions, while response fixture expectations point back to the generated schema fixtures that validate complete preview, record, list, comparison, and error bodies.
 - Route-family fixture drift tests live in `tests/test_validate_openapi_plugin_review_artifact_api_fixture.py`, `tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py`, `tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py`, and `tests/test_validate_openapi_mcp_approval_evidence_records_api_fixture.py`.
 - The `scripts/fixture_drift.py` script is the single command entrypoint for those fixture drift checks: run `python scripts\fixture_drift.py --json`; the `openapi-fixture-drift` release gate in `scripts/release_check.py` requires that script, the shared helper, and the four route-family fixture test files before it runs.
+- The fixture drift JSON report is deterministic: success output includes `kind`, `schemaVersion`, `totalFixtures`, `totalRequests`, `fixtures`, `routes`, `methods`, and `statuses`; error output includes `kind`, `schemaVersion`, `error.code`, and `error.message`.
+- Fixture report rows include `path`, `schemaVersion`, `apiBase`, `totalRequests`, `routes`, `methods`, and `statuses`; route report rows include `method`, `path`, `totalRequests`, `fixtures`, `statuses`, and success-only `successResponseSchemaRefs`.
+- Report keys, route rows, fixture path lists, method counters, and status counters are sorted before output so repeated runs can be compared directly.
 
 Run `python scripts\validate_openapi.py` after OpenAPI edits. Add focused validator tests when a route family introduces a new component, response status, or replay fixture.
 
@@ -177,6 +182,8 @@ JSON Schema exports are generated from `packages/schemas/src/jsonSchema.ts`. Do 
 - Generated plugin review artifact request bundle schema fixtures include `packages/schemas/fixtures/plugin-review-artifact-api-requests.schema.json` and `packages/schemas/fixtures/plugin-review-artifact-records-requests.schema.json`.
 - Generated MCP approval evidence request bundle schema fixtures include `packages/schemas/fixtures/mcp-approval-evidence-preview-requests.schema.json` and `packages/schemas/fixtures/mcp-approval-evidence-records-requests.schema.json`.
 - Request bundle valid and invalid fixtures live beside those schemas and must keep local `apiBase` values, repo-relative fixture references, JSON-only bodies, and `[REDACTED]` placeholders for sensitive-looking values.
+- Request bundle schemas validate the envelope fields `schemaVersion`, `generatedAt`, `apiBase`, `fixtureRefs`, `requests`, `route`, `request`, and `expect`.
+- Response schema fixtures validate the full response records named by fixture expectations, including preview, record, list, comparison, and API error examples.
 
 Run `node packages\schemas\scripts\export-json-schema.mjs --check` before release. If it reports stale files, run `node packages\schemas\scripts\export-json-schema.mjs`, review the generated diff, and then run the schema tests.
 
@@ -192,6 +199,7 @@ Compatibility tests should compare contracts across layers instead of checking o
 - `tests/test_validate_openapi_ingest_connector_mcp.py`, `tests/test_validate_openapi_ingest_connector_mcp_fixture.py`, and `tests/test_ingest_connector_mcp_api_e2e.py` lock ingest connector MCP OpenAPI parity, fixture safety, SDK fixture harness replay, CLI replay, and Web fixture state.
 - `tests/test_plugin_review_artifact_api_docs.py`, `tests/test_plugin_review_artifact_records_api_docs.py`, `tests/test_mcp_approval_evidence_api_docs.py`, and `tests/test_mcp_approval_evidence_records_api_docs.py` lock shared request bundle validator names, public fixture paths, local-only expectations, and redaction expectations.
 - `tests/test_validate_openapi_plugin_review_artifact_api_fixture.py`, `tests/test_validate_openapi_plugin_review_artifact_records_api_fixture.py`, `tests/test_validate_openapi_mcp_approval_evidence_api_fixture.py`, and `tests/test_validate_openapi_mcp_approval_evidence_records_api_fixture.py` lock replay fixtures against `docs/openapi.yaml` through `tests/test_openapi_fixture_contract.py`.
+- `tests/test_api_fixture_contract_docs.py` and `tests/test_schema_alignment_docs.py` lock the documented fixture response schema drift coverage, deterministic JSON report fields, and request/response alignment with generated schema fixtures.
 - Focused doc tests lock any public alignment process that would break consumers if silently removed.
 
 Before merging a schema change, run the narrow layer checks plus `python -m unittest discover -s tests`. Broaden to Rust and Node workspace checks when a change touches shared values, generated schemas, route contracts, or fixture replay.

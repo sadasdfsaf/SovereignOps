@@ -11,9 +11,9 @@ SovereignOps is a local-first platform for safe AI agent operations over sensiti
 - Support a plugin model that favors least privilege and clear isolation.
 - Provide SDKs that make secure automation practical for teams and builders.
 
-## Current Scope
+## Alpha Status
 
-The repository now has the first public bootstrap: root toolchain metadata, cross-platform smoke checks, a small Rust core crate, TypeScript package surfaces, a Python ingest helper, and focused tests. Early work should continue to favor small reviewable slices around security boundaries, data formats, developer ergonomics, and local-first prototypes.
+This repository is ready for a public alpha. The checked-in code provides local-first contracts, API route handlers, CLI commands, SDK clients, fixture replay, status reporting, and release checks that run without remote services. The alpha is intended for developer review and integration experiments, not production workloads.
 
 ## Security Principles
 
@@ -50,6 +50,10 @@ python -m unittest discover -s tests
 python scripts\loc_budget.py --summary
 python scripts\env_guard.py
 npm run fixtures:check
+python scripts/fixture_drift.py --json
+python scripts/status_dashboard.py --json
 ```
+
+`npm run fixtures:check` wraps the local fixture drift JSON check. The fixture workflow uses checked-in, local-only deterministic fixtures to verify response schema coverage and route/status drift without remote services. `python scripts/status_dashboard.py --json` summarizes repository health, fixture drift totals, and skipped optional tooling for status updates.
 
 Rust and pnpm checks are wired into the smoke flow and run automatically when those tools are installed.

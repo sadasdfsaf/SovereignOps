@@ -45,6 +45,7 @@ class FixtureSpec:
     expected_routes: frozenset[tuple[str, str]] | None = None
     expected_tag: str | None = None
     request_body_refs: dict[tuple[str, str], str] | None = None
+    response_schema_refs: dict[tuple[str, str, int], str] | None = None
 
 
 DEFAULT_FIXTURES: tuple[FixtureSpec, ...] = (
@@ -63,6 +64,13 @@ DEFAULT_FIXTURES: tuple[FixtureSpec, ...] = (
                 "POST",
                 "/v1/plugins/review-artifacts/preview",
             ): "PluginReviewArtifactPreviewRequest",
+        },
+        response_schema_refs={
+            (
+                "POST",
+                "/v1/plugins/review-artifacts/preview",
+                200,
+            ): "PluginReviewArtifactPreviewResponse",
         },
     ),
     FixtureSpec(
@@ -94,6 +102,28 @@ DEFAULT_FIXTURES: tuple[FixtureSpec, ...] = (
                 "/v1/plugins/review-artifacts/records/{recordId}/compare",
             ): "PluginReviewArtifactRecordCompareRequest",
         },
+        response_schema_refs={
+            (
+                "POST",
+                "/v1/plugins/review-artifacts/records",
+                201,
+            ): "PluginReviewArtifactRecordCreateResponse",
+            (
+                "GET",
+                "/v1/plugins/review-artifacts/records",
+                200,
+            ): "PluginReviewArtifactRecordListResponse",
+            (
+                "GET",
+                "/v1/plugins/review-artifacts/records/{recordId}",
+                200,
+            ): "PluginReviewArtifactRecordGetResponse",
+            (
+                "POST",
+                "/v1/plugins/review-artifacts/records/{recordId}/compare",
+                200,
+            ): "PluginReviewArtifactRecordCompareResponse",
+        },
     ),
     FixtureSpec(
         relative_path="examples/mcp/approval-evidence-preview-requests.json",
@@ -110,6 +140,13 @@ DEFAULT_FIXTURES: tuple[FixtureSpec, ...] = (
                 "POST",
                 "/v1/mcp/approval-evidence/preview",
             ): "McpApprovalEvidencePreviewRequest",
+        },
+        response_schema_refs={
+            (
+                "POST",
+                "/v1/mcp/approval-evidence/preview",
+                200,
+            ): "McpApprovalEvidencePreviewResponse",
         },
     ),
     FixtureSpec(
@@ -134,6 +171,28 @@ DEFAULT_FIXTURES: tuple[FixtureSpec, ...] = (
                 "POST",
                 "/v1/mcp/approval-evidence/records/{recordId}/compare",
             ): "McpApprovalEvidenceRecordCompareRequest",
+        },
+        response_schema_refs={
+            (
+                "POST",
+                "/v1/mcp/approval-evidence/records",
+                201,
+            ): "McpApprovalEvidenceRecordCreateResponse",
+            (
+                "GET",
+                "/v1/mcp/approval-evidence/records",
+                200,
+            ): "McpApprovalEvidenceRecordListResponse",
+            (
+                "GET",
+                "/v1/mcp/approval-evidence/records/{recordId}",
+                200,
+            ): "McpApprovalEvidenceRecordGetResponse",
+            (
+                "POST",
+                "/v1/mcp/approval-evidence/records/{recordId}/compare",
+                200,
+            ): "McpApprovalEvidenceRecordCompareResponse",
         },
     ),
 )
@@ -179,6 +238,7 @@ def verify_fixture_drift(
 
     fixture_summaries: list[dict[str, Any]] = []
     all_requests: list[tuple[str, FixtureRequest]] = []
+    all_response_schema_refs: dict[tuple[str, str], dict[str, list[str]]] = {}
 
     for fixture_file in fixture_files:
         relative_path = _repo_relative(fixture_file)
@@ -187,10 +247,18 @@ def verify_fixture_drift(
         requests = normalize_fixture_requests(bundle)
 
         _assert_fixture_identity(bundle, spec)
-        _assert_requests_documented(bundle, requests, openapi_lines, spec)
+        response_schema_refs = _assert_requests_documented(
+            bundle,
+            requests,
+            openapi_lines,
+            spec,
+        )
 
-        fixture_summaries.append(_fixture_summary(relative_path, bundle, requests))
+        fixture_summaries.append(
+            _fixture_summary(relative_path, bundle, requests, response_schema_refs)
+        )
         all_requests.extend((relative_path, request) for request in requests)
+        _merge_response_schema_refs(all_response_schema_refs, response_schema_refs)
 
     return {
         "kind": SUMMARY_KIND,
@@ -198,7 +266,7 @@ def verify_fixture_drift(
         "totalFixtures": len(fixture_summaries),
         "totalRequests": len(all_requests),
         "fixtures": fixture_summaries,
-        "routes": _route_summary(all_requests),
+        "routes": _route_summary(all_requests, all_response_schema_refs),
         "methods": _counter_summary(request.method for _, request in all_requests),
         "statuses": _counter_summary(
             str(request.expected_status) for _, request in all_requests
@@ -325,8 +393,9 @@ def _assert_requests_documented(
     requests: list[FixtureRequest],
     openapi_lines: list[str],
     spec: FixtureSpec,
-) -> None:
+) -> dict[tuple[str, str], dict[str, list[str]]]:
     represented_routes: set[tuple[str, str]] = set()
+    verified_response_schema_refs: dict[tuple[str, str], dict[str, list[str]]] = {}
 
     for request in requests:
         route_key = (request.method, request.route_template)
@@ -352,6 +421,25 @@ def _assert_requests_documented(
                     f"{request.method} {request.route_template} does not document "
                     f"status {request.expected_status}"
                 )
+            response_refs = _success_response_schema_refs(
+                method_block,
+                request.expected_status,
+            )
+            expected_response_ref = (spec.response_schema_refs or {}).get(
+                (request.method, request.route_template, request.expected_status)
+            )
+            if expected_response_ref is not None:
+                expected_ref = _component_schema_ref(expected_response_ref)
+                if expected_ref not in response_refs:
+                    raise AssertionError(
+                        f"{request.method} {request.route_template} missing response "
+                        f"schema {expected_response_ref} for status "
+                        f"{request.expected_status}"
+                    )
+            if response_refs:
+                verified_response_schema_refs.setdefault(route_key, {})[
+                    str(request.expected_status)
+                ] = response_refs
         elif status_text not in block_text and "default:" not in block_text:
             raise AssertionError(
                 f"{request.method} {request.route_template} does not document "
@@ -383,19 +471,24 @@ def _assert_requests_documented(
         raise AssertionError(
             f"{spec.relative_path} route drift: missing={missing}, extra={extra}"
         )
+    return verified_response_schema_refs
 
 
 def _fixture_summary(
     relative_path: str,
     bundle: dict[str, Any],
     requests: list[FixtureRequest],
+    response_schema_refs: dict[tuple[str, str], dict[str, list[str]]],
 ) -> dict[str, Any]:
     summary: dict[str, Any] = {
         "path": relative_path,
         "schemaVersion": bundle.get("schemaVersion"),
         "apiBase": bundle.get("apiBase"),
         "totalRequests": len(requests),
-        "routes": _route_summary((relative_path, request) for request in requests),
+        "routes": _route_summary(
+            ((relative_path, request) for request in requests),
+            response_schema_refs,
+        ),
         "methods": _counter_summary(request.method for request in requests),
         "statuses": _counter_summary(str(request.expected_status) for request in requests),
     }
@@ -406,6 +499,7 @@ def _fixture_summary(
 
 def _route_summary(
     requests: Iterable[tuple[str, FixtureRequest]],
+    response_schema_refs: dict[tuple[str, str], dict[str, list[str]]] | None = None,
 ) -> list[dict[str, Any]]:
     by_route: dict[tuple[str, str], list[tuple[str, FixtureRequest]]] = defaultdict(list)
     for fixture_path, request in requests:
@@ -424,11 +518,73 @@ def _route_summary(
                 ),
             }
         )
+        route_refs = (response_schema_refs or {}).get((method, route))
+        if route_refs:
+            rows[-1]["successResponseSchemaRefs"] = _response_schema_ref_summary(
+                route_refs
+            )
     return rows
 
 
 def _counter_summary(values: Iterable[str]) -> dict[str, int]:
     return dict(sorted(Counter(values).items()))
+
+
+def _success_response_schema_refs(
+    method_block: list[str],
+    expected_status: int,
+) -> list[str]:
+    responses_block = require_block(method_block, "responses", 6)
+    status_block = require_block(responses_block, f'"{expected_status}"', 8)
+    return _component_schema_refs(status_block)
+
+
+def _component_schema_refs(lines: list[str]) -> list[str]:
+    prefix = '$ref: "'
+    suffix = '"'
+    refs: set[str] = set()
+    for line in lines:
+        stripped = line.strip()
+        if not stripped.startswith(prefix) or not stripped.endswith(suffix):
+            continue
+        ref = stripped.removeprefix(prefix).removesuffix(suffix)
+        if ref.startswith("#/components/schemas/"):
+            refs.add(ref)
+    return sorted(refs)
+
+
+def _component_schema_ref(schema_name: str) -> str:
+    if schema_name.startswith("#/components/schemas/"):
+        return schema_name
+    return f"#/components/schemas/{schema_name}"
+
+
+def _merge_response_schema_refs(
+    target: dict[tuple[str, str], dict[str, list[str]]],
+    source: dict[tuple[str, str], dict[str, list[str]]],
+) -> None:
+    for route_key, status_refs in source.items():
+        merged_status_refs = target.setdefault(route_key, {})
+        for status, refs in status_refs.items():
+            merged_status_refs[status] = sorted(
+                set(merged_status_refs.get(status, [])) | set(refs)
+            )
+
+
+def _response_schema_ref_summary(
+    refs_by_status: dict[str, list[str]],
+) -> dict[str, list[str]]:
+    return {
+        status: sorted(refs_by_status[status])
+        for status in sorted(refs_by_status, key=_status_sort_key)
+    }
+
+
+def _status_sort_key(status: str) -> tuple[int, str]:
+    try:
+        return (int(status), status)
+    except ValueError:
+        return (sys.maxsize, status)
 
 
 if __name__ == "__main__":

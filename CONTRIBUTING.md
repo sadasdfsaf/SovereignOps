@@ -57,9 +57,10 @@ cargo check --workspace
 cargo test --workspace
 pnpm -r --if-present check
 npm run fixtures:check
+python scripts/status_dashboard.py --json
 ```
 
-`npm run fixtures:check` runs `python scripts/fixture_drift.py --json` for fixture drift checks.
+`npm run fixtures:check` runs `python scripts/fixture_drift.py --json` for fixture drift checks. These checks use local-only deterministic fixtures and cover route/status drift plus response schema coverage. Use `python scripts/status_dashboard.py --json` to report repo health, fixture drift totals, and skipped optional tooling.
 
 If Cargo is unavailable, `python scripts\rust_guard.py` is the Rust-source guard fallback for unsafe panic-style calls. See `docs/development-quickstart.md` for the expanded setup and validation flow.
 

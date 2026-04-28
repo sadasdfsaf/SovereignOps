@@ -4,12 +4,18 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from dataclasses import asdict, dataclass
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Any, Sequence
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 REPO_HEALTH_AUTO = object()
+FIXTURE_DRIFT_AUTO = object()
 OPENAPI_CANDIDATES = (
     "docs/openapi.yaml",
     "docs/openapi.yml",
@@ -52,6 +58,24 @@ class OpenApiSummary:
 
 
 @dataclass(frozen=True)
+class FixtureDriftRouteSummary:
+    method: str
+    path: str
+    total_requests: int
+
+
+@dataclass(frozen=True)
+class FixtureDriftSummary:
+    available: bool
+    ok: bool | None
+    total_fixtures: int
+    total_requests: int
+    total_routes: int
+    routes: list[FixtureDriftRouteSummary]
+    error: str = ""
+
+
+@dataclass(frozen=True)
 class WorkflowSummary:
     path: str
     name: str
@@ -68,6 +92,7 @@ class StatusDashboard:
     workspace_packages: list[PackageSummary]
     repo_health: RepoHealthSummary
     openapi: OpenApiSummary
+    fixture_drift: FixtureDriftSummary
     workflows: list[WorkflowSummary]
 
 
@@ -213,6 +238,129 @@ def collect_repo_health(
         missing_paths=list(getattr(report, "missing_paths", [])),
         commands=dict(getattr(report, "commands", {})),
         public_content_warnings=list(getattr(report, "public_content_warnings", [])),
+    )
+
+
+def _import_fixture_drift() -> tuple[Any | None, str]:
+    try:
+        from scripts import fixture_drift
+
+        return fixture_drift, ""
+    except Exception as first_error:  # pragma: no cover - depends on invocation path
+        try:
+            import fixture_drift  # type: ignore[no-redef]
+
+            return fixture_drift, ""
+        except Exception as second_error:
+            return None, f"{first_error}; {second_error}"
+
+
+def _int_value(value: Any) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _fixture_drift_route_summary(route: Any) -> FixtureDriftRouteSummary:
+    if not isinstance(route, dict):
+        return FixtureDriftRouteSummary(method="", path="", total_requests=0)
+    return FixtureDriftRouteSummary(
+        method=str(route.get("method") or ""),
+        path=str(route.get("path") or ""),
+        total_requests=_int_value(route.get("totalRequests", route.get("total_requests"))),
+    )
+
+
+def _is_fixture_drift_scoped_to_root(module: object, root: Path) -> bool:
+    module_root = getattr(module, "REPO_ROOT", None)
+    if module_root is None:
+        return True
+    try:
+        return Path(module_root).resolve() == root.resolve()
+    except (TypeError, OSError):
+        return False
+
+
+def collect_fixture_drift(
+    root: Path,
+    fixture_drift_module: object = FIXTURE_DRIFT_AUTO,
+) -> FixtureDriftSummary:
+    if fixture_drift_module is FIXTURE_DRIFT_AUTO:
+        module, import_error = _import_fixture_drift()
+    else:
+        module, import_error = fixture_drift_module, ""
+
+    if module is None:
+        return FixtureDriftSummary(
+            available=False,
+            ok=None,
+            total_fixtures=0,
+            total_requests=0,
+            total_routes=0,
+            routes=[],
+            error=import_error or "fixture_drift module is unavailable",
+        )
+
+    verify_fixture_drift = getattr(module, "verify_fixture_drift", None)
+    if not callable(verify_fixture_drift):
+        return FixtureDriftSummary(
+            available=False,
+            ok=None,
+            total_fixtures=0,
+            total_requests=0,
+            total_routes=0,
+            routes=[],
+            error="fixture_drift.verify_fixture_drift is unavailable",
+        )
+
+    if not _is_fixture_drift_scoped_to_root(module, root):
+        module_root = getattr(module, "REPO_ROOT", "")
+        return FixtureDriftSummary(
+            available=False,
+            ok=None,
+            total_fixtures=0,
+            total_requests=0,
+            total_routes=0,
+            routes=[],
+            error=f"fixture_drift is scoped to {str(module_root)}",
+        )
+
+    try:
+        report = verify_fixture_drift()
+    except Exception as exc:
+        return FixtureDriftSummary(
+            available=True,
+            ok=False,
+            total_fixtures=0,
+            total_requests=0,
+            total_routes=0,
+            routes=[],
+            error=str(exc),
+        )
+
+    if not isinstance(report, dict):
+        return FixtureDriftSummary(
+            available=True,
+            ok=False,
+            total_fixtures=0,
+            total_requests=0,
+            total_routes=0,
+            routes=[],
+            error="fixture_drift.verify_fixture_drift returned a non-object summary",
+        )
+
+    routes = sorted(
+        (_fixture_drift_route_summary(route) for route in report.get("routes", [])),
+        key=lambda route: (route.method, route.path),
+    )
+    return FixtureDriftSummary(
+        available=True,
+        ok=True,
+        total_fixtures=_int_value(report.get("totalFixtures", report.get("total_fixtures"))),
+        total_requests=_int_value(report.get("totalRequests", report.get("total_requests"))),
+        total_routes=len(routes),
+        routes=routes,
     )
 
 
@@ -389,6 +537,7 @@ def collect_workflows(root: Path) -> list[WorkflowSummary]:
 def collect_dashboard(
     root: Path,
     repo_health_module: object = REPO_HEALTH_AUTO,
+    fixture_drift_module: object = FIXTURE_DRIFT_AUTO,
 ) -> StatusDashboard:
     root = root.resolve()
     root_metadata: dict[str, Any] = {}
@@ -417,6 +566,7 @@ def collect_dashboard(
         workspace_packages=workspace_packages,
         repo_health=collect_repo_health(root, repo_health_module),
         openapi=collect_openapi(root),
+        fixture_drift=collect_fixture_drift(root, fixture_drift_module),
         workflows=collect_workflows(root),
     )
 
@@ -523,6 +673,42 @@ def render_markdown(dashboard: StatusDashboard) -> str:
         lines.append("- No docs/openapi file found.")
     lines.extend(f"- Issue: {issue}" for issue in openapi.issues)
 
+    lines.extend(["", "## Fixture Drift", ""])
+    fixture_drift = dashboard.fixture_drift
+    if not fixture_drift.available:
+        lines.append(f"- Status: unavailable ({fixture_drift.error})")
+        lines.extend(
+            [
+                f"- Total fixtures: {fixture_drift.total_fixtures}",
+                f"- Total requests: {fixture_drift.total_requests}",
+                f"- Total routes: {fixture_drift.total_routes}",
+            ]
+        )
+    else:
+        status = "ok" if fixture_drift.ok else "issues" if fixture_drift.ok is False else "unknown"
+        lines.extend(
+            [
+                f"- Status: {status}",
+                f"- Total fixtures: {fixture_drift.total_fixtures}",
+                f"- Total requests: {fixture_drift.total_requests}",
+                f"- Total routes: {fixture_drift.total_routes}",
+            ]
+        )
+        if fixture_drift.error:
+            lines.append(f"- Error: {fixture_drift.error}")
+        if fixture_drift.routes:
+            lines.extend(["", "| Method | Path | Requests |", "| --- | --- | --- |"])
+            for route in fixture_drift.routes:
+                lines.append(
+                    " | ".join(
+                        [
+                            f"| {_markdown_text(route.method or 'unknown')}",
+                            _markdown_text(route.path or "unknown"),
+                            f"{route.total_requests} |",
+                        ]
+                    )
+                )
+
     lines.extend(["", "## Workflows", ""])
     if dashboard.workflows:
         lines.extend(["| Path | Name | Triggers | Jobs |", "| --- | --- | --- | --- |"])
@@ -545,7 +731,11 @@ def render_markdown(dashboard: StatusDashboard) -> str:
     return "\n".join(lines) + "\n"
 
 
-def main(argv: Sequence[str] | None = None, repo_health_module: object = REPO_HEALTH_AUTO) -> int:
+def main(
+    argv: Sequence[str] | None = None,
+    repo_health_module: object = REPO_HEALTH_AUTO,
+    fixture_drift_module: object = FIXTURE_DRIFT_AUTO,
+) -> int:
     parser = argparse.ArgumentParser(description="Generate a deterministic repository status dashboard.")
     parser.add_argument("--root", default=".", help="Repository root.")
     parser.add_argument("--format", choices=("markdown", "json"), default="markdown", help="Output format.")
@@ -555,7 +745,11 @@ def main(argv: Sequence[str] | None = None, repo_health_module: object = REPO_HE
 
     root = Path(args.root).resolve()
     output_format = "json" if args.json else args.format
-    dashboard = collect_dashboard(root, repo_health_module=repo_health_module)
+    dashboard = collect_dashboard(
+        root,
+        repo_health_module=repo_health_module,
+        fixture_drift_module=fixture_drift_module,
+    )
     rendered = render_json(dashboard) if output_format == "json" else render_markdown(dashboard)
 
     if args.output:

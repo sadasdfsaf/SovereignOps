@@ -34,9 +34,18 @@ python scripts\repo_health.py --json
 python scripts\public_boundary_guard.py --json
 python scripts\loc_budget.py --summary
 python scripts\env_guard.py
+npm run fixtures:check
+python scripts/fixture_drift.py --json
+python scripts/status_dashboard.py --json
 ```
 
 When Node is installed, the smoke check also runs `node scripts/node-check.mjs`. When Cargo or pnpm are installed, the smoke check attempts the Rust and package checks as optional local checks.
+
+## Fixture Drift And Status Dashboard
+
+- `npm run fixtures:check` is the contributor shortcut for `python scripts/fixture_drift.py --json`.
+- `python scripts/fixture_drift.py --json` checks checked-in, local-only deterministic fixtures against OpenAPI route coverage, expected statuses, request-body schema refs, and response schema coverage.
+- `python scripts/status_dashboard.py --json` emits a deterministic repository status snapshot with package metadata, repo health, OpenAPI counts, fixture drift totals, and skipped optional tooling.
 
 ## Known Tool Gaps
 
