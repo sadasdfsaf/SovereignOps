@@ -151,6 +151,40 @@ describe("mcp gateway resource adapter", () => {
     );
   });
 
+  it("attaches trusted safety annotations for clean auto-scanned resource text", async () => {
+    const registry = new GatewayResourceRegistry([
+      {
+        uri: "sovereignops://docs/scanned-note",
+        name: "Scanned Note",
+        description: "Sample scanned note.",
+        mimeType: "text/plain",
+        read: ({ uri }) => ({
+          uri,
+          text: "Ready for local review.",
+        }),
+      },
+    ]);
+    const adapter = createGatewayResourceAdapter({
+      resources: registry,
+      policy: () => "allow",
+    });
+
+    const result = await adapter.readResource("sovereignops://docs/scanned-note");
+
+    assert.equal(result.ok, true);
+    assert.equal(result.value.contents[0].trust, "trusted");
+    assert.deepEqual(result.value.contents[0].safety, {
+      schemaVersion: 1,
+      scope: "mcp_resource_content",
+      trustLevel: "trusted",
+      action: "mark_only",
+      reasons: [
+        "No prompt-injection heuristic findings detected in scanned text.",
+      ],
+      findings: [],
+    });
+  });
+
   it("annotates suspicious resource content markers with deterministic untrusted findings", async () => {
     const events = [];
     const text = [

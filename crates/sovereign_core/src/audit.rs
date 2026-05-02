@@ -50,11 +50,17 @@ pub struct AuditRecord {
 const SENSITIVE_KEYS: &[&str] = &[
     "access_token",
     "api_key",
+    "authorization",
     "client_secret",
+    "cookie",
+    "credential",
     "password",
     "private_key",
     "refresh_token",
     "secret",
+    "session_id",
+    "session_token",
+    "x-api-key",
 ];
 
 /// Redact a flat list of key-value fields before audit serialization.
@@ -106,7 +112,8 @@ mod tests {
         let fields = vec![
             ("title".to_owned(), "Release checklist".to_owned()),
             ("api_key".to_owned(), "plain-text-value".to_owned()),
-            ("authorization".to_owned(), "Bearer example".to_owned()),
+            ("authorization".to_owned(), "CustomToken example".to_owned()),
+            ("cookie".to_owned(), "workspace=sensitive".to_owned()),
         ];
 
         let (safe, redactions) = redact_fields(&fields);
@@ -114,6 +121,7 @@ mod tests {
         assert_eq!(safe[0].1, "Release checklist");
         assert_eq!(safe[1].1, "[redacted]");
         assert_eq!(safe[2].1, "[redacted]");
-        assert_eq!(redactions.len(), 2);
+        assert_eq!(redactions.len(), 3);
+        assert_eq!(redactions[1].reason, "sensitive field name");
     }
 }

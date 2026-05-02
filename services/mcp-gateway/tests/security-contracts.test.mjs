@@ -8,6 +8,7 @@ import {
   PolicyApprovalRequiredError,
   PolicyDeniedError,
   createStaticPolicy,
+  evaluatePolicy,
 } from "../src/policy.ts";
 import { createResourceRegistry, createToolRegistry } from "../src/registry.ts";
 import { GatewayResourceRegistry } from "../src/resources.ts";
@@ -182,6 +183,47 @@ describe("mcp gateway security contracts", () => {
 
     assert.equal(handlerCalls, 0);
     assert.equal(policyCalls, 0);
+  });
+
+  it("normalizes trailing slashes on prefix policy rules", async () => {
+    const policy = createStaticPolicy([
+      {
+        id: "read-api-v1",
+        path: "/api//v1//",
+        capability: "read_object",
+        match: "prefix",
+        decision: "allow",
+        reason: "prefix rule",
+      },
+    ], "deny");
+
+    const result = await evaluatePolicy(policy, {
+      path: "/api//v1/documents",
+      capability: "read_object",
+    });
+
+    assert.equal(result.decision, "allow");
+    assert.equal(result.ruleId, "read-api-v1");
+  });
+
+  it("keeps root prefix policy rules matching absolute paths", async () => {
+    const policy = createStaticPolicy([
+      {
+        id: "root-prefix",
+        path: "/",
+        capability: "read_object",
+        match: "prefix",
+        decision: "allow",
+      },
+    ], "deny");
+
+    const result = await evaluatePolicy(policy, {
+      path: "/workspace/item",
+      capability: "read_object",
+    });
+
+    assert.equal(result.decision, "allow");
+    assert.equal(result.ruleId, "root-prefix");
   });
 
   it("audits requested and final outcomes with sensitive arguments redacted", async () => {

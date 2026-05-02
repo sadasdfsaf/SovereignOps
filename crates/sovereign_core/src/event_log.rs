@@ -76,6 +76,8 @@ pub enum EventLogError {
     EmptyOperation,
     /// The event payload digest was empty.
     EmptyPayloadDigest,
+    /// The log is too large to derive the next sequence number safely.
+    SequenceOverflow,
 }
 
 impl fmt::Display for EventLogError {
@@ -92,6 +94,7 @@ impl fmt::Display for EventLogError {
             }
             Self::EmptyOperation => write!(f, "event operation must not be empty"),
             Self::EmptyPayloadDigest => write!(f, "event payload digest must not be empty"),
+            Self::SequenceOverflow => write!(f, "event sequence exceeded u64 range"),
         }
     }
 }
@@ -119,7 +122,7 @@ impl EventLog {
             return Err(EventLogError::EmptyPayloadDigest);
         }
 
-        let expected_sequence = self.events.len() as u64 + 1;
+        let expected_sequence = next_sequence_for_len(self.events.len())?;
         if event.sequence != expected_sequence {
             return Err(EventLogError::SequenceGap {
                 expected: expected_sequence,
@@ -165,6 +168,13 @@ impl EventLog {
     pub fn events(&self) -> &[EventEnvelope] {
         &self.events
     }
+}
+
+fn next_sequence_for_len(len: usize) -> Result<u64, EventLogError> {
+    u64::try_from(len)
+        .ok()
+        .and_then(|value| value.checked_add(1))
+        .ok_or(EventLogError::SequenceOverflow)
 }
 
 fn push_field(output: &mut String, name: &str, value: &str) {
@@ -226,6 +236,15 @@ mod tests {
             })
         ));
         Ok(())
+    }
+
+    #[cfg(target_pointer_width = "64")]
+    #[test]
+    fn rejects_sequence_counter_overflow() {
+        assert_eq!(
+            next_sequence_for_len(usize::MAX),
+            Err(EventLogError::SequenceOverflow)
+        );
     }
 
     #[test]

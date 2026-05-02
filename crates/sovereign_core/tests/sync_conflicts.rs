@@ -49,6 +49,18 @@ fn classifies_delete_update_conflict() -> Result<(), VectorClockError> {
 }
 
 #[test]
+fn treats_concurrent_double_delete_as_no_conflict() -> Result<(), VectorClockError> {
+    let local = change(SyncChangeKind::Delete, "dev_a", 1)?;
+    let remote = change(SyncChangeKind::Delete, "dev_b", 1)?;
+
+    let classification = classify_conflict(&local, &remote);
+
+    assert_eq!(classification.kind, ConflictKind::NoConflict);
+    assert_eq!(classification.ordering, ClockOrdering::Concurrent);
+    Ok(())
+}
+
+#[test]
 fn classifies_permission_change_conflict() -> Result<(), VectorClockError> {
     let local = change(SyncChangeKind::PermissionChange, "dev_a", 1)?;
     let remote = change(SyncChangeKind::Update, "dev_b", 1)?;

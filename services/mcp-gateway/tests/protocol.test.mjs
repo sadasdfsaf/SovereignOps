@@ -146,6 +146,17 @@ describe("mcp gateway protocol adapter", () => {
         mimeType: "text/plain",
         text: "actor:user-1",
         blob: undefined,
+        trust: "trusted",
+        safety: {
+          schemaVersion: 1,
+          scope: "mcp_resource_content",
+          trustLevel: "trusted",
+          action: "mark_only",
+          reasons: [
+            "No prompt-injection heuristic findings detected in scanned text.",
+          ],
+          findings: [],
+        },
       },
     ]);
     assert.deepEqual(

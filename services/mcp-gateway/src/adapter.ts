@@ -417,10 +417,6 @@ function annotateResourceContentSafety(
     safety = createDeclaredResourceSafetyAnnotation(content.trust);
   }
 
-  if (!content.safety && !content.trust && safety?.trustLevel === "trusted") {
-    return undefined;
-  }
-
   return safety;
 }
 

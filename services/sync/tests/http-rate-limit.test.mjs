@@ -187,6 +187,23 @@ test("invalid requests consume pre-validation rate-limit tokens", async () => {
   assert.equal((await handlers.uploadBundle(invalidRequest)).status, 400);
 });
 
+test("rate limiter prunes expired subjects during token checks", () => {
+  let nowMs = 0;
+  const limiter = new InMemoryTokenWindowRateLimiter({
+    capacity: 1,
+    windowMs: 1_000,
+    now: () => nowMs,
+  });
+
+  assert.equal(limiter.take({ workspaceId: "wsp_alpha", deviceId: "dev_a" }).allowed, true);
+  assert.equal(limiter.take({ workspaceId: "wsp_alpha", deviceId: "dev_b" }).allowed, true);
+  assert.equal(limiter.activeSubjectCount(), 2);
+
+  nowMs = 1_001;
+  assert.equal(limiter.take({ workspaceId: "wsp_alpha", deviceId: "dev_c" }).allowed, true);
+  assert.equal(limiter.activeSubjectCount(), 1);
+});
+
 test("cyclic upload payloads are rejected without overflowing validation", async () => {
   const payload = { title: "cyclic" };
   payload.self = payload;

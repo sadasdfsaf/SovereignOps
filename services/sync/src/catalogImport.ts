@@ -7,7 +7,13 @@ import {
   type SyncedEventEnvelope,
   type ValidationIssue,
 } from "./bundles.ts";
-import { CURSOR_VERSION, INITIAL_CURSOR, compareCursors, parseCursor } from "./cursors.ts";
+import {
+  CURSOR_VERSION,
+  INITIAL_CURSOR,
+  compareCursors,
+  compareStableText,
+  parseCursor,
+} from "./cursors.ts";
 import {
   createEventReplayCatalog,
   validateEventReplayCatalog,
@@ -450,7 +456,7 @@ function compareAcceptedEvents(
   left: SyncedEventEnvelope,
   right: SyncedEventEnvelope,
 ): number {
-  return compareCursors(left.cursor, right.cursor) || left.id.localeCompare(right.id);
+  return compareCursors(left.cursor, right.cursor) || compareStableText(left.id, right.id);
 }
 
 function toCatalogImportError(error: SyncRepositoryError): CatalogImportError {

@@ -135,7 +135,18 @@
             {
               "uri": "sovereignops://docs/operator-guide",
               "mimeType": "text/plain",
-              "text": "# Operator Guide\n\n- Keep workspace data local-first and encrypted.\n- Route agent access through scoped gateway resources.\n- Record policy outcomes as audit intents before emitting durable records."
+              "text": "# Operator Guide\n\n- Keep workspace data local-first and encrypted.\n- Route agent access through scoped gateway resources.\n- Record policy outcomes as audit intents before emitting durable records.",
+              "trust": "trusted",
+              "safety": {
+                "schemaVersion": 1,
+                "scope": "mcp_resource_content",
+                "trustLevel": "trusted",
+                "action": "mark_only",
+                "reasons": [
+                  "No prompt-injection heuristic findings detected in scanned text."
+                ],
+                "findings": []
+              }
             }
           ]
         }

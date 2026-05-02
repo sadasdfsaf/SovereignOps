@@ -61,6 +61,31 @@ test("creates deterministic upload checksums from ordered event envelopes", () =
   assert.equal(validateUploadRequest(ordered).ok, true);
 });
 
+test("orders event id ties with stable code-unit comparison", () => {
+  const lower = { ...baseEvent, id: "evt_a", sequence: 1 };
+  const upper = { ...baseEvent, id: "evt_Z", sequence: 1 };
+
+  const batch = createUploadBatch({
+    workspaceId: "wsp_alpha",
+    deviceId: "dev_laptop",
+    baseCursor: INITIAL_CURSOR,
+    events: [lower, upper],
+  });
+
+  assert.deepEqual(
+    batch.events.map((event) => event.id),
+    ["evt_Z", "evt_a"],
+  );
+  assert.equal(
+    compareCursors(
+      { position: 9, eventId: "evt_Z" },
+      { position: 9, eventId: "evt_a" },
+    ),
+    -1,
+  );
+  assert.equal(validateUploadRequest(batch).ok, true);
+});
+
 test("parses, compares, formats, and advances stable cursors", () => {
   const firstCursor = formatCursor({ position: 1, eventId: "evt_001" });
   const secondCursor = advanceCursor(firstCursor, ["evt_002", "evt_003"]);

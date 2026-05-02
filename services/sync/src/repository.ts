@@ -11,7 +11,12 @@ import {
   type SyncedEventEnvelope,
   type ValidationIssue,
 } from "./bundles.ts";
-import { INITIAL_CURSOR, advanceCursor, compareCursors } from "./cursors.ts";
+import {
+  INITIAL_CURSOR,
+  advanceCursor,
+  compareCursors,
+  compareStableText,
+} from "./cursors.ts";
 
 export type SyncRepositoryErrorCode = ConflictCode | "validation_failed";
 
@@ -206,7 +211,7 @@ export class InMemorySyncBundleRepository implements SyncBundleRepository {
 
   #orderedWorkspaceStates(): WorkspaceState[] {
     return [...this.#workspaces.entries()]
-      .sort(([left], [right]) => left.localeCompare(right))
+      .sort(([left], [right]) => compareStableText(left, right))
       .map(([, state]) => state);
   }
 }
@@ -299,7 +304,7 @@ function compareSyncedEventCursor(
 ): number {
   return (
     compareCursors(left.cursor, right.cursor) ||
-    left.workspaceId.localeCompare(right.workspaceId) ||
-    left.id.localeCompare(right.id)
+    compareStableText(left.workspaceId, right.workspaceId) ||
+    compareStableText(left.id, right.id)
   );
 }

@@ -56,6 +56,7 @@ export class InMemoryTokenWindowRateLimiter implements RateLimiter {
     }
 
     const key = subjectKey(input);
+    this.pruneExpiredWindows(nowMs);
     const window = this.currentWindow(key, nowMs);
     const allowed = window.tokens >= cost;
 
@@ -74,6 +75,10 @@ export class InMemoryTokenWindowRateLimiter implements RateLimiter {
       resetAtMs: window.resetAtMs,
       retryAfterMs: allowed ? 0 : Math.max(0, window.resetAtMs - nowMs),
     };
+  }
+
+  activeSubjectCount(): number {
+    return this.windows.size;
   }
 
   reset(subject?: RateLimitSubject): void {
@@ -96,6 +101,14 @@ export class InMemoryTokenWindowRateLimiter implements RateLimiter {
       resetAtMs: windowStartMs + this.windowMs,
       tokens: this.capacity,
     };
+  }
+
+  private pruneExpiredWindows(nowMs: number): void {
+    for (const [key, window] of this.windows) {
+      if (nowMs >= window.resetAtMs) {
+        this.windows.delete(key);
+      }
+    }
   }
 }
 

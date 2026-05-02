@@ -749,6 +749,13 @@ pub enum ObjectReducerError {
         /// Evidence identifier.
         evidence_id: ObjectId,
     },
+    /// A mutation attempted to change a document tombstone.
+    DeletedObjectMutation {
+        /// Object that is already deleted.
+        object_id: ObjectId,
+        /// Operation that attempted to mutate the deleted object.
+        operation: &'static str,
+    },
 }
 
 impl fmt::Display for ObjectReducerError {
@@ -775,6 +782,12 @@ impl fmt::Display for ObjectReducerError {
             }
             Self::MissingEvidence { evidence_id } => {
                 write!(f, "evidence does not exist: {evidence_id}")
+            }
+            Self::DeletedObjectMutation {
+                object_id,
+                operation,
+            } => {
+                write!(f, "{operation} cannot mutate deleted object {object_id}")
             }
         }
     }
@@ -887,9 +900,10 @@ pub fn reduce_document_operation(
             }))
         }
         DocumentOperation::ChangeTitle(changed) => {
-            require_text(&changed.document_id, "title", &changed.title)?;
             let mut current = require_document_state(state, operation)?;
             ensure_same_object(&current.document_id, &changed.document_id)?;
+            ensure_document_not_deleted(&current, operation)?;
+            require_text(&changed.document_id, "title", &changed.title)?;
             current.title.clone_from(&changed.title);
             current.version += 1;
             Ok(Some(current))
@@ -897,6 +911,7 @@ pub fn reduce_document_operation(
         DocumentOperation::ReplaceBody(changed) => {
             let mut current = require_document_state(state, operation)?;
             ensure_same_object(&current.document_id, &changed.document_id)?;
+            ensure_document_not_deleted(&current, operation)?;
             current.body.clone_from(&changed.body);
             current.version += 1;
             Ok(Some(current))
@@ -904,6 +919,7 @@ pub fn reduce_document_operation(
         DocumentOperation::ReplaceTags(changed) => {
             let mut current = require_document_state(state, operation)?;
             ensure_same_object(&current.document_id, &changed.document_id)?;
+            ensure_document_not_deleted(&current, operation)?;
             current.tags = normalize_tags(&changed.tags);
             current.version += 1;
             Ok(Some(current))
@@ -911,6 +927,7 @@ pub fn reduce_document_operation(
         DocumentOperation::SetArchived(changed) => {
             let mut current = require_document_state(state, operation)?;
             ensure_same_object(&current.document_id, &changed.document_id)?;
+            ensure_document_not_deleted(&current, operation)?;
             current.archived = changed.archived;
             current.version += 1;
             Ok(Some(current))
@@ -918,6 +935,7 @@ pub fn reduce_document_operation(
         DocumentOperation::Delete(deleted) => {
             let mut current = require_document_state(state, operation)?;
             ensure_same_object(&current.document_id, &deleted.document_id)?;
+            ensure_document_not_deleted(&current, operation)?;
             current.deleted = true;
             current.version += 1;
             Ok(Some(current))
@@ -1041,6 +1059,20 @@ fn require_document_state(
         object_id: operation.object_id().clone(),
         operation: operation.operation_name(),
     })
+}
+
+fn ensure_document_not_deleted(
+    state: &DocumentState,
+    operation: &DocumentOperation,
+) -> Result<(), ObjectReducerError> {
+    if state.deleted {
+        return Err(ObjectReducerError::DeletedObjectMutation {
+            object_id: state.document_id.clone(),
+            operation: operation.operation_name(),
+        });
+    }
+
+    Ok(())
 }
 
 fn require_incident_state(

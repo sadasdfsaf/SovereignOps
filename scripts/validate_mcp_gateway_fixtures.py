@@ -1244,7 +1244,13 @@ def _validate_runtime_resource_read(
         if "trust" in content:
             _require_string(content, "trust", item_path, issues, allowed={"trusted", "review", "untrusted"})
         if "safety" in content:
-            _validate_runtime_safety_annotation(content["safety"], f"{item_path}.safety", issues, require_findings=False)
+            _validate_runtime_safety_annotation(
+                content["safety"],
+                f"{item_path}.safety",
+                issues,
+                require_findings=False,
+                allowed_scopes={"mcp_resource_content"},
+            )
 
 
 def _validate_runtime_safety_tool_call(
@@ -1468,13 +1474,14 @@ def _validate_runtime_safety_annotation(
     issues: list[str],
     *,
     require_findings: bool,
+    allowed_scopes: Optional[set[str]] = None,
 ) -> None:
     if not _is_record(value):
         issues.append(f"{path}: must be an object")
         return
     _reject_unknown_fields(value, {"schemaVersion", "scope", "trustLevel", "action", "reasons", "findings"}, path, issues)
     _require_integer(value, "schemaVersion", path, issues, minimum=1, maximum=1)
-    _require_exact_string(value, "scope", "mcp_tool_output", path, issues)
+    _require_string(value, "scope", path, issues, allowed=allowed_scopes or {"mcp_tool_output"})
     trust_level = _require_string(value, "trustLevel", path, issues, allowed={"trusted", "review", "untrusted"})
     _require_exact_string(value, "action", "mark_only", path, issues)
     _validate_string_array(value.get("reasons"), f"{path}.reasons", issues, min_length=1)

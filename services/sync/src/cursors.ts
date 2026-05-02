@@ -43,7 +43,7 @@ export function compareCursors(left: SyncCursorInput, right: SyncCursorInput): n
     return parsedLeft.position < parsedRight.position ? -1 : 1;
   }
 
-  return parsedLeft.eventId.localeCompare(parsedRight.eventId);
+  return compareStableText(parsedLeft.eventId, parsedRight.eventId);
 }
 
 export function advanceCursor(cursor: string, acceptedEventIds: readonly string[]): string {
@@ -98,4 +98,11 @@ function assertAcceptedEventId(eventId: string): void {
   if (!EVENT_ID_PATTERN.test(eventId)) {
     throw new Error("accepted event ids must use the evt_ id prefix");
   }
+}
+
+export function compareStableText(left: string, right: string): number {
+  if (left === right) {
+    return 0;
+  }
+  return left < right ? -1 : 1;
 }

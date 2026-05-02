@@ -3,6 +3,7 @@ import {
   CURSOR_VERSION,
   INITIAL_CURSOR,
   compareCursors,
+  compareStableText,
   formatCursor,
   parseCursor,
 } from "./cursors.ts";
@@ -361,10 +362,10 @@ function compareReplayEvents(
   if (leftCursor && rightCursor) {
     return (
       (leftCursor.position === rightCursor.position
-        ? leftCursor.eventId.localeCompare(rightCursor.eventId)
+        ? compareStableText(leftCursor.eventId, rightCursor.eventId)
         : leftCursor.position - rightCursor.position) ||
       left.sequence - right.sequence ||
-      left.id.localeCompare(right.id)
+      compareStableText(left.id, right.id)
     );
   }
 
@@ -375,7 +376,7 @@ function compareReplayEvents(
     return 1;
   }
 
-  return left.sequence - right.sequence || left.id.localeCompare(right.id);
+  return left.sequence - right.sequence || compareStableText(left.id, right.id);
 }
 
 function cloneSyncedEvent(event: SyncedEventEnvelope): SyncedEventEnvelope {

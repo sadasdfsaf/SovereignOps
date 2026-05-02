@@ -273,6 +273,13 @@ pub fn classify_conflict(local: &SyncChange, remote: &SyncChange) -> ConflictCla
         };
     }
 
+    if local.kind.is_delete() && remote.kind.is_delete() {
+        return ConflictClassification {
+            kind: ConflictKind::NoConflict,
+            ordering,
+        };
+    }
+
     if local.kind.is_edit_like() && remote.kind.is_edit_like() {
         return ConflictClassification {
             kind: ConflictKind::ConcurrentEdit,

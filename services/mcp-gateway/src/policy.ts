@@ -192,9 +192,22 @@ function ruleMatches(
     return rule.path === request.path;
   }
 
-  return request.path === rule.path || request.path.startsWith(`${trimTrailingSlash(rule.path)}/`);
+  const rulePath = normalizePrefixPath(rule.path);
+  const requestPath = normalizePrefixPath(request.path);
+  if (rulePath === "/") {
+    return requestPath.startsWith("/");
+  }
+  return requestPath === rulePath || requestPath.startsWith(`${rulePath}/`);
 }
 
-function trimTrailingSlash(value: string): string {
-  return value.endsWith("/") ? value.slice(0, -1) : value;
+function normalizePrefixPath(value: string): string {
+  return trimTrailingSlashes(value.replace(/\/{2,}/g, "/"));
+}
+
+function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 1 && value[end - 1] === "/") {
+    end -= 1;
+  }
+  return value.slice(0, end);
 }

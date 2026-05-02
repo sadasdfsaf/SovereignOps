@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import {
   INITIAL_CURSOR,
   compareCursors,
+  compareStableText,
   isEventId,
   parseCursor,
 } from "./cursors.ts";
@@ -384,7 +385,7 @@ function compareEventOrder(left: LocalFirstEventEnvelope, right: LocalFirstEvent
   if (left.sequence !== right.sequence) {
     return left.sequence < right.sequence ? -1 : 1;
   }
-  return left.id.localeCompare(right.id);
+  return compareStableText(left.id, right.id);
 }
 
 function isDeterministicallyOrdered(events: readonly LocalFirstEventEnvelope[]): boolean {
@@ -393,7 +394,7 @@ function isDeterministicallyOrdered(events: readonly LocalFirstEventEnvelope[]):
 }
 
 function orderSyncedEvents(events: readonly SyncedEventEnvelope[]): SyncedEventEnvelope[] {
-  return [...events].sort((left, right) => compareCursors(left.cursor, right.cursor) || left.id.localeCompare(right.id));
+  return [...events].sort((left, right) => compareCursors(left.cursor, right.cursor) || compareStableText(left.id, right.id));
 }
 
 function cloneSyncedEvent(event: SyncedEventEnvelope): SyncedEventEnvelope {

@@ -198,6 +198,42 @@ fn document_reducer_replaces_body_tags_and_deletion() -> Result<(), Box<dyn Erro
 }
 
 #[test]
+fn document_reducer_rejects_mutations_after_deletion() -> Result<(), Box<dyn Error>> {
+    let document_id = object_id("obj_document-deleted")?;
+    let result = reduce_document_operations(&[
+        DocumentOperation::Create(DocumentCreated {
+            document_id: document_id.clone(),
+            title: "Runbook".to_owned(),
+            body: "Draft".to_owned(),
+            tags: vec![],
+        }),
+        DocumentOperation::Delete(DocumentDeleted {
+            document_id: document_id.clone(),
+        }),
+        DocumentOperation::ChangeTitle(DocumentTitleChanged {
+            document_id: document_id.clone(),
+            title: "Should not apply".to_owned(),
+        }),
+    ]);
+
+    match result {
+        Err(ObjectReducerError::DeletedObjectMutation {
+            object_id,
+            operation,
+        }) => {
+            check_eq(object_id, document_id, "deleted document id")?;
+            check_eq(
+                operation,
+                "document.title_changed",
+                "deleted document operation",
+            )
+        }
+        Ok(_) => Err(test_error("mutation after delete was accepted")),
+        Err(error) => Err(test_error(format!("wrong error: {error}"))),
+    }
+}
+
+#[test]
 fn incident_reducer_tracks_severity_status_and_evidence() -> Result<(), Box<dyn Error>> {
     let incident_id = object_id("obj_incident-2")?;
     let evidence_a = object_id("obj_evidence-a")?;
